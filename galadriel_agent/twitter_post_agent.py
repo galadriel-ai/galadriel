@@ -85,7 +85,7 @@ class TwitterPostAgent(GaladrielAgent):
         post_interval_minutes_min: int = 90,
         post_interval_minutes_max: int = 180,
     ):
-        agent_path = Path("agents") / f"{agent_name}.json"
+        agent_path = Path("agent_configurator") / f"{agent_name}.json"
         with open(agent_path, "r", encoding="utf-8") as f:
             agent_dict = json.loads(f.read())
 
@@ -106,7 +106,7 @@ class TwitterPostAgent(GaladrielAgent):
         self.galadriel_client = GaladrielClient(api_key=api_key)
         self.perplexity_client = PerplexityClient(perplexity_api_key)
         self.twitter_client = TwitterClient(twitter_credentials)
-        self.database_client = DatabaseClient()
+        self.database_client = DatabaseClient(None)
 
         self.post_interval_minutes_min = post_interval_minutes_min
         self.post_interval_minutes_max = post_interval_minutes_max
