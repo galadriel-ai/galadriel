@@ -1,6 +1,6 @@
 [tool.poetry]
-name = "sentience"
-version = "0.0.3"
+name = "galadriel_agent"
+version = "0.0.1"
 description = ""
 authors = [
     "Kaspar Peterson <kaspar@galadriel.com>",
@@ -39,7 +39,7 @@ requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.scripts]
-sentience = "sentience.cli:main"
+agent = "cli:main"
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

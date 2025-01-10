@@ -1,0 +1,11 @@
+.idea/
+
+.env
+venv/
+.venv/
+.DS_Store
+.mypy_cache/
+
+logs/
+data/
+__pycache__/

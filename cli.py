@@ -1,7 +1,5 @@
 import os
 import shutil
-from io import BytesIO
-from zipfile import ZipFile
 import click
 import requests
 import json
@@ -17,13 +15,7 @@ def main():
     pass
 
 
-@main.group()
-def agent():
-    """Agent-related commands."""
-    pass
-
-
-@agent.command()
+@main.command()
 def init() -> None:
     """Create a new Agent folder template in the current directory."""
     agent_name = click.prompt("Enter agent name", type=str)
@@ -43,7 +35,7 @@ def init() -> None:
         click.echo(f"Error creating agent template: {str(e)}", err=True)
 
 
-@agent.command()
+@main.command()
 @click.option("--image-name", default="agent", help="Name of the Docker image")
 def build(image_name: str) -> None:
     """Build the agent Docker image."""
@@ -56,7 +48,7 @@ def build(image_name: str) -> None:
         raise click.ClickException(str(e))
 
 
-@agent.command()
+@main.command()
 @click.option("--image-name", default="agent", help="Name of the Docker image")
 def publish(image_name: str) -> None:
     """Publish the agent Docker image to the Docker Hub."""
@@ -73,7 +65,7 @@ def publish(image_name: str) -> None:
         raise click.ClickException(str(e))
 
 
-@agent.command()
+@main.command()
 @click.option("--image-name", default="agent", help="Name of the Docker image")
 def deploy(image_name: str) -> None:
     """Build, publish and deploy the agent."""
@@ -99,7 +91,7 @@ def deploy(image_name: str) -> None:
         raise click.ClickException(str(e))
 
 
-@click.command()
+@main.command()
 def get_agent_state(agent_id: str):
     """Get information about a deployed agent from Galadriel platform."""
     try:
@@ -124,7 +116,7 @@ def get_agent_state(agent_id: str):
         click.echo(f"Failed to get agent state: {str(e)}")
 
 
-@click.command()
+@main.command()
 def get_all_agent_states():
     """Get all agent states"""
     try:
@@ -186,7 +178,7 @@ def _create_agent_template(
 
     # Generate <agent_name>.py
     class_name = "".join(word.capitalize() for word in agent_name.split("_"))
-    agent_code = f"""from sentience import GaladrielAgent
+    agent_code = f"""from galadriel_agent import GaladrielAgent
 
 class {class_name}(GaladrielAgent):
     def run(self):
@@ -240,7 +232,7 @@ authors = ["Your Name <your.email@example.com>"]
 
 [tool.poetry.dependencies]
 python = "^3.10"
-sentience = "^0.0.2"
+galadriel_agent = "^0.0.1"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
@@ -256,13 +248,10 @@ GALADRIEL_API_KEY={galadriel_api_key}"""
     with open(os.path.join(agent_name, ".env"), "w") as f:
         f.write(env_content)
 
-    # copy docker files from sentience/agent_framework/docker to user current directory
-    docker_files_dir = os.path.join(
-        os.path.dirname(__file__), "agent_framework", "docker"
-    )
-    docker_compose_file = os.path.join(os.path.dirname(__file__), "agent_framework")
+    # copy docker files from sentience/galadriel_agent/docker to user current directory
+    docker_files_dir = os.path.join(os.path.dirname(__file__), "docker")
     shutil.copy(
-        os.path.join(docker_compose_file, "docker-compose.yml"),
+        os.path.join(os.path.join(os.path.dirname(__file__)), "docker-compose.yml"),
         os.path.join(agent_name, "docker-compose.yml"),
     )
     shutil.copy(
