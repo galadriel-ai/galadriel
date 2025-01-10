@@ -4,7 +4,7 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-from galadriel_agent.agent import GaladrielAgent
+from galadriel_agent.twitter_post_agent import TwitterPostAgent
 from galadriel_agent.clients.twitter import TwitterCredentials
 
 
@@ -21,7 +21,7 @@ if __name__ == "__main__":
         access_token=os.getenv("TWITTER_ACCESS_TOKEN"),
         access_token_secret=os.getenv("TWITTER_ACCESS_TOKEN_SECRET"),
     )
-    agent = GaladrielAgent(
+    agent = TwitterPostAgent(
         api_key=os.getenv("GALADRIEL_API_KEY"),
         agent_name="daige",
         perplexity_api_key=os.getenv("PERPLEXITY_API_KEY"),

@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import Optional
 from botocore.exceptions import ClientError
 
-from sentience.agent_framework.agents.logging_utils import get_agent_logger
+from galadriel_agent.logging_utils import get_agent_logger
 
 logger = get_agent_logger()
 
