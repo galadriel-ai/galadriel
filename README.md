@@ -48,7 +48,7 @@ unit-test
 ## when using CLI - IMPORTANT
 
 After running `agent init` you'll need:
-1.  to copy the `galadriel_agent` folder to the root of the project.
+1.  to copy the `galadriel-agent` folder to the root of the project.
 2. add the following line to `docker-compose.yml`, inside the `volumes` section:
     ```
     - ./galadriel-agent:/home/appuser/galadriel-agent
