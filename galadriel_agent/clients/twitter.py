@@ -1,3 +1,4 @@
+import datetime
 import os
 from dataclasses import dataclass
 from typing import Dict
@@ -48,6 +49,8 @@ class TwitterAPIError(TwitterConnectionError):
 # pylint: disable=C0301:
 SEARCH_QUERY = "(-is:retweet -is:reply -is:quote) (from:aixbt_agent OR from:iruletheworldmo OR from:VitalikButerin OR from:lexfridman OR from:SpaceX OR from:sama OR from:OpenAI OR from:xai OR from:balajis from:karpathy)"
 
+MAX_SEARCH_HISTORY_HOURS = 24
+
 
 class TwitterClient:
     oauth_session: OAuth1Session
@@ -78,6 +81,7 @@ class TwitterClient:
                 params={
                     "query": SEARCH_QUERY,
                     "sort_order": "relevancy",
+                    "start_time": get_iso_datetime(MAX_SEARCH_HISTORY_HOURS),
                     "tweet.fields": "public_metrics,text,author_id,referenced_tweets,attachments",
                     "expansions": "author_id",
                     "user.fields": "name,username",
@@ -145,3 +149,10 @@ class TwitterClient:
 
         except Exception as e:
             raise TwitterAPIError(f"API request failed: {str(e)}")
+
+
+def get_iso_datetime(hours_back: int = 0) -> str:
+    value = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(
+        hours=hours_back
+    )
+    return value.strftime("%Y-%m-%dT%H:%M:%S.000Z")

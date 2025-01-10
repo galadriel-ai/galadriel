@@ -61,7 +61,7 @@ class AgentConfig:
 @dataclass
 class Memory:
     id: str
-    type: Literal["tweet"]
+    type: Literal["tweet", "tweet_excluded"]
     text: str
     topics: List[str]
     timestamp: int

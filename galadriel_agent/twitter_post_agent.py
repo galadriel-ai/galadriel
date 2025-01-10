@@ -5,7 +5,10 @@ from pathlib import Path
 from typing import Dict
 from typing import List
 
+from galadriel_agent.responses import format_response
+
 from galadriel_agent import utils
+from galadriel_agent.agent import GaladrielAgent
 from galadriel_agent.clients.database import DatabaseClient
 from galadriel_agent.clients.galadriel import GaladrielClient
 from galadriel_agent.clients.perplexity import PerplexityClient
@@ -17,8 +20,6 @@ from galadriel_agent.models import AgentConfig
 from galadriel_agent.models import Memory
 from galadriel_agent.prompts import format_prompt
 from galadriel_agent.prompts import get_search_query
-from galadriel_agent.agent import GaladrielAgent
-
 
 logger = get_agent_logger()
 
@@ -59,6 +60,8 @@ PROMPT_QUOTE_TEMPLATE = """
 Thread of Tweets You Are Replying To:
 {{quote}}
 """
+
+TWEET_RETRY_COUNT = 3
 
 
 class TwitterPostAgent(GaladrielAgent):
@@ -143,11 +146,22 @@ class TwitterPostAgent(GaladrielAgent):
         if random.random() < 0.4:
             is_post_quote_success = await self._post_quote()
             if not is_post_quote_success:
-                await self._post_perplexity_tweet()
+                await self._post_perplexity_tweet_with_retries()
         else:
-            await self._post_perplexity_tweet()
+            await self._post_perplexity_tweet_with_retries()
 
-    async def _post_perplexity_tweet(self):
+    async def _post_perplexity_tweet_with_retries(self):
+        for i in range(TWEET_RETRY_COUNT):
+            is_success = await self._post_perplexity_tweet()
+            if is_success:
+                break
+            if i < TWEET_RETRY_COUNT:
+                logger.info(
+                    f"Failed to post tweet, retrying, attempts made: {i + 1}/{TWEET_RETRY_COUNT}"
+                )
+                await asyncio.sleep(i * 5)
+
+    async def _post_perplexity_tweet(self) -> bool:
         logger.info("Generating tweet with perplexity")
         prompt_state = await self._get_post_prompt_state()
 
@@ -159,32 +173,51 @@ class TwitterPostAgent(GaladrielAgent):
             {"role": "user", "content": prompt},
         ]
         response = await self.galadriel_client.completion(
-            self.agent.settings.get("model", "gpt-4o"), messages
+            self.agent.settings.get("model", "gpt-4o"), messages  # type: ignore
         )
         if not response:
             logger.error("No API response from Galadriel")
-            return
+            return False
         if response and response.choices and response.choices[0].message:
-            message = response.choices[0].message.content
-            response = await self.twitter_client.post_tweet(message)
-            if tweet_id := (response and response.get("data", {}).get("id")):
-                logger.debug(f"Tweet ID: {tweet_id}")
+            message = response.choices[0].message.content or ""
+            formatted_message = format_response.execute(message)
+            if not formatted_message:
                 await self.database_client.add_memory(
                     Memory(
-                        id=tweet_id,
-                        type="tweet",
+                        id=f"{utils.get_current_timestamp()}",
+                        type="tweet_excluded",
                         text=message,
-                        topics=prompt_state.get("topics_data"),
+                        topics=prompt_state.get("topics_data", []),
                         timestamp=utils.get_current_timestamp(),
                         search_topic=prompt_state.get("search_topic"),
                         quoted_tweet_id=None,
                         quoted_tweet_username=None,
                     )
                 )
+                return False
+            twitter_response = await self.twitter_client.post_tweet(formatted_message)
+            if tweet_id := (
+                twitter_response and twitter_response.get("data", {}).get("id")
+            ):
+                logger.debug(f"Tweet ID: {tweet_id}")
+                await self.database_client.add_memory(
+                    Memory(
+                        id=tweet_id,
+                        type="tweet",
+                        text=formatted_message,
+                        topics=prompt_state.get("topics_data", []),
+                        timestamp=utils.get_current_timestamp(),
+                        search_topic=prompt_state.get("search_topic"),
+                        quoted_tweet_id=None,
+                        quoted_tweet_username=None,
+                    )
+                )
+                return True
         else:
             logger.error(
                 f"Unexpected API response from Galadriel: \n{response.to_json()}"
             )
+        return False
 
     async def _post_quote(self) -> bool:
         logger.info("Generating tweet with quote")
