@@ -331,6 +331,10 @@ def _galadriel_deploy(image_name: str, docker_username: str) -> str:
     with open(".agents.env", "r") as f:
         env_vars = f.read()
 
+    api_key = os.getenv("GALADRIEL_API_KEY")
+    if not api_key:
+        raise click.ClickException("GALADRIEL_API_KEY not found in environment")
+
     payload = {
         "name": image_name,
         "docker_image": f"{docker_username}/{image_name}:latest",
@@ -340,7 +344,10 @@ def _galadriel_deploy(image_name: str, docker_username: str) -> str:
     response = requests.post(
         "https://api.galadriel.com/agent",
         json=payload,
-        headers={"Content-Type": "application/json"},
+        headers={
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {api_key}",
+        },
     )
 
     if response.status_code == 200:
