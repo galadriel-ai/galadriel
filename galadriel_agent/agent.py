@@ -18,6 +18,7 @@ class AgentState:
 class GaladrielAgent:
 
     def __init__(
+        self,
         # For now can put in what ever you want
         agent_config: AgentConfig,
         database_client: DatabaseClient,
@@ -35,18 +36,18 @@ class GaladrielAgent:
         pass
 
     # Does not take any input parameters so it can be run from anywhere
-    async def run():
+    async def run(self):
         # No abstractions, implement your while loop completely without any
         # building blocks
         pass
 
     # Gathers all the data that the Agent is using and exporting it as one class
-    async def export_state() -> AgentState:
+    async def export_state(self) -> AgentState:
         pass
 
     # Restores the Agent state from one class.
     # Should be called before calling run()
-    async def load_state(agent_state: AgentState):
+    async def load_state(self, agent_state: AgentState):
         pass
 
     async def upload_state(self):
