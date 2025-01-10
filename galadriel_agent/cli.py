@@ -199,10 +199,12 @@ class {class_name}(GaladrielAgent):
         json.dump(initial_data, f, indent=2)
 
     # generate main.py
-    main_code = f"""from agent.{agent_name} import {class_name}
+    main_code = f"""import asyncio
+
+from agent.{agent_name} import {class_name}
 
 if __name__ == "__main__":
-    agent = {class_name}(agent_name={agent_name})
+    agent = {class_name}(agent_name=\"{agent_name}\")
     asyncio.run(agent.run())
 """
     with open(os.path.join(agent_name, "main.py"), "w") as f:

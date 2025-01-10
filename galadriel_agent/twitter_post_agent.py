@@ -106,7 +106,7 @@ class TwitterPostAgent(GaladrielAgent):
         self.galadriel_client = GaladrielClient(api_key=api_key)
         self.perplexity_client = PerplexityClient(perplexity_api_key)
         self.twitter_client = TwitterClient(twitter_credentials)
-        self.database_client = DatabaseClient()
+        self.database_client = DatabaseClient(None)
 
         self.post_interval_minutes_min = post_interval_minutes_min
         self.post_interval_minutes_max = post_interval_minutes_max
