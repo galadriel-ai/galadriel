@@ -4,7 +4,7 @@ from typing import Optional
 
 import aiohttp
 
-from sentience.agent_framework.agents.logging_utils import get_agent_logger
+from galadriel_agent.logging_utils import get_agent_logger
 
 logger = get_agent_logger()
 

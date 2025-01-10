@@ -1,10 +1,10 @@
 from typing import List
 
-from sentience.agent_framework.agents.logging_utils import get_agent_logger
-from sentience.agent_framework.agents.models import AgentConfig
-from sentience.agent_framework.agents.models import Memory
-from sentience.agent_framework.agents.clients.database import DatabaseClient
-from sentience.agent_framework.agents.clients.s3 import S3Client
+from galadriel_agent.logging_utils import get_agent_logger
+from galadriel_agent.models import AgentConfig
+from galadriel_agent.models import Memory
+from galadriel_agent.clients.database import DatabaseClient
+from galadriel_agent.clients.s3 import S3Client
 
 logger = get_agent_logger()
 

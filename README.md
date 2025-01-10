@@ -44,3 +44,15 @@ unit-test
 ```shell
 ./deploy.sh
 ```
+
+## when using CLI - IMPORTANT
+
+After running `agent init` you'll need:
+1.  to copy the `galadriel_agent` folder to the root of the project.
+2. add the following line to `docker-compose.yml`, inside the `volumes` section:
+    ```
+    - ./galadriel-agent:/home/appuser/galadriel-agent
+    ```
+explanation:
+- galadriel-agent is not yet a package, so we need to mount it as a volume inside the docker container.
+- this is a temporary solution until the package is published on pypi.

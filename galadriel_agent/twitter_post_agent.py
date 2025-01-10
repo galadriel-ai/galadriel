@@ -5,19 +5,19 @@ from pathlib import Path
 from typing import Dict
 from typing import List
 
-from sentience.agent_framework.agents import utils
-from sentience.agent_framework.agents.clients.database import DatabaseClient
-from sentience.agent_framework.agents.clients.galadriel import GaladrielClient
-from sentience.agent_framework.agents.clients.perplexity import PerplexityClient
-from sentience.agent_framework.agents.clients.twitter import TwitterClient
-from sentience.agent_framework.agents.clients.twitter import TwitterCredentials
-from sentience.agent_framework.agents.logging_utils import get_agent_logger
-from sentience.agent_framework.agents.logging_utils import init_logging
-from sentience.agent_framework.agents.models import AgentConfig
-from sentience.agent_framework.agents.models import Memory
-from sentience.agent_framework.agents.prompts import format_prompt
-from sentience.agent_framework.agents.prompts import get_search_query
-from sentience.agent_framework.agents.agent import GaladrielAgent
+from galadriel_agent import utils
+from galadriel_agent.clients.database import DatabaseClient
+from galadriel_agent.clients.galadriel import GaladrielClient
+from galadriel_agent.clients.perplexity import PerplexityClient
+from galadriel_agent.clients.twitter import TwitterClient
+from galadriel_agent.clients.twitter import TwitterCredentials
+from galadriel_agent.logging_utils import get_agent_logger
+from galadriel_agent.logging_utils import init_logging
+from galadriel_agent.models import AgentConfig
+from galadriel_agent.models import Memory
+from galadriel_agent.prompts import format_prompt
+from galadriel_agent.prompts import get_search_query
+from galadriel_agent.agent import GaladrielAgent
 
 
 logger = get_agent_logger()

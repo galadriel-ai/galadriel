@@ -232,7 +232,7 @@ authors = ["Your Name <your.email@example.com>"]
 
 [tool.poetry.dependencies]
 python = "^3.10"
-galadriel_agent = "^0.0.1"
+galadriel_agent = {{path = "./galadriel-agent"}}
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

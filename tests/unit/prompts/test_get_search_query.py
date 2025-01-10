@@ -1,9 +1,9 @@
 from unittest.mock import AsyncMock
 from unittest.mock import MagicMock
 
-from sentience.agent_framework.agents.models import Memory
-from sentience.agent_framework.agents.prompts import get_search_query
-from sentience.agent_framework.agents.prompts.get_search_query import SearchQuery
+from galadriel_agent.models import Memory
+from galadriel_agent.prompts import get_search_query
+from galadriel_agent.prompts.get_search_query import SearchQuery
 
 
 async def test_success():
