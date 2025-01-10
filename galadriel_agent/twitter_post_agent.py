@@ -85,7 +85,7 @@ class TwitterPostAgent(GaladrielAgent):
         post_interval_minutes_min: int = 90,
         post_interval_minutes_max: int = 180,
     ):
-        agent_path = Path("agents") / f"{agent_name}.json"
+        agent_path = Path("agent_configurator") / f"{agent_name}.json"
         with open(agent_path, "r", encoding="utf-8") as f:
             agent_dict = json.loads(f.read())
 
