@@ -83,7 +83,7 @@ def deploy(image_name: str) -> None:
         )
 
         click.echo("Deploying agent...")
-        agent_id = _galadriel_deploy(image_name)
+        agent_id = _galadriel_deploy(image_name, docker_username)
         if not agent_id:
             raise click.ClickException("Failed to deploy agent")
         click.echo(f"Successfully deployed agent! Agent ID: {agent_id}")
@@ -92,15 +92,17 @@ def deploy(image_name: str) -> None:
 
 
 @main.command()
-def get_agent_state(agent_id: str):
+@click.option("--agent-id", help="ID of the agent to get state for")
+def state(agent_id: str):
     """Get information about a deployed agent from Galadriel platform."""
     try:
+        load_dotenv(dotenv_path=Path(".") / ".env")
         api_key = os.getenv("GALADRIEL_API_KEY")
         if not api_key:
             raise click.ClickException("GALADRIEL_API_KEY not found in environment")
 
         response = requests.get(
-            f"https://api.galadriel.com/agents/{agent_id}",
+            f"https://api.galadriel.com/v1/agents/{agent_id}",
             headers={
                 "Content-Type": "application/json",
                 "Authorization": f"Bearer {api_key}",
@@ -117,15 +119,16 @@ def get_agent_state(agent_id: str):
 
 
 @main.command()
-def get_all_agent_states():
+def states():
     """Get all agent states"""
     try:
+        load_dotenv(dotenv_path=Path(".") / ".env")
         api_key = os.getenv("GALADRIEL_API_KEY")
         if not api_key:
             raise click.ClickException("GALADRIEL_API_KEY not found in environment")
 
         response = requests.get(
-            f"https://api.galadriel.com/agents/",
+            f"https://api.galadriel.com/v1/agents/",
             headers={
                 "Content-Type": "application/json",
                 "Authorization": f"Bearer {api_key}",
@@ -139,6 +142,33 @@ def get_all_agent_states():
         click.echo(json.dumps(response.json(), indent=2))
     except Exception as e:
         click.echo(f"Failed to get agent state: {str(e)}")
+
+@main.command()
+@click.argument("agent_id")
+def destroy(agent_id: str):
+    """Destroy a deployed agent from Galadriel platform."""
+    try:
+        load_dotenv(dotenv_path=Path(".") / ".env")
+        api_key = os.getenv("GALADRIEL_API_KEY")
+        if not api_key:
+            raise click.ClickException("GALADRIEL_API_KEY not found in environment")
+
+        response = requests.delete(
+            f"https://api.galadriel.com/v1/agents/{agent_id}",
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {api_key}",
+            },
+        )
+
+        if response.status_code == 200:
+            click.echo(f"Successfully destroyed agent {agent_id}")
+        else:
+            click.echo(
+                f"Failed to destroy agent with status {response.status_code}: {response.text}"
+            )
+    except Exception as e:
+        click.echo(f"Failed to destroy agent: {str(e)}")
 
 
 def _assert_config_files(image_name: str) -> Tuple[str, str]:
@@ -328,9 +358,16 @@ def _galadriel_deploy(image_name: str, docker_username: str) -> str:
             "No .agents.env file found in current directory. Please create one."
         )
 
+    # Parse .agents.env into a dictionary
+    env_vars = {}
     with open(".agents.env", "r") as f:
-        env_vars = f.read()
+        for line in f:
+            line = line.strip()
+            if line and not line.startswith('#'):
+                key, value = line.split('=', 1)
+                env_vars[key.strip()] = value.strip()
 
+    load_dotenv(dotenv_path=Path(".") / ".env")
     api_key = os.getenv("GALADRIEL_API_KEY")
     if not api_key:
         raise click.ClickException("GALADRIEL_API_KEY not found in environment")
@@ -340,18 +377,28 @@ def _galadriel_deploy(image_name: str, docker_username: str) -> str:
         "docker_image": f"{docker_username}/{image_name}:latest",
         "env_vars": env_vars,
     }
-
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {api_key}",
+        "accept": "application/json",
+    }
     response = requests.post(
-        "https://api.galadriel.com/agent",
+        "https://api.galadriel.com/v1/agents/",
         json=payload,
-        headers={
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {api_key}",
-        },
+        headers=headers,
     )
 
     if response.status_code == 200:
         agent_id = response.json()["agent_id"]
         return agent_id
     else:
+        error_msg = f"""
+Failed to deploy agent:
+Status Code: {response.status_code}
+Response: {response.text}
+Request URL: {response.request.url}
+Request Headers: {dict(response.request.headers)}
+Request Body: {response.request.body}
+"""
+        click.echo(error_msg)
         return None
