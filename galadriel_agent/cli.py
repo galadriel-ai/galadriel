@@ -301,7 +301,7 @@ def _build_image(docker_username: str) -> None:
     click.echo(
         f"Building Docker image with tag {docker_username}/{os.environ['IMAGE_NAME']}..."
     )
-    subprocess.run(["docker-compose", "build"], check=True)
+    subprocess.run(["docker-compose", "build", "--platform", "linux/amd64"], check=True)
     click.echo("Successfully built Docker image!")
 
 
