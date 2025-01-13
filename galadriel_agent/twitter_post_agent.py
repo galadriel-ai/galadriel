@@ -5,13 +5,12 @@ from pathlib import Path
 from typing import Dict
 from typing import List
 
-from galadriel_agent.responses import format_response
-
 from galadriel_agent import utils
 from galadriel_agent.agent import GaladrielAgent
 from galadriel_agent.clients.database import DatabaseClient
 from galadriel_agent.clients.galadriel import GaladrielClient
 from galadriel_agent.clients.perplexity import PerplexityClient
+from galadriel_agent.clients.twitter import SearchResult
 from galadriel_agent.clients.twitter import TwitterClient
 from galadriel_agent.clients.twitter import TwitterCredentials
 from galadriel_agent.logging_utils import get_agent_logger
@@ -20,6 +19,7 @@ from galadriel_agent.models import AgentConfig
 from galadriel_agent.models import Memory
 from galadriel_agent.prompts import format_prompt
 from galadriel_agent.prompts import get_search_query
+from galadriel_agent.responses import format_response
 
 logger = get_agent_logger()
 
@@ -62,6 +62,8 @@ Thread of Tweets You Are Replying To:
 """
 
 TWEET_RETRY_COUNT = 3
+# How many tweets between last quote from the same user
+QUOTED_USER_REOCCURRENCE_LIMIT = 3
 
 
 class TwitterPostAgent(GaladrielAgent):
@@ -373,7 +375,9 @@ class TwitterPostAgent(GaladrielAgent):
             full_header = header + "\n"
         return f"{full_header}{body}\n"
 
-    async def _filter_quote_candidates(self, results):
+    async def _filter_quote_candidates(
+        self, results: List[SearchResult]
+    ) -> List[SearchResult]:
         filtered_tweets = [
             tweet
             for tweet in results
@@ -386,4 +390,17 @@ class TwitterPostAgent(GaladrielAgent):
         filtered_tweets = [
             tweet for tweet in filtered_tweets if tweet.id not in existing_quoted_ids
         ]
+
+        recently_quoted_users: List[str] = []
+        for tweet in reversed(existing_tweets):
+            if username := tweet.quoted_tweet_username:
+                recently_quoted_users.append(username)
+            if len(recently_quoted_users) >= QUOTED_USER_REOCCURRENCE_LIMIT:
+                break
+        filtered_tweets = [
+            tweet
+            for tweet in filtered_tweets
+            if tweet.username not in recently_quoted_users
+        ]
+
         return filtered_tweets
