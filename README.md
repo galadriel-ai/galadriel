@@ -103,7 +103,7 @@ Options:
 - `--image-name`: Name for the Docker image (default: "agent")
 
 ### Deploy Agent
-Build, publish, and deploy the agent to the Galadriel platform.
+Deploy the agent to the Galadriel platform.
 ```
 galadriel deploy [--image-name NAME]
 ```
