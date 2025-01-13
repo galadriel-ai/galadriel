@@ -5,9 +5,10 @@ import requests
 import json
 import subprocess
 from pathlib import Path
-from dotenv import load_dotenv
+from dotenv import load_dotenv, dotenv_values
 from typing import Tuple
 
+API_BASE_URL = "https://api.galadriel.com/v1"
 
 @click.group()
 def main():
@@ -102,7 +103,7 @@ def state(agent_id: str):
             raise click.ClickException("GALADRIEL_API_KEY not found in environment")
 
         response = requests.get(
-            f"https://api.galadriel.com/v1/agents/{agent_id}",
+            f"{API_BASE_URL}/agents/{agent_id}",
             headers={
                 "Content-Type": "application/json",
                 "Authorization": f"Bearer {api_key}",
@@ -128,7 +129,7 @@ def states():
             raise click.ClickException("GALADRIEL_API_KEY not found in environment")
 
         response = requests.get(
-            f"https://api.galadriel.com/v1/agents/",
+            f"{API_BASE_URL}/agents/",
             headers={
                 "Content-Type": "application/json",
                 "Authorization": f"Bearer {api_key}",
@@ -154,7 +155,7 @@ def destroy(agent_id: str):
             raise click.ClickException("GALADRIEL_API_KEY not found in environment")
 
         response = requests.delete(
-            f"https://api.galadriel.com/v1/agents/{agent_id}",
+            f"{API_BASE_URL}/agents/{agent_id}",
             headers={
                 "Content-Type": "application/json",
                 "Authorization": f"Bearer {api_key}",
@@ -358,14 +359,7 @@ def _galadriel_deploy(image_name: str, docker_username: str) -> str:
             "No .agents.env file found in current directory. Please create one."
         )
 
-    # Parse .agents.env into a dictionary
-    env_vars = {}
-    with open(".agents.env", "r") as f:
-        for line in f:
-            line = line.strip()
-            if line and not line.startswith('#'):
-                key, value = line.split('=', 1)
-                env_vars[key.strip()] = value.strip()
+    env_vars = dict(dotenv_values('.agents.env'))
 
     load_dotenv(dotenv_path=Path(".") / ".env")
     api_key = os.getenv("GALADRIEL_API_KEY")
@@ -383,7 +377,7 @@ def _galadriel_deploy(image_name: str, docker_username: str) -> str:
         "accept": "application/json",
     }
     response = requests.post(
-        "https://api.galadriel.com/v1/agents/",
+        f"{API_BASE_URL}/agents/",
         json=payload,
         headers=headers,
     )
