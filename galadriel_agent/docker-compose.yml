@@ -1,6 +1,7 @@
 version: "3.9"
 services:
   agent:
+    platform: linux/amd64 
     env_file:
       - .env
     image: ${DOCKER_USERNAME}/${IMAGE_NAME}:latest
