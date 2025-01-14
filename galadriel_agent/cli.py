@@ -209,10 +209,10 @@ def _create_agent_template(
 
     # Generate <agent_name>.py
     class_name = "".join(word.capitalize() for word in agent_name.split("_"))
-    agent_code = f"""from galadriel_agent import GaladrielAgent
+    agent_code = f"""from galadriel_agent.agent import GaladrielAgent
 
 class {class_name}(GaladrielAgent):
-    def run(self):
+    async def run(self):
         # Implement your agent's logic here
         print(f"Running {class_name} with agent configuration: {{self.agent_config}}")
 """
@@ -264,7 +264,7 @@ description = ""
 authors = ["Your Name <your.email@example.com>"]
 
 [tool.poetry.dependencies]
-python = "^3.10"
+python = "^3.12"
 galadriel_agent = {{path = "./galadriel-agent"}}
 
 [build-system]
