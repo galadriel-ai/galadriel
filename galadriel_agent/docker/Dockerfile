@@ -1,7 +1,5 @@
 FROM h4n00/galadriel_base:latest
 
-RUN yum update && yum install -y gcc logrotate g++ git 
-
 # Logrotate
 COPY docker/logrotate_logs /etc/logrotate.d/log-file
 RUN chmod 644 /etc/logrotate.d/log-file
@@ -12,4 +10,4 @@ WORKDIR /home/appuser
 
 COPY . /home/appuser
 
-RUN pip install -e .
+RUN python3.12 -m pip install -e .

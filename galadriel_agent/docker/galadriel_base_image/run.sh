@@ -13,4 +13,4 @@ echo "127.0.0.1   api.openai.com" >> /etc/hosts
 
 # Start the server
 echo "Starting enclave serivces"
-python3.10 /app/enclave_services/main.py &
+python3.12 /app/enclave_services/main.py &
