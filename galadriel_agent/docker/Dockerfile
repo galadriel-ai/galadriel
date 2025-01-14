@@ -1,6 +1,6 @@
-FROM continuumio/miniconda3:24.7.1-0
+FROM h4n00/galadriel_base:latest
 
-RUN apt-get update && apt-get install -y gcc logrotate g++ libtidy-dev git libmagic1 tesseract-ocr
+RUN yum update && yum install -y gcc logrotate g++ git 
 
 # Logrotate
 COPY docker/logrotate_logs /etc/logrotate.d/log-file
