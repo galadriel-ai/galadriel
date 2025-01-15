@@ -5,7 +5,8 @@ from galadriel_agent.models import AgentConfig
 from galadriel_agent.models import Memory
 from galadriel_agent.clients.database import DatabaseClient
 from galadriel_agent.clients.s3 import S3Client
-from smolagents import ToolCallingAgent
+from smolagents import ToolCallingAgent, Tool, TOOL_CALLING_SYSTEM_PROMPT
+from typing import Optional, List, Callable
 
 logger = get_agent_logger()
 
@@ -21,9 +22,14 @@ class GaladrielAgent(ToolCallingAgent):
     def __init__(
         self,
         # For now can put in what ever you want
-        agent_config: AgentConfig,
-        database_client: DatabaseClient,
-        s3_client: S3Client,
+        tools: List[Tool],
+        model: Callable,
+        agent_config: AgentConfig=None,
+        database_client: DatabaseClient=None,
+        s3_client: S3Client=None,
+        system_prompt: Optional[str] = None,
+        planning_interval: Optional[int] = None,
+        **kwargs,
         # Things consumed by python - OpenAI, Galadriel API, Database etc...
         # This allows the community to add all sorts of clients useful for Agent
         # TODO: not sure yet
@@ -34,13 +40,18 @@ class GaladrielAgent(ToolCallingAgent):
         # TODO: not sure yet
         # tools: List[Tool],
     ):
-        pass
-
-    # Does not take any input parameters so it can be run from anywhere
-    async def run(self):
-        # No abstractions, implement your while loop completely without any
-        # building blocks
-        pass
+        if system_prompt is None:
+            system_prompt = TOOL_CALLING_SYSTEM_PROMPT
+        super().__init__(
+            tools=tools,
+            model=model,
+            system_prompt=system_prompt,
+            planning_interval=planning_interval,
+            **kwargs,
+        )
+        self.agent_config = agent_config
+        self.database_client = database_client
+        self.s3_client = s3_client
 
     # Gathers all the data that the Agent is using and exporting it as one class
     async def export_state(self) -> AgentState:
