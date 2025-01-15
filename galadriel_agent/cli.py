@@ -274,12 +274,13 @@ build-backend = "poetry.core.masonry.api"
     with open(os.path.join(agent_name, "pyproject.toml"), "w") as f:
         f.write(pyproject_toml)
 
-    # Create .env file in the agent directory
+    # Create .env and .agents.env file in the agent directory
     env_content = f"""DOCKER_USERNAME={docker_username}
 DOCKER_PASSWORD={docker_password}
 GALADRIEL_API_KEY={galadriel_api_key}"""
     with open(os.path.join(agent_name, ".env"), "w") as f:
         f.write(env_content)
+    open(os.path.join(agent_name, ".agents.env"), "w").close()
 
     # copy docker files from sentience/galadriel_agent/docker to user current directory
     docker_files_dir = os.path.join(os.path.dirname(__file__), "docker")

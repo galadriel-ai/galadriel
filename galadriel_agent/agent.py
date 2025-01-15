@@ -5,6 +5,7 @@ from galadriel_agent.models import AgentConfig
 from galadriel_agent.models import Memory
 from galadriel_agent.clients.database import DatabaseClient
 from galadriel_agent.clients.s3 import S3Client
+from smolagents import ToolCallingAgent
 
 logger = get_agent_logger()
 
@@ -15,7 +16,7 @@ class AgentState:
     # TODO: knowledge_base: KnowledgeBase
 
 
-class GaladrielAgent:
+class GaladrielAgent(ToolCallingAgent):
 
     def __init__(
         self,
