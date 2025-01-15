@@ -1,6 +1,4 @@
-FROM continuumio/miniconda3:24.7.1-0
-
-RUN apt-get update && apt-get install -y gcc logrotate g++ libtidy-dev git libmagic1 tesseract-ocr
+FROM h4n00/galadriel_base:latest
 
 # Logrotate
 COPY docker/logrotate_logs /etc/logrotate.d/log-file
@@ -12,4 +10,4 @@ WORKDIR /home/appuser
 
 COPY . /home/appuser
 
-RUN pip install -e .
+RUN python3.12 -m pip install -e .
