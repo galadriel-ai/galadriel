@@ -24,4 +24,4 @@ COPY run.sh ./
 
 RUN chmod +x run.sh
 
-CMD ["/app/run.sh"]
+ENTRYPOINT ["/app/run.sh"]

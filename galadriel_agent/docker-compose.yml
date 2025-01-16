@@ -11,5 +11,5 @@ services:
     volumes:
       - ./logs:/home/appuser/logs
       - ./data:/home/appuser/data
-    command: python3.12 main.py
+    command: main.py
     restart: unless-stopped
