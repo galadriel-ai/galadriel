@@ -21,8 +21,7 @@ def main():
         payload = client_connection.recv(4096)
         request = json.loads(payload.decode())
 
-        if "env_vars" in request:
-            env_vars = request["env_vars"]
+        if env_vars := request.get("env_vars"):
             save_env_vars_to_file(env_vars)  # Save to file
 
             response = json.dumps({"result": "OK"})
