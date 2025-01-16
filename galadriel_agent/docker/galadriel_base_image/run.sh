@@ -23,6 +23,6 @@ if [ -f /tmp/env_vars.sh ]; then
 else
     echo "No environment variables file found."
 fi
-
 # Continue with execution
-exec python3.12 "$@"
+cd /home/appuser/
+python3.12 main.py
