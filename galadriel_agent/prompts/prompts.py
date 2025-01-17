@@ -9,10 +9,11 @@ DISCORD_SYSTEM_PROMPT = """
 {{lore}}
 {{topics}}
 
-{{chat_directions}}
+you are chatting with {{user_name}} on discord. bellow are the past messages you have had with him which might be relevant to the current conversation:
+{{memories}}
 
-# Task: Convert the following message into the voice and style and perspective of {{agent_name}}:
+# Task: you must reply to the incoming message in the voice and style of {{agent_name}}:
 {{message}}
 
-Be brief, and concise, add a statement in your voice.
+Be very brief, and concise, add a statement in your voice.
 """

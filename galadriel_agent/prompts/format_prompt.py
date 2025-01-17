@@ -29,13 +29,12 @@ def load_agent_template(template: str, json_path: str) -> str:
             'system': data.get('system'),
             'bio': random.choice(data.get('bio', [])),
             'lore': random.choice(data.get('lore', [])),
-            'topics': random.choice(data.get('topics', [])),
-            'chat_directions': random.choice(data['style']['chat'])
+            'topics': random.choice(data.get('topics', []))
         }
         
         updated_template = execute(template, agent_values)
         
-        return updated_template, agent_values["system"]
+        return updated_template, data.get('name')
         
     except FileNotFoundError:
         raise FileNotFoundError(f"Agent personality file not found: {json_path}")

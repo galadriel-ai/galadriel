@@ -1,23 +1,21 @@
 import asyncio
 from typing import Optional, Dict
 import os
-from smolagents import MultiStepAgent, Tool, CodeAgent, ToolCallingAgent
-from smolagents.agents import LogLevel, ActionStep, YELLOW_HEX, ToolCall
-from typing import List, Callable, Union, Any
+from smolagents import Tool, ToolCallingAgent
+from smolagents.agents import LogLevel
+from typing import List, Callable
 from rich.text import Text
-from rich.panel import Panel
-from smolagents.utils import AgentGenerationError
-from smolagents.types import AgentImage, AgentAudio
 from galadriel_agent.clients.discord_bot import DiscordClient
-
+import json
 
 
 
 class DiscordMultiStepAgent(ToolCallingAgent):
     def __init__(
         self,
+        database: List[Dict[str, str]],
         character_prompt: str,
-        character_system: str,
+        character_name: str,
         tools: List[Tool],
         model: Callable[[List[Dict[str, str]]], str],
         discord_token: str,
@@ -49,141 +47,54 @@ class DiscordMultiStepAgent(ToolCallingAgent):
         )
         
         # Discord-specific initialization
+        self.database = database
         self.character_prompt = character_prompt
-        self.character_system = character_system
+        self.character_name = character_name
         self.message_queue = asyncio.Queue()
         self.discord_client = DiscordClient(self.message_queue, guild_id=guild_id, logger=self.logger)
         self.discord_token = discord_token
         self.is_running = False
-
-    def step(self, log_entry: ActionStep) -> Union[None, Any]:
-        """
-        Perform one step in the ReAct framework: the agent thinks, acts, and observes the result.
-        Returns None if the step is not final.
-        """
-        agent_memory = self.write_inner_memory_from_logs()
-
-        self.input_messages = agent_memory
-
-        # Add new step in logs
-        log_entry.agent_memory = agent_memory.copy()
-
-        try:
-            model_message = self.model(
-                self.input_messages,
-                tools_to_call_from=list(self.tools.values()),
-                stop_sequences=["Observation:"],
-            )
-            tool_call = model_message.tool_calls[0]
-            tool_name, tool_call_id = tool_call.function.name, tool_call.id
-            tool_arguments = tool_call.function.arguments
-
-        except Exception as e:
-            raise AgentGenerationError(
-                f"Error in generating tool call with model:\n{e}"
-            )
-
-        log_entry.tool_calls = [
-            ToolCall(name=tool_name, arguments=tool_arguments, id=tool_call_id)
-        ]
-
-        # Execute
-        self.logger.log(
-            Panel(
-                Text(f"Calling tool: '{tool_name}' with arguments: {tool_arguments}")
-            ),
-            level=LogLevel.INFO,
-        )
-        if tool_name == "final_answer":
-            if isinstance(tool_arguments, dict):
-                if "answer" in tool_arguments:
-                    answer = tool_arguments["answer"]
-                else:
-                    answer = tool_arguments
-            else:
-                answer = tool_arguments
-            if (
-                isinstance(answer, str) and answer in self.state.keys()
-            ):  # if the answer is a state variable, return the value
-                final_answer = self.state[answer]
-                self.logger.log(
-                    f"[bold {YELLOW_HEX}]Final answer:[/bold {YELLOW_HEX}] Extracting key '{answer}' from state to return value '{final_answer}'.",
-                    level=LogLevel.INFO,
-                )
-            else:
-                final_answer = answer
-                self.logger.log(
-                    Text(f"Final answer: {final_answer}", style=f"bold {YELLOW_HEX}"),
-                    level=LogLevel.INFO,
-                )
-
-            # convert final answer to character's own voice
-            try:
-                message = self.character_prompt.replace("{{message}}", str(final_answer))
-                self.logger.log(
-                    Text(f"Character prompt: {message}", style=f"bold {YELLOW_HEX}"),
-                    level=LogLevel.DEBUG,
-                )
-                character_prompt = [
-                            {
-                                "role": "system",
-                                "content": self.character_system,
-                            },
-                            {
-                                "role": "user",
-                                "content": message,
-                            }
-                        ]
-                final_answer = self.model(character_prompt).content
-
-            except Exception as e:
-                raise AgentGenerationError(
-                    f"Error in generating tool call with model:\n{e}"
-                )
-
-            log_entry.action_output = final_answer
-            return final_answer
-        else:
-            if tool_arguments is None:
-                tool_arguments = {}
-            observation = self.execute_tool_call(tool_name, tool_arguments)
-            observation_type = type(observation)
-            if observation_type in [AgentImage, AgentAudio]:
-                if observation_type == AgentImage:
-                    observation_name = "image.png"
-                elif observation_type == AgentAudio:
-                    observation_name = "audio.mp3"
-                # TODO: observation naming could allow for different names of same type
-
-                self.state[observation_name] = observation
-                updated_information = f"Stored '{observation_name}' in memory."
-            else:
-                updated_information = str(observation).strip()
-            self.logger.log(
-                f"Observations: {updated_information.replace('[', '|')}",  # escape potential rich-tag-like components
-                level=LogLevel.INFO,
-            )
-            log_entry.observations = updated_information
-            return None
     
+
     async def _process_messages(self):
         """Separate task for processing messages from the queue"""
         while self.is_running:
             try:
                 message = await self.message_queue.get()
-                task = message.content #self.system_prompt.replace("{{message}}", message.content)
-                print(task)
+                task_message = self.character_prompt.replace("{{message}}", message.content)\
+                                                  .replace("{{user_name}}", message.author)\
+                                                  .replace("{{memories}}", str(self.database))
+                self.logger.log(Text(f"Task message: {task_message}"), level=LogLevel.INFO)   
                 # Use parent's run method to process the message content
                 response = super().run(
-                    task=task,
+                    task=task_message,
                     stream=False,
                     reset=True,
                 )
                 
+                # Extract message text if response is in JSON format
+                response_text = str(response)
+                try:
+                    response_json = json.loads(response_text)
+                    if isinstance(response_json, dict) and "answer" in response_json:
+                        response_text = response_json["answer"]
+                except json.JSONDecodeError:
+                    pass  # Not JSON format, use original response
+                
+                # Save message and response to database
+                if not hasattr(self, 'database'):
+                    self.database = []
+                    
+                conversation = {
+                    message.author: message.content,
+                    self.character_name: response_text
+                }
+                self.database.append(conversation)
+                
                 # Send response back to Discord
                 channel = self.discord_client.get_channel(message.channel_id)
                 if channel:
-                    await channel.send(str(response))
+                    await channel.send(response_text)
                 self.message_queue.task_done()
             except Exception as e:
                 self.logger.log(Text(f"Error processing message: {e}"), level=LogLevel.ERROR)   
@@ -223,15 +134,19 @@ if __name__ == "__main__":
     load_dotenv(dotenv_path=Path(".") / ".env", override=True)
     model = LiteLLMModel(model_id="gpt-4o", api_key=os.getenv("OPENAI_API_KEY"))
 
+    # very dummy database for now, it contains the past exchanged messages/memories
+    database: List[Dict[str, str]] = []
+
     json_path = Path("galadriel_agent/agent_configuration/example_elon_musk.json")
     try:
-        updated_template, character_system = load_agent_template(DISCORD_SYSTEM_PROMPT, json_path)
+        hydrated_character_prompt, character_name = load_agent_template(DISCORD_SYSTEM_PROMPT, json_path)
     except Exception as e:
         print(f"Error loading agent template: {e}")
 
     agent = DiscordMultiStepAgent(
-        character_system=character_system,
-        character_prompt=updated_template,
+        database=database,
+        character_prompt=hydrated_character_prompt,
+        character_name=character_name,
         tools=[get_weather, get_time],
         model=model,
         discord_token=os.getenv("DISCORD_TOKEN"),
