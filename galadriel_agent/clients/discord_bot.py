@@ -1,3 +1,4 @@
+from datetime import datetime
 import discord
 from discord.ext import commands
 import asyncio
@@ -13,6 +14,7 @@ class Message:
     channel_id: int
     author: str
     message_id: int
+    timestamp: datetime
 
 class CommandsCog(commands.Cog):
     def __init__(self, bot):
@@ -64,7 +66,8 @@ class DiscordClient(commands.Bot):
             content=message.content,
             channel_id=message.channel.id,
             author=message.author.name,
-            message_id=message.id
+            message_id=message.id,
+            timestamp=message.created_at
         )
         await self.message_queue.put(msg)
         self.logger.log(Text(f"Added message to queue: {msg}"), level=LogLevel.INFO)
