@@ -25,10 +25,8 @@ if __name__ == "__main__":
         access_token_secret=os.getenv("TWITTER_ACCESS_TOKEN_SECRET"),
     )
     agent = TwitterPostAgent(
-        api_key=os.getenv("GALADRIEL_API_KEY"),
         agent_name="daige",
         perplexity_api_key=os.getenv("PERPLEXITY_API_KEY"),
-        twitter_credentials=twitter_credentials,
         tools=[TwitterPostTool(), TwitterSearchTool(), TwitterRepliesTool()],
     )
     
