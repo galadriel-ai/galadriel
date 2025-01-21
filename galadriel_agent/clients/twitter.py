@@ -93,7 +93,7 @@ class TwitterClient:
         if reply_to_id:
             json_data["reply"] = {}
             json_data["reply"]["in_reply_to_tweet_id"] = reply_to_id
-        response = self._make_request("POST", "tweets", json={"text": message})
+        response = self._make_request("POST", "tweets", json=json_data)
         logger.info(f"Tweet posted successfully: {message}")
         return response
 

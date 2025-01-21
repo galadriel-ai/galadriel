@@ -343,6 +343,7 @@ class TwitterPostAgent(GaladrielAgent):
                     )
                 )
                 return True
+        return False
 
     async def _run_posting_loop(self):
         # # TODO: needs to be latest NON-reply
@@ -472,7 +473,7 @@ class TwitterPostAgent(GaladrielAgent):
         quoted_tweet_username = filtered_tweets[0].username
         quote_url = f"https://x.com/{quoted_tweet_username}/status/{quoted_tweet_id}"
 
-        prompt_state = await self._get_reply_prompt_state(filtered_tweets[0].text)
+        prompt_state = await self._get_quote_prompt_state(filtered_tweets[0].text)
         prompt = format_prompt.execute(PROMPT_QUOTE_TEMPLATE, prompt_state)
         logger.debug(f"Got full formatted quote prompt: \n{prompt}")
 
@@ -538,7 +539,7 @@ class TwitterPostAgent(GaladrielAgent):
 
         return data
 
-    async def _get_reply_prompt_state(self, quote: str) -> Dict:
+    async def _get_quote_prompt_state(self, quote: str) -> Dict:
         data = await get_default_prompt_state_use_case.execute(
             self.agent, self.database_client,
         )
