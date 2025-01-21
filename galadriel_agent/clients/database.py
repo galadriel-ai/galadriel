@@ -10,6 +10,7 @@ import aiofiles
 from galadriel_agent.logging_utils import get_agent_logger
 from galadriel_agent.models import Memory
 from galadriel_agent.clients.s3 import S3Client
+
 logger = get_agent_logger()
 
 MEMORIES_FILE = "memories.json"
@@ -61,14 +62,13 @@ class DatabaseClient:
         except Exception:
             logger.error("Failed to get memories", exc_info=True)
             return None
-    
+
     async def upload_memories(self, agent_name: str) -> None:
         status = await self.s3_client.upload_file(self.memories_file_path, agent_name)
         if status:
             logger.info("Successfully uploaded memories to S3")
         else:
             logger.error("Failed to upload memories to S3")
-
 
 
 async def _read_json_list(file_path: str) -> List[Dict]:

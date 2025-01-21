@@ -4,6 +4,9 @@ import random
 from pathlib import Path
 from typing import Dict
 from typing import List
+from typing import Optional
+
+from smolagents import Tool
 
 from galadriel_agent import utils
 from galadriel_agent.agent import GaladrielAgent
@@ -11,15 +14,19 @@ from galadriel_agent.clients.database import DatabaseClient
 from galadriel_agent.clients.galadriel import GaladrielClient
 from galadriel_agent.clients.perplexity import PerplexityClient
 from galadriel_agent.clients.twitter import SearchResult
-from galadriel_agent.clients.twitter import TwitterClient
 from galadriel_agent.clients.twitter import TwitterCredentials
 from galadriel_agent.logging_utils import get_agent_logger
 from galadriel_agent.logging_utils import init_logging
 from galadriel_agent.models import AgentConfig
 from galadriel_agent.models import Memory
 from galadriel_agent.prompts import format_prompt
+from galadriel_agent.prompts import get_default_prompt_state_use_case
 from galadriel_agent.prompts import get_search_query
 from galadriel_agent.responses import format_response
+from galadriel_agent.tools.twitter import TWITTER_POST_TOOL_NAME
+from galadriel_agent.tools.twitter import TWITTER_REPLIES_TOOL_NAME
+from galadriel_agent.tools.twitter import TWITTER_SEARCH_TOOL_NAME
+from galadriel_agent.utils import format_timestamp
 
 logger = get_agent_logger()
 
@@ -61,6 +68,65 @@ Thread of Tweets You Are Replying To:
 {{quote}}
 """
 
+PROMPT_SHOULD_REPLY_TEMPLATE = """# INSTRUCTIONS: Determine if {{agent_name}} (@{{twitter_user_name}}) should respond to the message and participate in the conversation. Do not comment. Just respond with "true" or "false".
+
+Response options are RESPOND, IGNORE and STOP.
+
+- {{agent_name}} should RESPOND to messages directed at them
+- {{agent_name}} should RESPOND to conversations relevant to their background
+- {{agent_name}} should IGNORE irrelevant messages
+- {{agent_name}} should IGNORE very short messages unless directly addressed
+- {{agent_name}} should STOP if asked to stop
+- {{agent_name}} should STOP if conversation is concluded
+- {{agent_name}} is in a room with other users and wants to be conversational, but not annoying.
+
+IMPORTANT:
+- {{agent_name}} (aka @{{twitter_user_name}}) is particularly sensitive about being annoying, so if there is any doubt, it is better to IGNORE than to RESPOND.
+- For users not in the priority list, {{agent_name}} (@{{twitter_user_name}}) should err on the side of IGNORE rather than RESPOND if in doubt.
+
+Recent Posts:
+{{recent_posts}}
+
+Current Post:
+{{current_post}}
+
+Thread of Tweets You Are Replying To:
+{{formatted_conversation}}
+
+# INSTRUCTIONS: Respond with [RESPOND] if {{agent_name}} should respond, or [IGNORE] if {{agent_name}} should not respond to the last message and [STOP] if {{agent_name}} should stop participating in the conversation.
+The available options are [RESPOND], [IGNORE], or [STOP]. Choose the most appropriate option.
+If {{agent_name}} is talking too much, you can choose [IGNORE]
+
+Your response must include one of the options.
+"""
+
+PROMPT_REPLY_TEMPLATE = """
+# Areas of Expertise
+{{knowledge}}
+
+# About {{agent_name}} (@{{twitter_user_name}}):
+{{bio}}
+{{lore}}
+{{topics}}
+
+{{post_directions}}
+
+Recent interactions between {{agent_name}} and other users:
+
+{{recent_posts}}
+
+# TASK: Generate a post/reply in the voice, style and perspective of {{agent_name}} (@{{twitter_user_name}}) while using the thread of tweets as additional context:
+
+Current Post:
+{{current_post}}
+
+Thread of Tweets You Are Replying To:
+{{formatted_conversation}}
+
+Here is the current post text again.
+{{current_post}}
+"""
+
 TWEET_RETRY_COUNT = 3
 # How many tweets between last quote from the same user
 QUOTED_USER_REOCCURRENCE_LIMIT = 3
@@ -71,8 +137,11 @@ class TwitterPostAgent(GaladrielAgent):
 
     perplexity_client: PerplexityClient
     galadriel_client: GaladrielClient
-    twitter_client: TwitterClient
     database_client: DatabaseClient
+
+    twitter_post_tool: Tool
+    twitter_search_tool: Optional[Tool]
+    twitter_replies_tool: Optional[Tool]
 
     post_interval_minutes_min: int
     post_interval_minutes_max: int
@@ -84,9 +153,12 @@ class TwitterPostAgent(GaladrielAgent):
         agent_name: str,
         perplexity_api_key: str,
         twitter_credentials: TwitterCredentials,
+        tools: List[Tool],
         post_interval_minutes_min: int = 90,
         post_interval_minutes_max: int = 180,
+        max_conversations_count_for_replies: int = 3,
     ):
+        # super().__init__()
         agent_path = Path("agent_configurator") / f"{agent_name}.json"
         with open(agent_path, "r", encoding="utf-8") as f:
             agent_dict = json.loads(f.read())
@@ -105,17 +177,175 @@ class TwitterPostAgent(GaladrielAgent):
         # TODO: validate types
         self.agent = AgentConfig.from_json(agent_dict)
 
+        self.twitter_username = self.agent.extra_fields.get("twitter_profile", {}).get(
+            "username", "user"
+        )
+
         self.galadriel_client = GaladrielClient(api_key=api_key)
         self.perplexity_client = PerplexityClient(perplexity_api_key)
-        self.twitter_client = TwitterClient(twitter_credentials)
+
+        # Initialize tools
+        tool_names = [t.name for t in tools]
+        if TWITTER_POST_TOOL_NAME in tool_names:
+            self.twitter_post_tool = [t for t in tools if t.name == TWITTER_POST_TOOL_NAME][0]
+        else:
+            raise Exception("Missing tool for posting tweets, exiting")
+        if TWITTER_SEARCH_TOOL_NAME in tool_names:
+            self.twitter_search_tool = [t for t in tools if t.name == TWITTER_SEARCH_TOOL_NAME][0]
+        if TWITTER_REPLIES_TOOL_NAME in tool_names:
+            self.twitter_replies_tool = [t for t in tools if t.name == TWITTER_REPLIES_TOOL_NAME][0]
+
         self.database_client = DatabaseClient(None)
 
         self.post_interval_minutes_min = post_interval_minutes_min
         self.post_interval_minutes_max = post_interval_minutes_max
+        self.max_conversations_count_for_replies = max_conversations_count_for_replies
 
     async def run(self):
         logger.info("Running agent!")
 
+        # TODO: what to do with this event loop?
+        #  Need to start replying as well
+        # await self._run_posting_loop()
+        await self._run_reply_loop()
+
+    async def _run_reply_loop(self):
+        # sleep_time = random.randint(
+        #     int(self.post_interval_minutes_min / 4),
+        #     int(self.post_interval_minutes_max / 4),
+        # )
+        # await asyncio.sleep(sleep_time * 60)
+
+        while True:
+            await self._post_replies()
+            sleep_time = random.randint(
+                int(self.post_interval_minutes_min / 4),
+                int(self.post_interval_minutes_max / 4),
+            )
+            logger.info(f"Next Tweet replies scheduled in {sleep_time} minutes.")
+            await asyncio.sleep(sleep_time * 60)
+
+    async def _post_replies(self):
+        logger.info("Generating replies")
+        reply_count = 0
+
+        # Get all conversations
+        tweets = await self.database_client.get_tweets()
+        conversations = []
+        for tweet in reversed(tweets):
+            if (
+                tweet.quoted_tweet_username is None and tweet.quoted_tweet_id is None
+                and tweet.conversation_id is not None
+            ):
+                conversation_id = tweet.conversation_id
+                if conversation_id not in conversations and conversation_id != "dry_run":
+                    conversations.append(conversation_id)
+            if len(conversations) > self.max_conversations_count_for_replies:
+                break
+
+        for conversation_id in conversations:
+            replies = self.twitter_replies_tool(conversation_id)
+            if not len(replies):
+                continue
+
+            formatted_replies = [SearchResult.from_dict(r) for r in json.loads(replies)]
+            for reply in formatted_replies:
+                if reply.username == self.twitter_username:
+                    continue
+                existing_response = [t for t in tweets if t.reply_to_id == reply.id]
+                if len(existing_response):
+                    continue
+                is_success = await self._handle_reply(conversation_id, reply)
+                if is_success:
+                    reply_count += 1
+
+    async def _handle_reply(self, reply_to_id: str, reply: SearchResult) -> bool:
+
+        tweets = await self.database_client.get_tweets()
+        filtered_tweets = [t for t in tweets if t.id == reply_to_id]
+        if not len(filtered_tweets):
+            return False
+
+        prompt_state = await get_default_prompt_state_use_case.execute(
+            self.agent, self.database_client,
+        )
+        prompt_state["current_post"] = f"""ID: ${reply.id}
+  From: @{reply.username}
+  Text: {reply.text}"""
+        # "TODO":
+        prompt_state["formatted_conversation"] = ""
+
+        prompt = format_prompt.execute(PROMPT_SHOULD_REPLY_TEMPLATE, prompt_state)
+        logger.debug(f"Got full formatted quote prompt: \n{prompt}")
+
+        messages = [
+            {"role": "system", "content": self.agent.system},
+            {"role": "user", "content": prompt},
+        ]
+        response = await self.galadriel_client.completion(
+            self.agent.settings.get("model", "gpt-4o"), messages  # type: ignore
+        )
+        if not response:
+            logger.error("No API response from Galadriel")
+            return False
+        if (
+            response.choices
+            and response.choices[0].message
+            and response.choices[0].message.content
+        ):
+            message = response.choices[0].message.content
+            # Is this check good enough?
+            if "RESPOND" not in message:
+                return False
+
+            return await self._generate_reply(prompt_state, reply_to_id, reply)
+        else:
+            logger.error(
+                f"Unexpected API response from Galadriel: \n{response.to_json()}"
+            )
+        return False
+
+    async def _generate_reply(self, prompt_state: Dict, conversation_id: str, reply: SearchResult) -> bool:
+        prompt = format_prompt.execute(PROMPT_REPLY_TEMPLATE, prompt_state)
+        messages = [
+            {"role": "system", "content": self.agent.system},
+            {"role": "user", "content": prompt},
+        ]
+        reply_response = await self.galadriel_client.completion(
+            self.agent.settings.get("model", "gpt-4o"), messages  # type: ignore
+        )
+        if not reply_response:
+            logger.error("No API reply_response from Galadriel")
+            return False
+        if (
+            reply_response.choices
+            and reply_response.choices[0].message
+            and reply_response.choices[0].message.content
+        ):
+            reply_message = reply_response.choices[0].message.content
+            twitter_response = self.twitter_post_tool(reply_message, reply.id)
+            if tweet_id := (
+                twitter_response and twitter_response.get("data", {}).get("id")
+            ):
+                logger.debug(f"Tweet ID: {tweet_id}")
+                await self.database_client.add_memory(
+                    Memory(
+                        id=tweet_id,
+                        conversation_id=conversation_id,
+                        type="tweet",
+                        text=reply_message,
+                        topics=prompt_state.get("topics_data", []),
+                        timestamp=utils.get_current_timestamp(),
+                        search_topic=None,
+                        quoted_tweet_id=None,
+                        quoted_tweet_username=None,
+                        reply_to_id=reply.id,
+                    )
+                )
+                return True
+
+    async def _run_posting_loop(self):
+        # # TODO: needs to be latest NON-reply
         latest_tweet = await self.database_client.get_latest_tweet()
         if last_tweet_timestamp := (latest_tweet and latest_tweet.timestamp):
             minutes_passed = int(
@@ -136,7 +366,7 @@ class TwitterPostAgent(GaladrielAgent):
                 await asyncio.sleep(sleep_time * 60)
 
         while True:
-            await self._post_tweet()
+            await self._generate_original_tweet()
             sleep_time = random.randint(
                 self.post_interval_minutes_min,
                 self.post_interval_minutes_max,
@@ -144,8 +374,10 @@ class TwitterPostAgent(GaladrielAgent):
             logger.info(f"Next Tweet scheduled in {sleep_time} minutes.")
             await asyncio.sleep(sleep_time * 60)
 
-    async def _post_tweet(self):
-        if random.random() < 0.4:
+    async def _generate_original_tweet(self):
+        # TODO:
+        # if random.random() < 0.4:
+        if random.random() < 2:
             is_post_quote_success = await self._post_quote()
             if not is_post_quote_success:
                 await self._post_perplexity_tweet_with_retries()
@@ -187,6 +419,7 @@ class TwitterPostAgent(GaladrielAgent):
                 await self.database_client.add_memory(
                     Memory(
                         id=f"{utils.get_current_timestamp()}",
+                        conversation_id=None,
                         type="tweet_excluded",
                         text=message,
                         topics=prompt_state.get("topics_data", []),
@@ -197,7 +430,7 @@ class TwitterPostAgent(GaladrielAgent):
                     )
                 )
                 return False
-            twitter_response = await self.twitter_client.post_tweet(formatted_message)
+            twitter_response = self.twitter_post_tool(formatted_message)
             if tweet_id := (
                 twitter_response and twitter_response.get("data", {}).get("id")
             ):
@@ -205,6 +438,7 @@ class TwitterPostAgent(GaladrielAgent):
                 await self.database_client.add_memory(
                     Memory(
                         id=tweet_id,
+                        conversation_id=tweet_id,
                         type="tweet",
                         text=formatted_message,
                         topics=prompt_state.get("topics_data", []),
@@ -223,11 +457,13 @@ class TwitterPostAgent(GaladrielAgent):
 
     async def _post_quote(self) -> bool:
         logger.info("Generating tweet with quote")
-        results = await self.twitter_client.search()
+        # TODO: check if exists etc, part of what kind of flow to do
+        results = self.twitter_search_tool()
         if not results:
             logger.info("Failed to get twitter search results")
             return False
-        filtered_tweets = await self._filter_quote_candidates(results)
+        formatted_results = [SearchResult.from_dict(r) for r in json.loads(results)]
+        filtered_tweets = await self._filter_quote_candidates(formatted_results)
         if not filtered_tweets:
             logger.info("No relevant tweets found, skipping")
             return False
@@ -256,7 +492,7 @@ class TwitterPostAgent(GaladrielAgent):
             and response.choices[0].message.content
         ):
             message = response.choices[0].message.content + " " + quote_url
-            twitter_response = await self.twitter_client.post_tweet(message)
+            twitter_response = self.twitter_post_tool(message)
             if tweet_id := (
                 twitter_response and twitter_response.get("data", {}).get("id")
             ):
@@ -264,6 +500,7 @@ class TwitterPostAgent(GaladrielAgent):
                 await self.database_client.add_memory(
                     Memory(
                         id=tweet_id,
+                        conversation_id=tweet_id,
                         type="tweet",
                         text=message,
                         topics=prompt_state.get("topics_data", []),
@@ -282,7 +519,9 @@ class TwitterPostAgent(GaladrielAgent):
 
     async def _get_post_prompt_state(self) -> Dict:
         # TODO: need to update prompt etc etc
-        data = await self._get_default_prompt_state()
+        data = await get_default_prompt_state_use_case.execute(
+            self.agent, self.database_client,
+        )
 
         search_query = await get_search_query.execute(self.agent, self.database_client)
         data["search_topic"] = search_query.topic
@@ -300,80 +539,11 @@ class TwitterPostAgent(GaladrielAgent):
         return data
 
     async def _get_reply_prompt_state(self, quote: str) -> Dict:
-        data = await self._get_default_prompt_state()
+        data = await get_default_prompt_state_use_case.execute(
+            self.agent, self.database_client,
+        )
         data["quote"] = quote
         return data
-
-    async def _get_default_prompt_state(self) -> Dict:
-        topics = await self._get_topics()
-        return {
-            "knowledge": self._get_formatted_knowledge(),
-            "agent_name": self.agent.name,
-            "twitter_user_name": self.agent.extra_fields.get("twitter_profile", {}).get(
-                "username", "user"
-            ),
-            "bio": self._get_formatted_bio(),
-            "lore": self._get_formatted_lore(),
-            # This is kind of hacky, needed to get the "topics_data" to save it later
-            "topics": self._get_formatted_topics(topics),
-            "topics_data": topics,
-            "post_directions": self._get_formatted_post_directions(),
-        }
-
-    def _get_formatted_knowledge(self):
-        shuffled_knowledge = random.sample(
-            self.agent.knowledge, len(self.agent.knowledge)
-        )
-        return "\n".join(shuffled_knowledge[:3])
-
-    def _get_formatted_bio(self) -> str:
-        bio = self.agent.bio
-        return " ".join(random.sample(bio, min(len(bio), 3)))
-
-    def _get_formatted_lore(self) -> str:
-        lore = self.agent.lore
-        shuffled_lore = random.sample(lore, len(lore))
-        selected_lore = shuffled_lore[:10]
-        return "\n".join(selected_lore)
-
-    async def _get_topics(self) -> List[str]:
-        topics = self.agent.topics
-        recently_used_topics = []
-        latest_tweet = await self.database_client.get_latest_tweet()
-        if latest_tweet and latest_tweet.topics:
-            recently_used_topics = latest_tweet.topics
-        available_topics = [
-            topic for topic in topics if topic not in recently_used_topics
-        ]
-        shuffled_topics = random.sample(available_topics, len(available_topics))
-
-        return shuffled_topics[:5]
-
-    def _get_formatted_topics(self, selected_topics: List[str]) -> str:
-        formatted_topics = ""
-        for index, topic in enumerate(selected_topics):
-            if index == len(selected_topics) - 2:
-                formatted_topics += topic + " and "
-            elif index == len(selected_topics) - 1:
-                formatted_topics += topic
-            else:
-                formatted_topics += topic + ", "
-        return f"{self.agent.name} is interested in {formatted_topics}"
-
-    def _get_formatted_post_directions(self) -> str:
-        style = self.agent.style
-        merged_styles = "\n".join(style.get("all", []) + style.get("post", []))
-        return self._add_header(
-            f"# Post Directions for {self.agent.name}", merged_styles
-        )
-
-    def _add_header(self, header: str, body: str) -> str:
-        if not body:
-            return ""
-        full_header = ""
-        if header:
-            full_header = header + "\n"
-        return f"{full_header}{body}\n"
 
     async def _filter_quote_candidates(
         self, results: List[SearchResult]
