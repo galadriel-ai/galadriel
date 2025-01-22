@@ -6,7 +6,6 @@ from typing import List
 from typing import Optional
 
 from galadriel_agent import utils
-from galadriel_agent.agent import GaladrielAgent
 from galadriel_agent.clients.database import DatabaseClient
 from galadriel_agent.clients.llms.galadriel import GaladrielClient
 from galadriel_agent.clients.perplexity import PerplexityClient
@@ -66,7 +65,7 @@ TWEET_RETRY_COUNT = 3
 QUOTED_USER_REOCCURRENCE_LIMIT = 3
 
 
-class TwitterPostRunner(GaladrielAgent):
+class TwitterPostRunner:
     agent: AgentConfig
 
     database_client: DatabaseClient

@@ -1,20 +1,15 @@
-import asyncio
-import json
-import random
 from typing import Dict
+from typing import Optional
 
-from galadriel_agent import utils
-from galadriel_agent.agent import GaladrielAgent
+from galadriel_agent.agent import UserAgent
 from galadriel_agent.clients.database import DatabaseClient
 from galadriel_agent.clients.llms.galadriel import GaladrielClient
 from galadriel_agent.clients.twitter import SearchResult
 from galadriel_agent.logging_utils import get_agent_logger
 from galadriel_agent.models import AgentConfig
-from galadriel_agent.models import Memory
+from galadriel_agent.models import TwitterPost
 from galadriel_agent.prompts import format_prompt
 from galadriel_agent.prompts import get_default_prompt_state_use_case
-from galadriel_agent.tools.twitter import TwitterPostTool
-from galadriel_agent.tools.twitter import TwitterRepliesTool
 
 logger = get_agent_logger()
 
@@ -78,104 +73,40 @@ Here is the current post text again.
 """
 
 
-class TwitterReplyRunner(GaladrielAgent):
+class TwitterReplyRunnerAgent(UserAgent):
     agent: AgentConfig
 
     database_client: DatabaseClient
     llm_client: GaladrielClient
 
-    twitter_replies_tool: TwitterRepliesTool
-    twitter_post_tool: TwitterPostTool
-
-    post_interval_minutes_min: int
-    post_interval_minutes_max: int
-    max_conversations_count_for_replies: int
 
     def __init__(
         self,
         agent: AgentConfig,
         llm_client: GaladrielClient,
-        twitter_replies_tool: TwitterRepliesTool,
-        twitter_post_tool: TwitterPostTool,
         database_client: DatabaseClient,
-        post_interval_minutes_min: int,
-        post_interval_minutes_max: int,
-        max_conversations_count_for_replies: int,
     ):
         self.agent = agent
-        self.twitter_username = self.agent.extra_fields.get("twitter_profile", {}).get(
-            "username", "user"
-        )
-
-        self.twitter_replies_tool = twitter_replies_tool
-        self.twitter_post_tool = twitter_post_tool
 
         self.llm_client = llm_client
         self.database_client = database_client
 
-        self.post_interval_minutes_min = post_interval_minutes_min
-        self.post_interval_minutes_max = post_interval_minutes_max
-        self.max_conversations_count_for_replies = max_conversations_count_for_replies
+    async def run(self, request: Dict) -> Dict:
+        if request.get("type") != "reply":
+            raise RuntimeError("Unexpected input request")
+        conversation_id = request["conversation_id"]
+        reply = SearchResult.from_dict(request["reply"])
+        response = await self._handle_reply(conversation_id, reply)
+        if response:
+            return response
+        raise Exception("Error running agent")
 
-    async def run(self) -> None:
-        await self._run_loop()
-
-    async def _run_loop(self) -> None:
-        # sleep_time = random.randint(
-        #     self.post_interval_minutes_min,
-        #     self.post_interval_minutes_max,
-        # )
-        # await asyncio.sleep(sleep_time * 60)
-
-        while True:
-            await self._post_replies()
-            sleep_time = random.randint(
-                self.post_interval_minutes_min,
-                self.post_interval_minutes_max,
-            )
-            logger.info(f"Next Tweet replies scheduled in {sleep_time} minutes.")
-            await asyncio.sleep(sleep_time * 60)
-
-    async def _post_replies(self):
-        logger.info("Generating replies")
-        reply_count = 0
-
-        # Get all conversations
-        tweets = await self.database_client.get_tweets()
-        conversations = []
-        for tweet in reversed(tweets):
-            if (
-                tweet.quoted_tweet_username is None and tweet.quoted_tweet_id is None
-                and tweet.conversation_id is not None
-            ):
-                conversation_id = tweet.conversation_id
-                if conversation_id not in conversations and conversation_id != "dry_run":
-                    conversations.append(conversation_id)
-            if len(conversations) > self.max_conversations_count_for_replies:
-                break
-
-        for conversation_id in conversations:
-            replies = self.twitter_replies_tool(conversation_id)
-            if not len(replies):
-                continue
-
-            formatted_replies = [SearchResult.from_dict(r) for r in json.loads(replies)]
-            for reply in formatted_replies:
-                if reply.username == self.twitter_username:
-                    continue
-                existing_response = [t for t in tweets if t.reply_to_id == reply.id]
-                if len(existing_response):
-                    continue
-                is_success = await self._handle_reply(conversation_id, reply)
-                if is_success:
-                    reply_count += 1
-
-    async def _handle_reply(self, reply_to_id: str, reply: SearchResult) -> bool:
+    async def _handle_reply(self, reply_to_id: str, reply: SearchResult) -> Optional[Dict]:
 
         tweets = await self.database_client.get_tweets()
         filtered_tweets = [t for t in tweets if t.id == reply_to_id]
         if not len(filtered_tweets):
-            return False
+            return None
 
         prompt_state = await get_default_prompt_state_use_case.execute(
             self.agent, self.database_client,
@@ -198,7 +129,7 @@ class TwitterReplyRunner(GaladrielAgent):
         )
         if not response:
             logger.error("No API response from LLM")
-            return False
+            return None
         if (
             response.choices
             and response.choices[0].message
@@ -207,16 +138,16 @@ class TwitterReplyRunner(GaladrielAgent):
             message = response.choices[0].message.content
             # Is this check good enough?
             if "RESPOND" not in message:
-                return False
+                return None
 
             return await self._generate_reply(prompt_state, reply_to_id, reply)
         else:
             logger.error(
                 f"Unexpected API response from Galadriel: \n{response.to_json()}"
             )
-        return False
+        return None
 
-    async def _generate_reply(self, prompt_state: Dict, conversation_id: str, reply: SearchResult) -> bool:
+    async def _generate_reply(self, prompt_state: Dict, conversation_id: str, reply: SearchResult) -> Optional[Dict]:
         prompt = format_prompt.execute(PROMPT_REPLY_TEMPLATE, prompt_state)
         messages = [
             {"role": "system", "content": self.agent.system},
@@ -227,31 +158,17 @@ class TwitterReplyRunner(GaladrielAgent):
         )
         if not reply_response:
             logger.error("No API reply_response from Galadriel")
-            return False
+            return None
         if (
             reply_response.choices
             and reply_response.choices[0].message
             and reply_response.choices[0].message.content
         ):
             reply_message = reply_response.choices[0].message.content
-            twitter_response = self.twitter_post_tool(reply_message, reply.id)
-            if tweet_id := (
-                twitter_response and twitter_response.get("data", {}).get("id")
-            ):
-                logger.debug(f"Tweet ID: {tweet_id}")
-                await self.database_client.add_memory(
-                    Memory(
-                        id=tweet_id,
-                        conversation_id=conversation_id,
-                        type="tweet",
-                        text=reply_message,
-                        topics=prompt_state.get("topics_data", []),
-                        timestamp=utils.get_current_timestamp(),
-                        search_topic=None,
-                        quoted_tweet_id=None,
-                        quoted_tweet_username=None,
-                        reply_to_id=reply.id,
-                    )
-                )
-                return True
-        return False
+            return TwitterPost(
+                type="tweet",
+                conversation_id=conversation_id,
+                text=reply_message,
+                reply_to_id=reply.id,
+            ).to_dict()
+        return None

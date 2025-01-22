@@ -88,3 +88,23 @@ class Memory:
 
     def to_dict(self) -> Dict:
         return self.__dict__
+
+
+@dataclass
+class TwitterPost:
+    type: Literal["tweet"]
+    conversation_id: str
+    text: str
+    reply_to_id: Optional[str]
+
+    @staticmethod
+    def from_dict(data: Dict) -> "TwitterPost":
+        return TwitterPost(
+            type=data["type"],
+            conversation_id=data["conversation_id"],
+            text=data["text"],
+            reply_to_id=data.get("reply_to_id"),
+        )
+
+    def to_dict(self) -> Dict:
+        return self.__dict__

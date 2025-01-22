@@ -1,59 +1,82 @@
-from typing import List
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Dict
 
-from galadriel_agent.logging_utils import get_agent_logger
-from galadriel_agent.models import AgentConfig
-from galadriel_agent.models import Memory
-from galadriel_agent.clients.database import DatabaseClient
-from galadriel_agent.clients.s3 import S3Client
-
-logger = get_agent_logger()
+from dotenv import load_dotenv
 
 
+@dataclass
+class AgentConfig:
+    pass
+
+
+@dataclass
 class AgentState:
-    memories: List[Memory]
-    database: DatabaseClient
-    # TODO: knowledge_base: KnowledgeBase
+    pass
 
 
+class UserAgent:
+
+    async def run(self, request: Dict) -> Dict:
+        raise RuntimeError("Function not implemented")
+
+
+# Client interface, client itself can be Twitter, Discord, CLI, API etc...
+class Client:
+
+    async def get_input(self) -> Dict:
+        pass
+
+    async def post_output(self, response: Dict, proof: str):
+        pass
+
+
+# This is just a rough sketch on how the GaladrielAgent itself will be implemented
+# This is not meant to be read or modified by the end developer
 class GaladrielAgent:
 
     def __init__(
         self,
-        # For now can put in what ever you want
         agent_config: AgentConfig,
-        database_client: DatabaseClient,
-        s3_client: S3Client,
-        # Things consumed by python - OpenAI, Galadriel API, Database etc...
-        # This allows the community to add all sorts of clients useful for Agent
-        # TODO: not sure yet
-        # clients: List[Client],
-        # Things consumed by LLMs - calculator, web search etc..
-        # This is allows the community to develop all sorts of tools and easy
-        # for developers to create new ones
-        # TODO: not sure yet
-        # tools: List[Tool],
+        client: Client,
+        user_agent: UserAgent
     ):
-        pass
+        self.agent_config = agent_config
+        self.client = client
+        self.user_agent = user_agent
 
-    # Does not take any input parameters so it can be run from anywhere
+        env_path = Path(".") / ".env"
+        load_dotenv(dotenv_path=env_path)
+
     async def run(self):
-        # No abstractions, implement your while loop completely without any
-        # building blocks
+        await self.load_state("")
+        while True:
+            request = await self.client.get_input()
+            response = await self.user_agent.run(request)
+            if response:
+                proof = await self.generate_proof(request, response)
+                await self.publish_proof(proof)
+                await self.client.post_output(response, proof)
+
+            await self.upload_state()
+
+    async def generate_proof(self, request: Dict, response: Dict) -> str:
+        return "mock_proof"
+
+    async def publish_proof(self, proof: str):
         pass
 
-    # Gathers all the data that the Agent is using and exporting it as one class
+    # State management functions
     async def export_state(self) -> AgentState:
         pass
 
-    # Restores the Agent state from one class.
-    # Should be called before calling run()
     async def load_state(self, agent_state: AgentState):
         pass
 
     async def upload_state(self):
-        state = self.export_state()
-        await self.s3_client.upload_file(state)
+        state = await self.export_state()
+        # upload(state)
 
     async def restore_state(self):
-        state = await self.s3_client.download_file()
-        self.load_state(state)
+        # state = download()
+        await self.load_state("state")
