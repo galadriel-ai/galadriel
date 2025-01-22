@@ -1,3 +1,4 @@
+import asyncio
 import json
 from pathlib import Path
 from typing import List
@@ -31,7 +32,7 @@ class TwitterPostAgent(GaladrielAgent):
     twitter_search_tool: Optional[Tool]
     twitter_replies_tool: Optional[Tool]
 
-    agent_runners: List[GaladrielAgent]
+    agent_runners: List[GaladrielAgent] = []
 
     # pylint: disable=R0917:
     def __init__(
@@ -106,6 +107,5 @@ class TwitterPostAgent(GaladrielAgent):
 
     async def run(self):
         logger.info("Running agents!")
-        for agent in self.agent_runners:
-            # TODO: run all agents in parallel
-            await agent.run()
+        tasks = [agent.run() for agent in self.agent_runners]
+        await asyncio.gather(*tasks)
