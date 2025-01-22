@@ -1,10 +1,13 @@
 from datetime import datetime
+from typing import Dict
 import discord
 from discord.ext import commands
 import asyncio
 from dataclasses import dataclass
 from smolagents.agents import AgentLogger, LogLevel
 from rich.text import Text
+from galadriel_agent.clients.client import Client
+
 
 
 @dataclass
@@ -30,15 +33,15 @@ class CommandsCog(commands.Cog):
         """Greet the user"""
         await ctx.send(f"Hello {ctx.author.name}! 👋")
 
-class DiscordClient(commands.Bot):
-    def __init__(self, message_queue: asyncio.Queue, guild_id: str, logger: AgentLogger):
+class DiscordClient(commands.Bot, Client):
+    def __init__(self, guild_id: str, logger):
         # Set up intents
         intents = discord.Intents.default()
         intents.message_content = True
         intents.guild_messages = True
         
         super().__init__(command_prefix='!', intents=intents)
-        self.message_queue = message_queue
+        self.message_queue = asyncio.Queue()
         self.guild_id = guild_id
         self.logger = logger
     async def on_ready(self):
@@ -52,9 +55,10 @@ class DiscordClient(commands.Bot):
         guild = discord.Object(id=int(self.guild_id))
         try:
             await self.tree.sync(guild=guild)
-            self.logger.log(Text(f"Connected to guild {self.guild_id}"), level=LogLevel.INFO)
+            #self.logger.log(Text(f"Connected to guild {self.guild_id}"), level=LogLevel.INFO)
         except discord.HTTPException as e:
-            self.logger.log(Text(f"Failed to sync commands to guild {self.guild_id}: {e}"), level=LogLevel.ERROR)
+            #self.logger.log(Text(f"Failed to sync commands to guild {self.guild_id}: {e}"), level=LogLevel.ERROR)
+            pass
         
     async def on_message(self, message: discord.Message):
         # Ignore messages from the bot itself
@@ -70,4 +74,13 @@ class DiscordClient(commands.Bot):
             timestamp=message.created_at
         )
         await self.message_queue.put(msg)
-        self.logger.log(Text(f"Added message to queue: {msg}"), level=LogLevel.INFO)
+        #self.logger.log(Text(f"Added message to queue: {msg}"), level=LogLevel.INFO)
+    
+    async def get_input(self) -> Message:
+        return await self.message_queue.get() or None
+    
+    async def post_output(self, response: Dict, proof: str):
+        channel = self.get_channel(response["channel_id"])
+        if channel:
+            await channel.send(response["agent_response"])
+        self.message_queue.task_done()

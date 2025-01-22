@@ -6,7 +6,8 @@ from galadriel_agent.models import Memory
 from galadriel_agent.clients.database import DatabaseClient
 from galadriel_agent.clients.s3 import S3Client
 from smolagents import ToolCallingAgent, Tool, TOOL_CALLING_SYSTEM_PROMPT
-from typing import Optional, List, Callable
+from typing import Optional, List, Callable, Dict
+from galadriel_agent.clients.client import Client
 
 logger = get_agent_logger()
 
@@ -17,48 +18,51 @@ class AgentState:
     # TODO: knowledge_base: KnowledgeBase
 
 
-class GaladrielAgent(ToolCallingAgent):
+class UserAgent:
+    async def run(self, request: Dict) -> Dict:
+        raise RuntimeError("Function not implemented")
 
+class AgentState:
+    memories: List[Memory]
+    database: DatabaseClient
+    # TODO: knowledge_base: KnowledgeBase
+
+# This is just a rough sketch on how the GaladrielAgent itself will be implemented
+# This is not meant to be read or modified by the end developer
+class GaladrielAgent:
     def __init__(
         self,
-        # For now can put in what ever you want
-        tools: List[Tool],
-        model: Callable,
-        agent_config: AgentConfig=None,
-        database_client: DatabaseClient=None,
-        s3_client: S3Client=None,
-        system_prompt: Optional[str] = None,
-        planning_interval: Optional[int] = None,
-        **kwargs,
-        # Things consumed by python - OpenAI, Galadriel API, Database etc...
-        # This allows the community to add all sorts of clients useful for Agent
-        # TODO: not sure yet
-        # clients: List[Client],
-        # Things consumed by LLMs - calculator, web search etc..
-        # This is allows the community to develop all sorts of tools and easy
-        # for developers to create new ones
-        # TODO: not sure yet
-        # tools: List[Tool],
+        agent_config: AgentConfig,
+        client: Client,
+        user_agent: UserAgent,
+        s3_client: S3Client 
     ):
-        if system_prompt is None:
-            system_prompt = TOOL_CALLING_SYSTEM_PROMPT
-        super().__init__(
-            tools=tools,
-            model=model,
-            system_prompt=system_prompt,
-            planning_interval=planning_interval,
-            **kwargs,
-        )
         self.agent_config = agent_config
-        self.database_client = database_client
+        self.client = client
+        self.user_agent = user_agent
         self.s3_client = s3_client
 
-    # Gathers all the data that the Agent is using and exporting it as one class
+    async def run(self):
+        await self.load_state(agent_state=None)
+        while True:
+            request = await self.client.get_input()
+            response = await self.user_agent.run(request)
+            if response:
+                proof = await self.generate_proof(request, response)
+                await self.publish_proof(proof)
+                await self.client.post_output(response=response, proof=proof)
+            #await self.upload_state()
+
+    async def generate_proof(self, request: Dict, response: Dict) -> str:
+        pass
+
+    async def publish_proof(self, proof: str):
+        pass
+
+    # State management functions
     async def export_state(self) -> AgentState:
         pass
 
-    # Restores the Agent state from one class.
-    # Should be called before calling run()
     async def load_state(self, agent_state: AgentState):
         pass
 

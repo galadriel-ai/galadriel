@@ -18,6 +18,17 @@ class Memory(BaseModel):
 
     def __str__(self):
         return f"{self.author}: {self.message} - {self.agent_name}: {self.agent_response} - {self.timestamp}"
+    
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "message": self.message,
+            "agent_response": self.agent_response,
+            "channel_id": self.channel_id,
+            "author": self.author,
+            "agent_name": self.agent_name,
+            "timestamp": self.timestamp
+        }
 
 
 class EmbeddingClient:
