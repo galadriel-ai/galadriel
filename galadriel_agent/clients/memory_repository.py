@@ -117,29 +117,3 @@ class MemoryRepository():
 
 # singleton
 memory_repository = MemoryRepository(chromadb.Client())
-
-if __name__ == "__main__":
-    import asyncio
-    from dotenv import load_dotenv
-    from pathlib import Path
-    import os
-
-    async def main():
-        load_dotenv(dotenv_path=Path(".") / ".env", override=True)
-        embedding_client = EmbeddingClient(api_key=os.getenv("OPENAI_API_KEY"))
-        embedding = await embedding_client.embed_text("Hello, world!")
-        #print(embedding)
-        return embedding
-
-    embedding = asyncio.run(main())
-    memory_repository.add_memory(user_id="test", 
-                                 memory=Memory(message="Hello, world!",
-                                         agent_response="Hello, world!",
-                                           author="test",
-                                             agent_name="test",
-                                               timestamp=datetime.now(),
-                                                 embedding=embedding,
-                                                 channel_id=1234567890),
-                                                 conversation_id="test")
-    print(memory_repository.get_short_term_memory("test", "test"))
-    print(memory_repository.query_long_term_memory("test", "test", embedding, 1))

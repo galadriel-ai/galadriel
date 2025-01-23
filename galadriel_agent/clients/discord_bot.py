@@ -81,7 +81,7 @@ class DiscordClient(commands.Bot, Client):
         self.message_queue = queue
         await super().start(os.getenv("DISCORD_TOKEN"))
     
-    async def post_output(self, response: Dict, proof: str):
+    async def post_output(self, request, response: Dict, proof: str):
         channel = self.get_channel(response["channel_id"])
         if channel:
             await channel.send(response["agent_response"])
