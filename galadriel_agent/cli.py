@@ -97,7 +97,7 @@ def deploy(image_name: str) -> None:
 def state(agent_id: str):
     """Get information about a deployed agent from Galadriel platform."""
     try:
-        load_dotenv(dotenv_path=Path(".") / ".env")
+        load_dotenv(dotenv_path=Path(".") / ".env", override=True)
         api_key = os.getenv("GALADRIEL_API_KEY")
         if not api_key:
             raise click.ClickException("GALADRIEL_API_KEY not found in environment")
@@ -123,7 +123,7 @@ def state(agent_id: str):
 def states():
     """Get all agent states"""
     try:
-        load_dotenv(dotenv_path=Path(".") / ".env")
+        load_dotenv(dotenv_path=Path(".") / ".env", override=True)
         api_key = os.getenv("GALADRIEL_API_KEY")
         if not api_key:
             raise click.ClickException("GALADRIEL_API_KEY not found in environment")
@@ -149,7 +149,7 @@ def states():
 def destroy(agent_id: str):
     """Destroy a deployed agent from Galadriel platform."""
     try:
-        load_dotenv(dotenv_path=Path(".") / ".env")
+        load_dotenv(dotenv_path=Path(".") / ".env", override=True)
         api_key = os.getenv("GALADRIEL_API_KEY")
         if not api_key:
             raise click.ClickException("GALADRIEL_API_KEY not found in environment")
@@ -178,7 +178,7 @@ def _assert_config_files(image_name: str) -> Tuple[str, str]:
     if not os.path.exists(".env"):
         raise click.ClickException("No .env file found in current directory")
 
-    load_dotenv(dotenv_path=Path(".") / ".env")
+    load_dotenv(dotenv_path=Path(".") / ".env", override=True)
     docker_username = os.getenv("DOCKER_USERNAME")
     docker_password = os.getenv("DOCKER_PASSWORD")
     os.environ["IMAGE_NAME"] = image_name  # required for docker-compose.yml
@@ -274,12 +274,13 @@ build-backend = "poetry.core.masonry.api"
     with open(os.path.join(agent_name, "pyproject.toml"), "w") as f:
         f.write(pyproject_toml)
 
-    # Create .env file in the agent directory
+    # Create .env and .agents.env file in the agent directory
     env_content = f"""DOCKER_USERNAME={docker_username}
 DOCKER_PASSWORD={docker_password}
 GALADRIEL_API_KEY={galadriel_api_key}"""
     with open(os.path.join(agent_name, ".env"), "w") as f:
         f.write(env_content)
+    open(os.path.join(agent_name, ".agents.env"), "w").close()
 
     # copy docker files from sentience/galadriel_agent/docker to user current directory
     docker_files_dir = os.path.join(os.path.dirname(__file__), "docker")

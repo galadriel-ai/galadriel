@@ -1,9 +1,15 @@
 import asyncio
+from typing import List, Dict
+import asyncio
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict
 from typing import List
 
+from galadriel_agent.clients.database import DatabaseClient
+from galadriel_agent.clients.s3 import S3Client
+from galadriel_agent.logging_utils import get_agent_logger
+from galadriel_agent.models import Memory
 from dotenv import load_dotenv
 
 
@@ -31,6 +37,17 @@ class PushOnlyQueue:
         await self._queue.put(item)
 
 
+class UserAgent:
+    async def run(self, request: Dict) -> Dict:
+        raise RuntimeError("Function not implemented")
+
+class AgentState:
+    memories: List[Memory]
+    database: DatabaseClient
+    # TODO: knowledge_base: KnowledgeBase
+
+# This is just a rough sketch on how the GaladrielAgent itself will be implemented
+# This is not meant to be read or modified by the end developer
 # Client interface, client itself can be Twitter, Discord, CLI, API etc...
 class Client:
 
@@ -44,16 +61,17 @@ class Client:
 # This is just a rough sketch on how the GaladrielAgent itself will be implemented
 # This is not meant to be read or modified by the end developer
 class GaladrielAgent:
-
     def __init__(
         self,
         agent_config: AgentConfig,
         clients: List[Client],
-        user_agent: UserAgent
+        user_agent: UserAgent,
+        s3_client: S3Client
     ):
         self.agent_config = agent_config
         self.clients = clients
         self.user_agent = user_agent
+        self.s3_client = s3_client
 
         env_path = Path(".") / ".env"
         load_dotenv(dotenv_path=env_path)
