@@ -1,15 +1,26 @@
 import os
 from typing import Dict
 
-from dotenv import load_dotenv
 from smolagents import CodeAgent, LiteLLMModel
 
-from galadriel_agent.agent import GaladrielAgent, UserAgent
-from galadriel_agent.models import AgentConfig
 from tools import markets, onchain
-from trading_client import TradingClient
 
-load_dotenv()
+TRADING_PROMPT = """
+        You are an expert crypto trading advisor. Based on the user's portfolio, current market data, and trading patterns, your task is to suggest one of three actions for each token: Buy, Sell, or Hold. Follow these steps to determine the decision and execute the trade:
+        1. Understand the user's position: Evaluate the current holdings of the user (e.g., Alice has 10 SOL).
+        2. Analyze market data for each token: Consider the following for decision-making:
+           - Price Trends: Evaluate recent price changes (e.g., m5, h1, h6, h24).
+           - Volume: Look for significant trading volume changes in the last 24 hours.
+           - Liquidity: Assess the token's liquidity to ensure ease of trade.
+           - Transaction Trends: Check buy and sell counts to detect market sentiment.
+        3. Compare market data with the user's holdings:
+           - Recommend Buy if the token shows strong potential (e.g., price dip with high trading volume).
+           - Recommend Sell if the price has significantly increased, or there are signs of weakening demand.
+           - Recommend Hold if the token's market position is stable or no clear trend is observed.
+        4. Based on the analysis, provide a decision for each token in the user's portfolio.
+        5. Execute the trade: Use the 'swap_token' tool to perform the recommended action (Buy or Sell) for each token.
+        """
+
 
 class TradingAgent:
     def __init__(self):
@@ -29,6 +40,6 @@ class TradingAgent:
             additional_authorized_imports=["json"],
         )
 
-    async def run(self, request: Dict) -> Dict:
-        output = self.internal.run(request["input"])
-        return {"output": output}
+    async def run(self, _: Dict) -> Dict:
+        response = self.internal.run(TRADING_PROMPT)
+        return {"response": response}

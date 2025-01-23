@@ -3,7 +3,7 @@ import asyncio
 from galadriel_agent.agent import GaladrielAgent
 from galadriel_agent.models import AgentConfig
 from tools import onchain
-from trading_client import TradingClient
+from trading_client import CronClient
 from trading_agent import TradingAgent
 
 def main():
@@ -16,7 +16,7 @@ def main():
 
     agent = GaladrielAgent(
         agent_config=AgentConfig(),
-        clients=TradingClient(),
+        clients=CronClient(),
         user_agent=TradingAgent(),
     )
 
