@@ -10,13 +10,30 @@ from typing import Tuple
 
 API_BASE_URL = "https://api.galadriel.com/v1"
 
-@click.group()
-def main():
-    """Sentience CLI"""
+@click.group(help="""
+Galadriel: A CLI tool to create automous agents and deploy them to Galadriel L1.
+
+Usage:
+  galadriel [resource] [subcommand] [options]
+
+Resources:
+  agent     Manage agents (create, update, etc.)
+
+Options:
+  -h, --help    Show this help message and exit
+
+For more information about each resource, use:
+  galadriel <resource> --help
+""")
+def galadriel():
     pass
 
+@galadriel.group()
+def agent():
+    """Agent management commands"""
+    pass
 
-@main.command()
+@agent.command()
 def init() -> None:
     """Create a new Agent folder template in the current directory."""
     agent_name = click.prompt("Enter agent name", type=str)
@@ -36,7 +53,7 @@ def init() -> None:
         click.echo(f"Error creating agent template: {str(e)}", err=True)
 
 
-@main.command()
+@agent.command()
 @click.option("--image-name", default="agent", help="Name of the Docker image")
 def build(image_name: str) -> None:
     """Build the agent Docker image."""
@@ -49,7 +66,7 @@ def build(image_name: str) -> None:
         raise click.ClickException(str(e))
 
 
-@main.command()
+@agent.command()
 @click.option("--image-name", default="agent", help="Name of the Docker image")
 def publish(image_name: str) -> None:
     """Publish the agent Docker image to the Docker Hub."""
@@ -66,7 +83,7 @@ def publish(image_name: str) -> None:
         raise click.ClickException(str(e))
 
 
-@main.command()
+@agent.command()
 @click.option("--image-name", default="agent", help="Name of the Docker image")
 def deploy(image_name: str) -> None:
     """Build, publish and deploy the agent."""
@@ -92,7 +109,7 @@ def deploy(image_name: str) -> None:
         raise click.ClickException(str(e))
 
 
-@main.command()
+@agent.command()
 @click.option("--agent-id", help="ID of the agent to get state for")
 def state(agent_id: str):
     """Get information about a deployed agent from Galadriel platform."""
@@ -119,7 +136,7 @@ def state(agent_id: str):
         click.echo(f"Failed to get agent state: {str(e)}")
 
 
-@main.command()
+@agent.command()
 def states():
     """Get all agent states"""
     try:
@@ -144,7 +161,7 @@ def states():
     except Exception as e:
         click.echo(f"Failed to get agent state: {str(e)}")
 
-@main.command()
+@agent.command()
 @click.argument("agent_id")
 def destroy(agent_id: str):
     """Destroy a deployed agent from Galadriel platform."""
