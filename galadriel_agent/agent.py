@@ -1,3 +1,4 @@
+import asyncio
 from typing import List
 
 from galadriel_agent.logging_utils import get_agent_logger
@@ -5,6 +6,9 @@ from galadriel_agent.models import AgentConfig
 from galadriel_agent.models import Memory
 from galadriel_agent.clients.database import DatabaseClient
 from galadriel_agent.clients.s3 import S3Client
+from smolagents import ToolCallingAgent, Tool, TOOL_CALLING_SYSTEM_PROMPT
+from typing import Optional, List, Callable, Dict
+from galadriel_agent.clients.client import Client
 
 logger = get_agent_logger()
 
@@ -15,38 +19,56 @@ class AgentState:
     # TODO: knowledge_base: KnowledgeBase
 
 
-class GaladrielAgent:
+class UserAgent:
+    async def run(self, request: Dict) -> Dict:
+        raise RuntimeError("Function not implemented")
 
+class AgentState:
+    memories: List[Memory]
+    database: DatabaseClient
+    # TODO: knowledge_base: KnowledgeBase
+
+# This is just a rough sketch on how the GaladrielAgent itself will be implemented
+# This is not meant to be read or modified by the end developer
+class GaladrielAgent:
     def __init__(
         self,
-        # For now can put in what ever you want
         agent_config: AgentConfig,
-        database_client: DatabaseClient,
-        s3_client: S3Client,
-        # Things consumed by python - OpenAI, Galadriel API, Database etc...
-        # This allows the community to add all sorts of clients useful for Agent
-        # TODO: not sure yet
-        # clients: List[Client],
-        # Things consumed by LLMs - calculator, web search etc..
-        # This is allows the community to develop all sorts of tools and easy
-        # for developers to create new ones
-        # TODO: not sure yet
-        # tools: List[Tool],
+        clients: Client,
+        user_agent: UserAgent,
+        s3_client: S3Client 
     ):
-        pass
+        self.agent_config = agent_config
+        self.clients = clients
+        self.user_agent = user_agent
+        self.s3_client = s3_client
 
-    # Does not take any input parameters so it can be run from anywhere
     async def run(self):
-        # No abstractions, implement your while loop completely without any
-        # building blocks
+        client_input_queue = asyncio.Queue()
+        for client in self.clients:
+            asyncio.create_task(client.start(client_input_queue))
+
+        await self.load_state(agent_state=None)
+        while True:
+            request = await client_input_queue.get()
+            response = await self.user_agent.run(request)
+            if response:
+                proof = await self.generate_proof(request, response)
+                await self.publish_proof(proof)
+                for client in self.clients:
+                    await client.post_output(request, response, proof)
+            #await self.upload_state()
+
+    async def generate_proof(self, request: Dict, response: Dict) -> str:
         pass
 
-    # Gathers all the data that the Agent is using and exporting it as one class
+    async def publish_proof(self, proof: str):
+        pass
+
+    # State management functions
     async def export_state(self) -> AgentState:
         pass
 
-    # Restores the Agent state from one class.
-    # Should be called before calling run()
     async def load_state(self, agent_state: AgentState):
         pass
 
