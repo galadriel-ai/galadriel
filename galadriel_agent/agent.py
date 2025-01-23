@@ -1,14 +1,12 @@
 import asyncio
-from typing import List
+from typing import List, Dict
 
+from galadriel_agent.clients.client import Client
+from galadriel_agent.clients.database import DatabaseClient
+from galadriel_agent.clients.s3 import S3Client
 from galadriel_agent.logging_utils import get_agent_logger
 from galadriel_agent.models import AgentConfig
 from galadriel_agent.models import Memory
-from galadriel_agent.clients.database import DatabaseClient
-from galadriel_agent.clients.s3 import S3Client
-from smolagents import ToolCallingAgent, Tool, TOOL_CALLING_SYSTEM_PROMPT
-from typing import Optional, List, Callable, Dict
-from galadriel_agent.clients.client import Client
 
 logger = get_agent_logger()
 
