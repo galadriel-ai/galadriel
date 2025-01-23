@@ -209,10 +209,11 @@ def _create_agent_template(
 
     # Generate <agent_name>.py
     class_name = "".join(word.capitalize() for word in agent_name.split("_"))
-    agent_code = f"""from galadriel_agent.agent import GaladrielAgent
+    agent_code = f"""from galadriel_agent.agent import UserAgent
+from typing import Dict
 
-class {class_name}(GaladrielAgent):
-    async def run(self):
+class {class_name}(UserAgent):
+    async def run(self, request: Dict) -> Dict:
         # Implement your agent's logic here
         print(f"Running {class_name} with agent configuration: {{self.agent_config}}")
 """
@@ -231,29 +232,23 @@ class {class_name}(GaladrielAgent):
 
     # generate main.py
     main_code = f"""import asyncio
-
 from agent.{agent_name} import {class_name}
+from galadriel_agent.agent import GaladrielAgent
 
 if __name__ == "__main__":
-    agent = {class_name}(agent_name=\"{agent_name}\")
+    {agent_name} = {class_name}()
+    client = None
+    agent = GaladrielAgent(
+        agent_config=None,
+        clients=[client], 
+        user_agent={agent_name},
+        s3_client=None,
+    )
     asyncio.run(agent.run())
 """
     with open(os.path.join(agent_name, "main.py"), "w") as f:
         f.write(main_code)
 
-    # Generate test.py
-    test_code = f"""from agent.{agent_name} import {class_name}
-from sentience import GaladrielAgent 
-
-def main():
-    agent = GaladrielAgent(agent_name={agent_name})
-    agent.run()
-
-if __name__ == "__main__":
-    main()
-"""
-    with open(os.path.join(agent_name, "test.py"), "w") as f:
-        f.write(test_code)
 
     # Generate pyproject.toml
     pyproject_toml = f"""
@@ -264,7 +259,7 @@ description = ""
 authors = ["Your Name <your.email@example.com>"]
 
 [tool.poetry.dependencies]
-python = "^3.12"
+python = "^3.10"
 galadriel_agent = {{path = "./galadriel-agent"}}
 
 [build-system]

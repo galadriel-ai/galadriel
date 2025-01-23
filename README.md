@@ -62,17 +62,12 @@ explanation:
 
 Command-line interface for creating, building, and managing Galadriel agents.
 
-## Installation
-```
-pip install galadriel-agent
-```
-
 ## Commands
 
 ### Initialize a New Agent
 Create a new agent project with all necessary files and structure.
 ```
-galadriel init
+agent init
 ```
 This will prompt you for:
 - Agent name
@@ -89,7 +84,7 @@ The command creates:
 ### Build Agent
 Build the Docker image for your agent.
 ```
-galadriel build [--image-name NAME]
+agent build [--image-name NAME]
 ```
 Options:
 - `--image-name`: Name for the Docker image (default: "agent")
@@ -97,7 +92,7 @@ Options:
 ### Publish Agent
 Push the agent's Docker image to Docker Hub.
 ```
-galadriel publish [--image-name NAME]
+agnet publish [--image-name NAME]
 ```
 Options:
 - `--image-name`: Name for the Docker image (default: "agent")
@@ -105,7 +100,7 @@ Options:
 ### Deploy Agent
 Deploy the agent to the Galadriel platform.
 ```
-galadriel deploy [--image-name NAME]
+agent deploy [--image-name NAME]
 ```
 Options:
 - `--image-name`: Name for the Docker image (default: "agent")
@@ -113,7 +108,7 @@ Options:
 ### Get Agent State
 Retrieve the current state of a deployed agent.
 ```
-galadriel state --agent-id AGENT_ID
+agnet state --agent-id AGENT_ID
 ```
 Required:
 - `--agent-id`: ID of the deployed agent
@@ -127,7 +122,7 @@ galadriel states
 ### Destroy Agent
 Remove a deployed agent from the Galadriel platform.
 ```
-galadriel destroy AGENT_ID
+agent destroy AGENT_ID
 ```
 Required:
 - `AGENT_ID`: ID of the agent to destroy
