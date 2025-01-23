@@ -11,7 +11,7 @@ from galadriel_agent.clients.llms.galadriel import GaladrielClient
 from galadriel_agent.logging_utils import init_logging
 from galadriel_agent.models import AgentConfig
 from galadriel_agent.plugins.twitter.twitter_reply_agent import TwitterReplyRunnerAgent
-from galadriel_agent.plugins.twitter.twitter_reply_client import TwitterReplyRunnerClient
+from galadriel_agent.plugins.twitter.twitter_reply_client import TwitterClient
 
 
 def _load_dotenv():
@@ -26,7 +26,7 @@ async def main():
     galadriel_client = GaladrielClient()
     database_client = DatabaseClient(None)
     # Configure the twitter client, has some optional params as well
-    twitter_client = TwitterReplyRunnerClient(
+    twitter_client = TwitterClient(
         agent=agent_config,
         database_client=database_client,
     )
@@ -41,7 +41,7 @@ async def main():
     # Inject whatever client I have to Galadriel, and give it my agent
     galadriel_agent = GaladrielAgent(
         agent_config=agent_config,
-        client=twitter_client,
+        clients=[twitter_client],
         user_agent=my_agent,
     )
     # However it is actually started

@@ -79,7 +79,6 @@ class TwitterReplyRunnerAgent(UserAgent):
     database_client: DatabaseClient
     llm_client: GaladrielClient
 
-
     def __init__(
         self,
         agent: AgentConfig,
@@ -154,7 +153,7 @@ class TwitterReplyRunnerAgent(UserAgent):
             {"role": "user", "content": prompt},
         ]
         reply_response = await self.llm_client.completion(
-            self.agent.settings.get("model", "gpt-4o"), messages  # type: ignore
+            self.agent.settings.get("model", "gpt-4o"), messages
         )
         if not reply_response:
             logger.error("No API reply_response from Galadriel")

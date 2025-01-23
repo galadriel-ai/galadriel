@@ -5,6 +5,7 @@ from typing import Dict
 
 from galadriel_agent import utils
 from galadriel_agent.agent import Client
+from galadriel_agent.agent import PushOnlyQueue
 from galadriel_agent.clients.database import DatabaseClient
 from galadriel_agent.clients.twitter import SearchResult
 from galadriel_agent.logging_utils import get_agent_logger
@@ -17,10 +18,10 @@ from galadriel_agent.tools.twitter import TwitterRepliesTool
 logger = get_agent_logger()
 
 
-class TwitterReplyRunnerClient(Client):
+class TwitterClient(Client):
     agent: AgentConfig
 
-    event_queue: asyncio.Queue
+    event_queue: PushOnlyQueue
 
     database_client: DatabaseClient
 
@@ -43,8 +44,6 @@ class TwitterReplyRunnerClient(Client):
         self.twitter_username = self.agent.extra_fields.get("twitter_profile", {}).get(
             "username", "user"
         )
-        # Might need to be injected in constructor to do multiple things..
-        self.event_queue = asyncio.Queue()
 
         self.twitter_replies_tool = TwitterRepliesTool()
         self.twitter_post_tool = TwitterPostTool()
@@ -55,32 +54,26 @@ class TwitterReplyRunnerClient(Client):
         self.post_interval_minutes_max = post_interval_minutes_max
         self.max_conversations_count_for_replies = max_conversations_count_for_replies
 
-        # Should client run method be called by galadriel agent?
-        asyncio.create_task(self.run())
+    async def start(self, queue: PushOnlyQueue) -> None:
+        self.event_queue = queue
+        await self._run_loop()
 
-    async def get_input(self) -> Dict:
-        response = await self.event_queue.get()
-        return response
-
-    async def post_output(self, response: Dict, proof: str):
+    async def post_output(self, response: Dict, proof: str) -> None:
         if response.get("type") == "tweet":
             await self._post_tweet(TwitterPost.from_dict(response))
 
-    async def run(self) -> None:
-        await self._run_loop()
-
     async def _run_loop(self) -> None:
         # sleep_time = random.randint(
-        #     self.post_interval_minutes_min,
-        #     self.post_interval_minutes_max,
+        #     int(self.post_interval_minutes_min / 4),
+        #     int(self.post_interval_minutes_max / 4),
         # )
         # await asyncio.sleep(sleep_time * 60)
 
         while True:
             await self._post_replies()
             sleep_time = random.randint(
-                self.post_interval_minutes_min,
-                self.post_interval_minutes_max,
+                int(self.post_interval_minutes_min / 4),
+                int(self.post_interval_minutes_max / 4),
             )
             logger.info(f"Next Tweet replies scheduled in {sleep_time} minutes.")
             await asyncio.sleep(sleep_time * 60)
@@ -108,12 +101,14 @@ class TwitterReplyRunnerClient(Client):
                 continue
 
             formatted_replies = [SearchResult.from_dict(r) for r in json.loads(replies)]
+            reply_to_ids = []
             for reply in formatted_replies:
                 if reply.username == self.twitter_username:
                     continue
                 existing_response = [t for t in tweets if t.reply_to_id == reply.id]
-                if len(existing_response):
+                if len(existing_response) or reply.id in reply_to_ids:
                     continue
+                reply_to_ids.append(reply.id)
                 # TODO: data format etc
                 await self.event_queue.put({
                     "type": "reply",
