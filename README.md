@@ -47,7 +47,7 @@ unit-test
 
 ## Before using CLI - IMPORTANT
 
-After running `agent init` you'll need:
+After running `galadriel agent init` you'll need:
 1.  to copy the `galadriel-agent` folder to the root of the project.
 2. add the following line to `docker-compose.yml`, inside the `volumes` section:
     ```
@@ -67,7 +67,7 @@ Command-line interface for creating, building, and managing Galadriel agents.
 ### Initialize a New Agent
 Create a new agent project with all necessary files and structure.
 ```
-agent init
+galadriel agent init
 ```
 This will prompt you for:
 - Agent name
@@ -84,7 +84,7 @@ The command creates:
 ### Build Agent
 Build the Docker image for your agent.
 ```
-agent build [--image-name NAME]
+galadriel agent build [--image-name NAME]
 ```
 Options:
 - `--image-name`: Name for the Docker image (default: "agent")
@@ -92,7 +92,7 @@ Options:
 ### Publish Agent
 Push the agent's Docker image to Docker Hub.
 ```
-agnet publish [--image-name NAME]
+galadriel agent publish [--image-name NAME]
 ```
 Options:
 - `--image-name`: Name for the Docker image (default: "agent")
@@ -100,15 +100,24 @@ Options:
 ### Deploy Agent
 Deploy the agent to the Galadriel platform.
 ```
-agent deploy [--image-name NAME]
+galadriel agent deploy [--image-name NAME]
 ```
 Options:
 - `--image-name`: Name for the Docker image (default: "agent")
 
+### Update Agent
+Update an existing agent on the Galadriel platform.
+```
+galadriel agent update [--image-name NAME] [--agent-id AGENT_ID]
+```
+Options:
+- `--image-name`: Name for the Docker image (default: "agent")
+- `--agent-id`: ID of the agent to update
+
 ### Get Agent State
 Retrieve the current state of a deployed agent.
 ```
-agnet state --agent-id AGENT_ID
+galadriel agent state --agent-id AGENT_ID
 ```
 Required:
 - `--agent-id`: ID of the deployed agent
@@ -116,13 +125,13 @@ Required:
 ### List All Agents
 Get information about all deployed agents.
 ```
-galadriel states
+galadriel agent states
 ```
 
 ### Destroy Agent
 Remove a deployed agent from the Galadriel platform.
 ```
-agent destroy AGENT_ID
+galadriel agent destroy AGENT_ID
 ```
 Required:
 - `AGENT_ID`: ID of the agent to destroy

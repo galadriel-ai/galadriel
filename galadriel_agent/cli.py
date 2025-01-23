@@ -108,6 +108,22 @@ def deploy(image_name: str) -> None:
     except Exception as e:
         raise click.ClickException(str(e))
 
+@agent.command()
+@click.option("--agent-id", help="ID of the agent to update")
+@click.option("--image-name", default="agent", help="Name of the Docker image")
+def update(agent_id: str, image_name: str):
+    """Update the agent"""
+    click.echo(f"Updating agent {agent_id}")
+    try:
+        docker_username, _ = _assert_config_files(image_name=image_name)
+        status = _galadriel_update(image_name=image_name, docker_username=docker_username, agent_id=agent_id)
+        if status:
+            click.echo(f"Successfully updated agent {agent_id}")
+        else:
+            raise click.ClickException(f"Failed to update agent {agent_id}")
+    except Exception as e:
+        raise click.ClickException(str(e))
+
 
 @agent.command()
 @click.option("--agent-id", help="ID of the agent to get state for")
@@ -409,3 +425,49 @@ Request Body: {response.request.body}
 """
         click.echo(error_msg)
         return None
+
+
+def _galadriel_update(image_name: str, docker_username: str, agent_id: str) -> bool:
+    """Update agent on Galadriel platform."""
+
+    if not os.path.exists(".agents.env"):
+        raise click.ClickException(
+            "No .agents.env file found in current directory. Please create one."
+        )
+
+    env_vars = dict(dotenv_values('.agents.env'))
+
+    load_dotenv(dotenv_path=Path(".") / ".env")
+    api_key = os.getenv("GALADRIEL_API_KEY")
+    if not api_key:
+        raise click.ClickException("GALADRIEL_API_KEY not found in environment")
+
+    payload = {
+        "name": image_name,
+        "docker_image": f"{docker_username}/{image_name}:latest",
+        "env_vars": env_vars,
+    }
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {api_key}",
+        "accept": "application/json",
+    }
+    response = requests.put(
+        f"{API_BASE_URL}/agents/{agent_id}",
+        json=payload,
+        headers=headers,
+    )
+
+    if response.status_code == 200:
+        return True
+    else:
+        error_msg = f"""
+Failed to update agent:
+Status Code: {response.status_code}
+Response: {response.text}
+Request URL: {response.request.url}
+Request Headers: {dict(response.request.headers)}
+Request Body: {response.request.body}
+"""
+        click.echo(error_msg)
+        return False
