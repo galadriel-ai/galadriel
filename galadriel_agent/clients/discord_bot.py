@@ -1,10 +1,11 @@
 from datetime import datetime
+import os
 from typing import Dict
 import discord
 from discord.ext import commands
 import asyncio
 from dataclasses import dataclass
-from smolagents.agents import AgentLogger, LogLevel
+from smolagents.agents import LogLevel
 from rich.text import Text
 from galadriel_agent.clients.client import Client
 
@@ -41,7 +42,7 @@ class DiscordClient(commands.Bot, Client):
         intents.guild_messages = True
         
         super().__init__(command_prefix='!', intents=intents)
-        self.message_queue = asyncio.Queue()
+        self.message_queue = None
         self.guild_id = guild_id
         self.logger = logger
     async def on_ready(self):
@@ -76,8 +77,9 @@ class DiscordClient(commands.Bot, Client):
         await self.message_queue.put(msg)
         #self.logger.log(Text(f"Added message to queue: {msg}"), level=LogLevel.INFO)
     
-    async def get_input(self) -> Message:
-        return await self.message_queue.get() or None
+    async def start(self, queue: asyncio.Queue) -> Message:
+        self.message_queue = queue
+        await super().start(os.getenv("DISCORD_TOKEN"))
     
     async def post_output(self, response: Dict, proof: str):
         channel = self.get_channel(response["channel_id"])

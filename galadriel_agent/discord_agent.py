@@ -139,7 +139,6 @@ if __name__ == "__main__":
 
     async def main():
         discord_client = DiscordClient(guild_id=os.getenv("DISCORD_GUILD_ID"), logger=None)
-        asyncio.create_task(discord_client.start(os.getenv("DISCORD_TOKEN")))
 
         discord_agent = DiscordMultiStepAgent(
             memory_repository=memory_repository,
@@ -151,11 +150,10 @@ if __name__ == "__main__":
 
         agent = GaladrielAgent(
             agent_config=None,
-            client=discord_client, 
+            clients=[discord_client], 
             user_agent=discord_agent,
             s3_client=None,
-            
         )
-        
         await agent.run()
+
     asyncio.run(main())

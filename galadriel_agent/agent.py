@@ -1,3 +1,4 @@
+import asyncio
 from typing import List
 
 from galadriel_agent.logging_utils import get_agent_logger
@@ -33,24 +34,29 @@ class GaladrielAgent:
     def __init__(
         self,
         agent_config: AgentConfig,
-        client: Client,
+        clients: Client,
         user_agent: UserAgent,
         s3_client: S3Client 
     ):
         self.agent_config = agent_config
-        self.client = client
+        self.clients = clients
         self.user_agent = user_agent
         self.s3_client = s3_client
 
     async def run(self):
+        client_input_queue = asyncio.Queue()
+        for client in self.clients:
+            asyncio.create_task(client.start(client_input_queue))
+
         await self.load_state(agent_state=None)
         while True:
-            request = await self.client.get_input()
+            request = await client_input_queue.get()
             response = await self.user_agent.run(request)
             if response:
                 proof = await self.generate_proof(request, response)
                 await self.publish_proof(proof)
-                await self.client.post_output(response=response, proof=proof)
+                for client in self.clients:
+                    await client.post_output(request, response, proof)
             #await self.upload_state()
 
     async def generate_proof(self, request: Dict, response: Dict) -> str:
