@@ -2,6 +2,7 @@ import asyncio
 import json
 import random
 from typing import Dict
+from typing import Optional
 
 from galadriel_agent import utils
 from galadriel_agent.agent import Client
@@ -9,7 +10,7 @@ from galadriel_agent.agent import PushOnlyQueue
 from galadriel_agent.clients.database import DatabaseClient
 from galadriel_agent.clients.twitter import SearchResult
 from galadriel_agent.logging_utils import get_agent_logger
-from galadriel_agent.models import AgentConfig
+from galadriel_agent.models import TwitterAgentConfig
 from galadriel_agent.models import Memory
 from galadriel_agent.models import TwitterPost
 from galadriel_agent.tools.twitter import TwitterPostTool
@@ -19,14 +20,14 @@ logger = get_agent_logger()
 
 
 class TwitterClient(Client):
-    agent: AgentConfig
+    agent: TwitterAgentConfig
 
     event_queue: PushOnlyQueue
 
     database_client: DatabaseClient
 
-    twitter_replies_tool: TwitterRepliesTool
     twitter_post_tool: TwitterPostTool
+    twitter_replies_tool: TwitterRepliesTool
 
     post_interval_minutes_min: int
     post_interval_minutes_max: int
@@ -34,7 +35,7 @@ class TwitterClient(Client):
 
     def __init__(
         self,
-        agent: AgentConfig,
+        agent: TwitterAgentConfig,
         database_client: DatabaseClient,
         post_interval_minutes_min: int = 90,
         post_interval_minutes_max: int = 180,
@@ -45,8 +46,8 @@ class TwitterClient(Client):
             "username", "user"
         )
 
-        self.twitter_replies_tool = TwitterRepliesTool()
         self.twitter_post_tool = TwitterPostTool()
+        self.twitter_replies_tool = TwitterRepliesTool()
 
         self.database_client = database_client
 
@@ -56,13 +57,66 @@ class TwitterClient(Client):
 
     async def start(self, queue: PushOnlyQueue) -> None:
         self.event_queue = queue
-        await self._run_loop()
+        # Should be configurable: which kind of flows to run
+        asyncio.create_task(self._run_post_loop())
+        asyncio.create_task(self._run_reply_loop())
 
     async def post_output(self, response: Dict, proof: str) -> None:
         if response.get("type") == "tweet":
             await self._post_tweet(TwitterPost.from_dict(response))
+        if response.get("type") == "tweet_excluded":
+            twitter_post = TwitterPost.from_dict(response)
+            await self.database_client.add_memory(
+                Memory(
+                    id=f"{utils.get_current_timestamp()}",
+                    conversation_id=None,
+                    type="tweet_excluded",
+                    text=twitter_post.text,
+                    topics=twitter_post.topics,
+                    timestamp=utils.get_current_timestamp(),
+                    search_topic=twitter_post.search_topic,
+                    quoted_tweet_id=None,
+                    quoted_tweet_username=None,
+                )
+            )
 
-    async def _run_loop(self) -> None:
+    async def _run_post_loop(self) -> None:
+        tweets = await self.database_client.get_tweets()
+        latest_tweet: Optional[Memory] = None
+        for tweet in reversed(tweets):
+            if not tweet.reply_to_id:
+                latest_tweet = tweet
+                break
+        if last_tweet_timestamp := (latest_tweet and latest_tweet.timestamp):
+            minutes_passed = int(
+                (utils.get_current_timestamp() - last_tweet_timestamp) / 60
+            )
+            if minutes_passed > self.post_interval_minutes_min:
+                logger.info(
+                    f"Last tweet happened {minutes_passed} minutes ago, generating new tweet immediately"
+                )
+            else:
+                sleep_time = random.randint(
+                    self.post_interval_minutes_min - minutes_passed,
+                    self.post_interval_minutes_max - minutes_passed,
+                )
+                logger.info(
+                    f"Last tweet happened {minutes_passed} minutes ago, waiting for {sleep_time} minutes"
+                )
+                await asyncio.sleep(sleep_time * 60)
+
+        while True:
+            await self.event_queue.put({
+                "type": "tweet_original",
+            })
+            sleep_time = random.randint(
+                self.post_interval_minutes_min,
+                self.post_interval_minutes_max,
+            )
+            logger.info(f"Next Tweet scheduled in {sleep_time} minutes.")
+            await asyncio.sleep(sleep_time * 60)
+
+    async def _run_reply_loop(self) -> None:
         # sleep_time = random.randint(
         #     int(self.post_interval_minutes_min / 4),
         #     int(self.post_interval_minutes_max / 4),
@@ -70,7 +124,7 @@ class TwitterClient(Client):
         # await asyncio.sleep(sleep_time * 60)
 
         while True:
-            await self._post_replies()
+            await self._get_replies()
             sleep_time = random.randint(
                 int(self.post_interval_minutes_min / 4),
                 int(self.post_interval_minutes_max / 4),
@@ -78,7 +132,7 @@ class TwitterClient(Client):
             logger.info(f"Next Tweet replies scheduled in {sleep_time} minutes.")
             await asyncio.sleep(sleep_time * 60)
 
-    async def _post_replies(self):
+    async def _get_replies(self):
         logger.info("Generating replies")
 
         # Get all conversations
@@ -109,9 +163,8 @@ class TwitterClient(Client):
                 if len(existing_response) or reply.id in reply_to_ids:
                     continue
                 reply_to_ids.append(reply.id)
-                # TODO: data format etc
                 await self.event_queue.put({
-                    "type": "reply",
+                    "type": "tweet_reply",
                     "conversation_id": conversation_id,
                     "reply": reply.to_dict(),
                 })
@@ -130,9 +183,9 @@ class TwitterClient(Client):
                     text=twitter_post.text,
                     topics=[],
                     timestamp=utils.get_current_timestamp(),
-                    search_topic=None,
-                    quoted_tweet_id=None,
-                    quoted_tweet_username=None,
+                    search_topic=twitter_post.search_topic,
+                    quoted_tweet_id=twitter_post.quoted_tweet_id,
+                    quoted_tweet_username=twitter_post.quoted_tweet_username,
                     reply_to_id=twitter_post.reply_to_id,
                 )
             )

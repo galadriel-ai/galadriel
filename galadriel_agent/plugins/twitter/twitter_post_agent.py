@@ -5,19 +5,18 @@ from typing import Dict
 from typing import List
 from typing import Optional
 
-from galadriel_agent import utils
+from galadriel_agent.agent import UserAgent
 from galadriel_agent.clients.database import DatabaseClient
 from galadriel_agent.clients.llms.galadriel import GaladrielClient
 from galadriel_agent.clients.perplexity import PerplexityClient
 from galadriel_agent.clients.twitter import SearchResult
 from galadriel_agent.logging_utils import get_agent_logger
-from galadriel_agent.models import AgentConfig
-from galadriel_agent.models import Memory
+from galadriel_agent.models import TwitterAgentConfig
+from galadriel_agent.models import TwitterPost
 from galadriel_agent.prompts import format_prompt
 from galadriel_agent.prompts import get_default_prompt_state_use_case
 from galadriel_agent.prompts import get_search_query
 from galadriel_agent.responses import format_response
-from galadriel_agent.tools.twitter import TwitterPostTool
 from galadriel_agent.tools.twitter import TwitterSearchTool
 
 logger = get_agent_logger()
@@ -65,15 +64,13 @@ TWEET_RETRY_COUNT = 3
 QUOTED_USER_REOCCURRENCE_LIMIT = 3
 
 
-class TwitterPostRunner:
-    agent: AgentConfig
+class TwitterPostAgent(UserAgent):
+    agent: TwitterAgentConfig
 
     database_client: DatabaseClient
     llm_client: GaladrielClient
 
-    twitter_post_tool: TwitterPostTool
-    # TODO: Optional?
-    twitter_search_tool: TwitterSearchTool
+    twitter_search_tool: Optional[TwitterSearchTool]
 
     perplexity_client: PerplexityClient
 
@@ -82,87 +79,56 @@ class TwitterPostRunner:
 
     def __init__(
         self,
-        agent: AgentConfig,
+        agent_config: TwitterAgentConfig,
         llm_client: GaladrielClient,
-        twitter_post_tool: TwitterPostTool,
-        twitter_search_tool: TwitterSearchTool,
         database_client: DatabaseClient,
         perplexity_client: PerplexityClient,
-        post_interval_minutes_min: int,
-        post_interval_minutes_max: int,
+        twitter_search_tool: Optional[TwitterSearchTool] = None
     ):
-        self.agent = agent
+        self.agent = agent_config
 
         self.llm_client = llm_client
         self.database_client = database_client
 
-        self.twitter_post_tool = twitter_post_tool
-        self.twitter_search_tool = twitter_search_tool
-
         self.perplexity_client = perplexity_client
 
-        self.post_interval_minutes_min = post_interval_minutes_min
-        self.post_interval_minutes_max = post_interval_minutes_max
+        self.twitter_search_tool = twitter_search_tool
 
-    async def run(self) -> None:
-        await self._run_loop()
+    async def run(self, request: Dict) -> Dict:
+        request_type = request.get("type")
+        if request_type == "tweet_original":
+            response = await self._generate_original_tweet()
+            if response:
+                return response
+            raise Exception("Error running agent")
+        elif request_type == "tweet_original":
+            pass
+        logger.debug(f"TwitterClient got unexpected request_type: {request_type}, skipping")
 
-    async def _run_loop(self) -> None:
-        tweets = await self.database_client.get_tweets()
-        latest_tweet: Optional[Memory] = None
-        for tweet in reversed(tweets):
-            if not tweet.reply_to_id:
-                latest_tweet = tweet
-                break
-        if last_tweet_timestamp := (latest_tweet and latest_tweet.timestamp):
-            minutes_passed = int(
-                (utils.get_current_timestamp() - last_tweet_timestamp) / 60
-            )
-            if minutes_passed > self.post_interval_minutes_min:
-                logger.info(
-                    f"Last tweet happened {minutes_passed} minutes ago, generating new tweet immediately"
-                )
-            else:
-                sleep_time = random.randint(
-                    self.post_interval_minutes_min - minutes_passed,
-                    self.post_interval_minutes_max - minutes_passed,
-                )
-                logger.info(
-                    f"Last tweet happened {minutes_passed} minutes ago, waiting for {sleep_time} minutes"
-                )
-                await asyncio.sleep(sleep_time * 60)
-
-        while True:
-            await self._generate_original_tweet()
-            sleep_time = random.randint(
-                self.post_interval_minutes_min,
-                self.post_interval_minutes_max,
-            )
-            logger.info(f"Next Tweet scheduled in {sleep_time} minutes.")
-            await asyncio.sleep(sleep_time * 60)
-
-    async def _generate_original_tweet(self):
-        # TODO:
-        # if random.random() < 0.4:
-        if random.random() < 0:
-            is_post_quote_success = await self._post_quote()
-            if not is_post_quote_success:
-                await self._post_perplexity_tweet_with_retries()
+    async def _generate_original_tweet(self) -> Dict:
+        if random.random() < 0.4 and self.twitter_search_tool:
+            response = await self._post_quote()
+            if response:
+                return response
+            response = await self._post_perplexity_tweet_with_retries()
         else:
-            await self._post_perplexity_tweet_with_retries()
+            response = await self._post_perplexity_tweet_with_retries()
+        if response:
+            return response
+        raise Exception("Error running agent")
 
-    async def _post_perplexity_tweet_with_retries(self):
+    async def _post_perplexity_tweet_with_retries(self) -> Optional[Dict]:
         for i in range(TWEET_RETRY_COUNT):
-            is_success = await self._post_perplexity_tweet()
-            if is_success:
-                break
+            response = await self._post_perplexity_tweet()
+            if response:
+                return response
             if i < TWEET_RETRY_COUNT:
                 logger.info(
                     f"Failed to post tweet, retrying, attempts made: {i + 1}/{TWEET_RETRY_COUNT}"
                 )
                 await asyncio.sleep(i * 5)
 
-    async def _post_perplexity_tweet(self) -> bool:
+    async def _post_perplexity_tweet(self) -> Optional[Dict]:
         logger.info("Generating tweet with perplexity")
         prompt_state = await self._get_post_prompt_state()
 
@@ -178,62 +144,46 @@ class TwitterPostRunner:
         )
         if not response:
             logger.error("No API response from Galadriel")
-            return False
+            return None
         if response and response.choices and response.choices[0].message:
             message = response.choices[0].message.content or ""
             formatted_message = format_response.execute(message)
             if not formatted_message:
-                await self.database_client.add_memory(
-                    Memory(
-                        id=f"{utils.get_current_timestamp()}",
-                        conversation_id=None,
-                        type="tweet_excluded",
-                        text=message,
-                        topics=prompt_state.get("topics_data", []),
-                        timestamp=utils.get_current_timestamp(),
-                        search_topic=prompt_state.get("search_topic"),
-                        quoted_tweet_id=None,
-                        quoted_tweet_username=None,
-                    )
-                )
-                return False
-            twitter_response = self.twitter_post_tool(formatted_message, "")
-            if tweet_id := (
-                twitter_response and twitter_response.get("data", {}).get("id")
-            ):
-                logger.debug(f"Tweet ID: {tweet_id}")
-                await self.database_client.add_memory(
-                    Memory(
-                        id=tweet_id,
-                        conversation_id=tweet_id,
-                        type="tweet",
-                        text=formatted_message,
-                        topics=prompt_state.get("topics_data", []),
-                        timestamp=utils.get_current_timestamp(),
-                        search_topic=prompt_state.get("search_topic"),
-                        quoted_tweet_id=None,
-                        quoted_tweet_username=None,
-                    )
-                )
-                return True
+                return TwitterPost(
+                    type="tweet_excluded",
+                    conversation_id=None,
+                    text=message,
+                    topics=prompt_state.get("topics_data", []),
+                    search_topic=prompt_state.get("search_topic"),
+                    quoted_tweet_id=None,
+                    quoted_tweet_username=None,
+                ).to_dict()
+            return TwitterPost(
+                type="tweet",
+                conversation_id=None,
+                text=formatted_message,
+                topics=prompt_state.get("topics_data", []),
+                search_topic=prompt_state.get("search_topic"),
+                quoted_tweet_id=None,
+                quoted_tweet_username=None,
+            ).to_dict()
         else:
             logger.error(
                 f"Unexpected API response from Galadriel: \n{response.to_json()}"
             )
-        return False
+        return None
 
-    async def _post_quote(self) -> bool:
+    async def _post_quote(self) -> Optional[Dict]:
         logger.info("Generating tweet with quote")
-        # TODO: check if exists etc, part of what kind of flow to do
         results = self.twitter_search_tool()
         if not results:
             logger.info("Failed to get twitter search results")
-            return False
+            return None
         formatted_results = [SearchResult.from_dict(r) for r in json.loads(results)]
         filtered_tweets = await self._filter_quote_candidates(formatted_results)
         if not filtered_tweets:
             logger.info("No relevant tweets found, skipping")
-            return False
+            return None
 
         quoted_tweet_id = filtered_tweets[0].id
         quoted_tweet_username = filtered_tweets[0].username
@@ -252,40 +202,29 @@ class TwitterPostRunner:
         )
         if not response:
             logger.error("No API response from Galadriel")
-            return False
+            return None
         if (
             response.choices
             and response.choices[0].message
             and response.choices[0].message.content
         ):
             message = response.choices[0].message.content + " " + quote_url
-            twitter_response = self.twitter_post_tool(message, "")
-            if tweet_id := (
-                twitter_response and twitter_response.get("data", {}).get("id")
-            ):
-                logger.debug(f"Tweet ID: {tweet_id}")
-                await self.database_client.add_memory(
-                    Memory(
-                        id=tweet_id,
-                        conversation_id=tweet_id,
-                        type="tweet",
-                        text=message,
-                        topics=prompt_state.get("topics_data", []),
-                        timestamp=utils.get_current_timestamp(),
-                        search_topic=None,
-                        quoted_tweet_id=quoted_tweet_id,
-                        quoted_tweet_username=quoted_tweet_username,
-                    )
-                )
-                return True
+            return TwitterPost(
+                type="tweet",
+                conversation_id=None,
+                text=message,
+                topics=prompt_state.get("topics_data", []),
+                search_topic=None,
+                quoted_tweet_id=quoted_tweet_id,
+                quoted_tweet_username=quoted_tweet_username,
+            ).to_dict()
         else:
             logger.error(
                 f"Unexpected API response from Galadriel: \n{response.to_json()}"
             )
-        return False
+        return None
 
     async def _get_post_prompt_state(self) -> Dict:
-        # TODO: need to update prompt etc etc
         data = await get_default_prompt_state_use_case.execute(
             self.agent, self.database_client,
         )

@@ -3,7 +3,7 @@ from dataclasses import dataclass
 
 from galadriel_agent.clients.database import DatabaseClient
 from galadriel_agent.logging_utils import get_agent_logger
-from galadriel_agent.models import AgentConfig
+from galadriel_agent.models import TwitterAgentConfig
 
 MAX_SEARCH_TOPICS_COUNT = 7
 
@@ -16,7 +16,7 @@ class SearchQuery:
     query: str
 
 
-async def execute(agent: AgentConfig, database: DatabaseClient) -> SearchQuery:
+async def execute(agent: TwitterAgentConfig, database: DatabaseClient) -> SearchQuery:
     all_search_topics = list(agent.search_queries.keys())
     tweets = await database.get_tweets()
     used_search_topics = []

@@ -8,7 +8,7 @@ from typing import Optional
 
 
 @dataclass
-class AgentConfig:
+class TwitterAgentConfig:
     name: str
     settings: Dict
     system: str
@@ -47,12 +47,12 @@ class AgentConfig:
         kwargs = {
             key: value
             for key, value in data.items()
-            if key in AgentConfig.required_fields()
+            if key in TwitterAgentConfig.required_fields()
         }
         extra_fields = {
             key: value
             for key, value in data.items()
-            if key not in AgentConfig.required_fields()
+            if key not in TwitterAgentConfig.required_fields()
         }
         # Pass known fields to the dataclass, and store extra fields
         return cls(**kwargs, extra_fields=extra_fields)
@@ -92,10 +92,15 @@ class Memory:
 
 @dataclass
 class TwitterPost:
-    type: Literal["tweet"]
-    conversation_id: str
+    type: Literal["tweet", "tweet_excluded"]
+    conversation_id: Optional[str]
     text: str
-    reply_to_id: Optional[str]
+
+    topics: List[str] = None
+    search_topic: Optional[str] = None
+    quoted_tweet_id: Optional[str] = None
+    quoted_tweet_username: Optional[str] = None
+    reply_to_id: Optional[str] = None
 
     @staticmethod
     def from_dict(data: Dict) -> "TwitterPost":
@@ -103,6 +108,10 @@ class TwitterPost:
             type=data["type"],
             conversation_id=data["conversation_id"],
             text=data["text"],
+            topics=data.get("topics"),
+            search_topic=data.get("search_topic"),
+            quoted_tweet_id=data.get("quoted_tweet_id"),
+            quoted_tweet_username=data.get("quoted_tweet_username"),
             reply_to_id=data.get("reply_to_id"),
         )
 

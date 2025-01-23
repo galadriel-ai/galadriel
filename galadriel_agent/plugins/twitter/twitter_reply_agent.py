@@ -6,7 +6,7 @@ from galadriel_agent.clients.database import DatabaseClient
 from galadriel_agent.clients.llms.galadriel import GaladrielClient
 from galadriel_agent.clients.twitter import SearchResult
 from galadriel_agent.logging_utils import get_agent_logger
-from galadriel_agent.models import AgentConfig
+from galadriel_agent.models import TwitterAgentConfig
 from galadriel_agent.models import TwitterPost
 from galadriel_agent.prompts import format_prompt
 from galadriel_agent.prompts import get_default_prompt_state_use_case
@@ -73,32 +73,35 @@ Here is the current post text again.
 """
 
 
-class TwitterReplyRunnerAgent(UserAgent):
-    agent: AgentConfig
+class TwitterReplyAgent(UserAgent):
+    agent: TwitterAgentConfig
 
     database_client: DatabaseClient
     llm_client: GaladrielClient
 
     def __init__(
         self,
-        agent: AgentConfig,
+        agent_config: TwitterAgentConfig,
         llm_client: GaladrielClient,
         database_client: DatabaseClient,
     ):
-        self.agent = agent
+        self.agent = agent_config
 
         self.llm_client = llm_client
         self.database_client = database_client
 
     async def run(self, request: Dict) -> Dict:
-        if request.get("type") != "reply":
-            raise RuntimeError("Unexpected input request")
-        conversation_id = request["conversation_id"]
-        reply = SearchResult.from_dict(request["reply"])
-        response = await self._handle_reply(conversation_id, reply)
-        if response:
-            return response
-        raise Exception("Error running agent")
+        request_type = request.get("type")
+        if request_type == "tweet_reply":
+            conversation_id = request["conversation_id"]
+            reply = SearchResult.from_dict(request["reply"])
+            response = await self._handle_reply(conversation_id, reply)
+            if response:
+                return response
+            raise Exception("Error running agent")
+        elif request_type == "tweet_original":
+            pass
+        logger.debug(f"TwitterClient got unexpected request_type: {request_type}, skipping")
 
     async def _handle_reply(self, reply_to_id: str, reply: SearchResult) -> Optional[Dict]:
 

@@ -3,12 +3,12 @@ from typing import Dict
 from typing import List
 
 from galadriel_agent.clients.database import DatabaseClient
-from galadriel_agent.models import AgentConfig
+from galadriel_agent.models import TwitterAgentConfig
 from galadriel_agent.utils import format_timestamp
 
 
 async def execute(
-    agent: AgentConfig,
+    agent: TwitterAgentConfig,
     database_client: DatabaseClient,
 ) -> Dict:
     topics = await _get_topics(agent, database_client)
@@ -29,7 +29,7 @@ async def execute(
 
 
 async def _get_recent_posts(
-    agent: AgentConfig,
+    agent: TwitterAgentConfig,
     database_client: DatabaseClient,
 ) -> str:
     recent_posts: List[str] = []
@@ -49,7 +49,7 @@ Text: {tweet.text}"""
 
 
 async def _get_topics(
-    agent: AgentConfig,
+    agent: TwitterAgentConfig,
     database_client: DatabaseClient,
 ) -> List[str]:
     topics = agent.topics
@@ -65,26 +65,26 @@ async def _get_topics(
     return shuffled_topics[:5]
 
 
-def _get_formatted_knowledge(agent: AgentConfig):
+def _get_formatted_knowledge(agent: TwitterAgentConfig):
     shuffled_knowledge = random.sample(
         agent.knowledge, len(agent.knowledge)
     )
     return "\n".join(shuffled_knowledge[:3])
 
 
-def _get_formatted_bio(agent: AgentConfig) -> str:
+def _get_formatted_bio(agent: TwitterAgentConfig) -> str:
     bio = agent.bio
     return " ".join(random.sample(bio, min(len(bio), 3)))
 
 
-def _get_formatted_lore(agent: AgentConfig) -> str:
+def _get_formatted_lore(agent: TwitterAgentConfig) -> str:
     lore = agent.lore
     shuffled_lore = random.sample(lore, len(lore))
     selected_lore = shuffled_lore[:10]
     return "\n".join(selected_lore)
 
 
-def _get_formatted_topics(agent: AgentConfig, selected_topics: List[str]) -> str:
+def _get_formatted_topics(agent: TwitterAgentConfig, selected_topics: List[str]) -> str:
     formatted_topics = ""
     for index, topic in enumerate(selected_topics):
         if index == len(selected_topics) - 2:
@@ -96,7 +96,7 @@ def _get_formatted_topics(agent: AgentConfig, selected_topics: List[str]) -> str
     return f"{agent.name} is interested in {formatted_topics}"
 
 
-def _get_formatted_post_directions(agent: AgentConfig) -> str:
+def _get_formatted_post_directions(agent: TwitterAgentConfig) -> str:
     style = agent.style
     merged_styles = "\n".join(style.get("all", []) + style.get("post", []))
     return _add_header(
