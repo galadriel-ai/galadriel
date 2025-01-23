@@ -20,6 +20,16 @@ class Message:
     message_id: int
     timestamp: datetime
 
+    def to_dict(self) -> Dict:
+        """Convert Message object to dictionary"""
+        return {
+            "content": self.content,
+            "channel_id": self.channel_id,
+            "author": self.author,
+            "message_id": self.message_id,
+            "timestamp": self.timestamp.isoformat()
+        }
+
 class CommandsCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -74,7 +84,7 @@ class DiscordClient(commands.Bot, Client):
             message_id=message.id,
             timestamp=message.created_at
         )
-        await self.message_queue.put(msg)
+        await self.message_queue.put(msg.to_dict())
         #self.logger.log(Text(f"Added message to queue: {msg}"), level=LogLevel.INFO)
     
     async def start(self, queue: asyncio.Queue) -> Message:
