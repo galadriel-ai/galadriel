@@ -3,15 +3,16 @@ from typing import Dict
 
 from galadriel_agent.clients.client import Client
 
-CRON_INTERVAL = 300
 
+class Cron(Client):
+    def __init__(self, interval_seconds: int):
+        self.interval_seconds = interval_seconds
 
-class CronClient(Client):
     async def start(self, queue: asyncio.Queue):
         while True:
             try:
                 await queue.put({})
-                await asyncio.sleep(CRON_INTERVAL)
+                await asyncio.sleep(self.interval_seconds)
             except asyncio.CancelledError:
                 break
 

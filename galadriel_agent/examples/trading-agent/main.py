@@ -1,13 +1,14 @@
 import asyncio
 
 from galadriel_agent.agent import GaladrielAgent
+from galadriel_agent.clients.cron import Cron
 from galadriel_agent.models import AgentConfig
 from tools import onchain
-from trading_client import CronClient
 from trading_agent import TradingAgent
 
+TRADING_INTERVAL_SECONDS = 300
+
 def main():
-    # Simulating users adding some funds to their balance
     onchain.deposit_usdc("Alice", 1000)
     onchain.deposit_token("Alice", "SOL", 10)
 
@@ -16,7 +17,7 @@ def main():
 
     agent = GaladrielAgent(
         agent_config=AgentConfig(),
-        clients=CronClient(),
+        clients=Cron(TRADING_INTERVAL_SECONDS),
         user_agent=TradingAgent(),
     )
 
