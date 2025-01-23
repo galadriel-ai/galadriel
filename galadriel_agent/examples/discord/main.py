@@ -1,7 +1,7 @@
 from smolagents.models import LiteLLMModel
 from dotenv import load_dotenv
 from pathlib import Path
-from galadriel_agent.tools.example_tools import get_time, get_weather
+from galadriel_agent.examples.discord.tools import get_time, get_weather
 from galadriel_agent.clients.memory_repository import memory_repository
 from galadriel_agent.agent import GaladrielAgent
 from galadriel_agent.clients.discord_bot import DiscordClient
