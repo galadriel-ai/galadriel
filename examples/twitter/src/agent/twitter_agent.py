@@ -43,8 +43,13 @@ class TwitterAgent(UserAgent):
             logger.warning("Missing PERPLEXITY_API_KEY in .env, skipping TwitterPostAgent initialization")
 
     async def run(self, request: Dict) -> Dict:
-        request_type = request.get("type")
-        if request_type == "tweet_reply" and self.reply_agent:
-            return await self.reply_agent.run(request)
-        if request_type == "tweet_original" and self.post_agent:
-            return await self.post_agent.run(request)
+        try:
+            request_type = request.get("type")
+            if request_type == "tweet_reply" and self.reply_agent:
+                return await self.reply_agent.run(request)
+            if request_type == "tweet_original" and self.post_agent:
+                return await self.post_agent.run(request)
+        except Exception as e:
+            logger.error("Error in twitter_agent", exc_info=True)
+            return {}
+

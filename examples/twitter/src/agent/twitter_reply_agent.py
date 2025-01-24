@@ -139,7 +139,7 @@ class TwitterReplyAgent(UserAgent):
         ):
             message = response.choices[0].message.content
             # Is this check good enough?
-            if "RESPOND" not in message:
+            if "RESPOND".lower() not in message.lower() and "true" not in message.lower():
                 return None
 
             return await self._generate_reply(prompt_state, reply_to_id, reply)
