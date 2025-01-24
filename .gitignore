@@ -1,6 +1,7 @@
 .idea/
 
 .env
+**/**/.env
 venv/
 .venv/
 .DS_Store
