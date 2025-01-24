@@ -21,10 +21,12 @@ class UserAgent:
     async def run(self, request: Dict) -> Dict:
         raise RuntimeError("Function not implemented")
 
+
 class AgentState:
     memories: List[Memory]
     database: DatabaseClient
     # TODO: knowledge_base: KnowledgeBase
+
 
 # This is just a rough sketch on how the GaladrielAgent itself will be implemented
 # This is not meant to be read or modified by the end developer
@@ -32,9 +34,9 @@ class GaladrielAgent:
     def __init__(
         self,
         agent_config: AgentConfig,
-        clients: Client,
+        clients: List[Client],
         user_agent: UserAgent,
-        s3_client: S3Client 
+        s3_client: S3Client,
     ):
         self.agent_config = agent_config
         self.clients = clients
@@ -55,7 +57,7 @@ class GaladrielAgent:
                 await self.publish_proof(proof)
                 for client in self.clients:
                     await client.post_output(request, response, proof)
-            #await self.upload_state()
+            # await self.upload_state()
 
     async def generate_proof(self, request: Dict, response: Dict) -> str:
         pass
