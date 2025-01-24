@@ -1,33 +1,33 @@
 import asyncio
-from typing import List, Dict
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Dict
+from typing import List
 
-from galadriel_agent.clients.client import Client
-from galadriel_agent.clients.database import DatabaseClient
-from galadriel_agent.clients.s3 import S3Client
+from dotenv import load_dotenv
 from galadriel_agent.domain import generate_proof
 from galadriel_agent.domain import publish_proof
-from galadriel_agent.logging_utils import get_agent_logger
-from galadriel_agent.models import AgentConfig
-from galadriel_agent.models import Memory
 
-logger = get_agent_logger()
+from galadriel_agent.clients.client import Client
+from galadriel_agent.clients.client import PushOnlyQueue
+from galadriel_agent.clients.s3 import S3Client
 
 
-class AgentState:
-    memories: List[Memory]
-    database: DatabaseClient
-    # TODO: knowledge_base: KnowledgeBase
+@dataclass
+class AgentConfig:
+    pass
 
 
 class UserAgent:
+
     async def run(self, request: Dict) -> Dict:
         raise RuntimeError("Function not implemented")
 
 
 class AgentState:
-    memories: List[Memory]
-    database: DatabaseClient
     # TODO: knowledge_base: KnowledgeBase
+    pass
+
 
 
 # This is just a rough sketch on how the GaladrielAgent itself will be implemented
@@ -45,10 +45,14 @@ class GaladrielAgent:
         self.user_agent = user_agent
         self.s3_client = s3_client
 
+        env_path = Path(".") / ".env"
+        load_dotenv(dotenv_path=env_path)
+
     async def run(self):
         client_input_queue = asyncio.Queue()
+        push_only_queue = PushOnlyQueue(client_input_queue)
         for client in self.clients:
-            asyncio.create_task(client.start(client_input_queue))
+            asyncio.create_task(client.start(push_only_queue))
 
         await self.load_state(agent_state=None)
         while True:

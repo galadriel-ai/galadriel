@@ -5,13 +5,13 @@ from dotenv import load_dotenv
 
 from galadriel_agent.agent import GaladrielAgent
 from galadriel_agent.clients.cron import Cron
-from galadriel_agent.models import AgentConfig
 from tools import onchain
 from trading_agent import TradingAgent
 
 TRADING_INTERVAL_SECONDS = 300
 
 load_dotenv(dotenv_path=Path(".") / ".env", override=True)
+
 
 def main():
     onchain.deposit_usdc("Alice", 1000)
@@ -28,6 +28,7 @@ def main():
     )
 
     asyncio.run(agent.run())
+
 
 if __name__ == "__main__":
     main()
