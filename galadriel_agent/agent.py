@@ -4,6 +4,8 @@ from typing import List, Dict
 from galadriel_agent.clients.client import Client
 from galadriel_agent.clients.database import DatabaseClient
 from galadriel_agent.clients.s3 import S3Client
+from galadriel_agent.domain import generate_proof
+from galadriel_agent.domain import publish_proof
 from galadriel_agent.logging_utils import get_agent_logger
 from galadriel_agent.models import AgentConfig
 from galadriel_agent.models import Memory
@@ -54,16 +56,16 @@ class GaladrielAgent:
             response = await self.user_agent.run(request)
             if response:
                 proof = await self.generate_proof(request, response)
-                await self.publish_proof(proof)
+                await self.publish_proof(request, response, proof)
                 for client in self.clients:
                     await client.post_output(request, response, proof)
             # await self.upload_state()
 
     async def generate_proof(self, request: Dict, response: Dict) -> str:
-        pass
+        return generate_proof.execute(request, response)
 
-    async def publish_proof(self, proof: str):
-        pass
+    async def publish_proof(self, request: Dict, response: Dict, proof: str):
+        publish_proof.execute(request, response, proof)
 
     # State management functions
     async def export_state(self) -> AgentState:
