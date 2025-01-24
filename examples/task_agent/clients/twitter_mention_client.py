@@ -1,5 +1,4 @@
 import asyncio
-from dataclasses import dataclass
 from typing import Dict, List, Optional
 
 from galadriel_agent.clients.client import Client
