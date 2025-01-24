@@ -1,9 +1,9 @@
 from unittest.mock import AsyncMock
 from unittest.mock import MagicMock
 
-from galadriel_agent.models import Memory
-from galadriel_agent.prompts import get_search_query
-from galadriel_agent.prompts.get_search_query import SearchQuery
+from src.models import Memory
+from src.prompts import get_search_query
+from src.prompts.get_search_query import SearchQuery
 
 
 async def test_success():
@@ -28,6 +28,7 @@ async def test_excludes_used_topic():
     db.get_tweets.return_value = [
         Memory(
             id="mock_id",
+            conversation_id="mock_id",
             type="tweet",
             text="mock_text",
             topics=["key1"],
@@ -51,6 +52,7 @@ async def test_no_topics_to_exclude():
     db.get_tweets.return_value = [
         Memory(
             id="mock_id",
+            conversation_id="mock_id",
             type="tweet",
             text="mock_text",
             topics=[],

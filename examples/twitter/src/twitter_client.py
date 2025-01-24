@@ -4,17 +4,17 @@ import random
 from typing import Dict
 from typing import Optional
 
-from galadriel_agent import utils
 from galadriel_agent.agent import Client
 from galadriel_agent.agent import PushOnlyQueue
-from galadriel_agent.clients.database import DatabaseClient
 from galadriel_agent.clients.twitter import SearchResult
 from galadriel_agent.logging_utils import get_agent_logger
-from galadriel_agent.models import TwitterAgentConfig
-from galadriel_agent.models import Memory
-from galadriel_agent.models import TwitterPost
 from galadriel_agent.tools.twitter import TwitterPostTool
 from galadriel_agent.tools.twitter import TwitterRepliesTool
+from src import utils
+from src.models import Memory
+from src.models import TwitterAgentConfig
+from src.models import TwitterPost
+from src.repository.database import DatabaseClient
 
 logger = get_agent_logger()
 

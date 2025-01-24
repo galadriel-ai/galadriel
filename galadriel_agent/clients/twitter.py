@@ -71,7 +71,7 @@ SEARCH_QUERY = "(-is:retweet -is:reply -is:quote) (from:aixbt_agent OR from:irul
 MAX_SEARCH_HISTORY_HOURS = 24
 
 
-class TwitterClient:
+class TwitterApiClient:
     oauth_session: OAuth1Session
 
     def __init__(self, _credentials: TwitterCredentials):
@@ -87,7 +87,7 @@ class TwitterClient:
 
     def post_tweet(self, message: str, reply_to_id: Optional[str] = None) -> Optional[Dict]:
         if os.getenv("DRY_RUN"):
-            logger.info(f"Would have posted tweet: {message}")
+            logger.info(f"Would have posted tweet, reply_id: {reply_to_id or ''}: {message}")
             return {"data": {"id": "dry_run"}}
         json_data = {"text": message}
         if reply_to_id:

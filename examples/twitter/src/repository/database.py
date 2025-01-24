@@ -8,8 +8,7 @@ from typing import Union
 import aiofiles
 
 from galadriel_agent.logging_utils import get_agent_logger
-from galadriel_agent.models import Memory
-from galadriel_agent.clients.s3 import S3Client
+from src.models import Memory
 
 logger = get_agent_logger()
 
@@ -21,7 +20,6 @@ class DatabaseClient:
 
     def __init__(
         self,
-        s3_client: S3Client,
         data_dir: str = "data",
     ):
         os.makedirs(data_dir, exist_ok=True)
@@ -30,7 +28,6 @@ class DatabaseClient:
         if not os.path.exists(self.memories_file_path):
             with open(self.memories_file_path, "w", encoding="utf-8") as f:
                 f.write(json.dumps([]))
-        self.s3_client = s3_client
 
     async def _get_memories(self) -> List[Memory]:
         try:
@@ -62,13 +59,6 @@ class DatabaseClient:
         except Exception:
             logger.error("Failed to get memories", exc_info=True)
             return None
-
-    async def upload_memories(self, agent_name: str) -> None:
-        status = await self.s3_client.upload_file(self.memories_file_path, agent_name)
-        if status:
-            logger.info("Successfully uploaded memories to S3")
-        else:
-            logger.error("Failed to upload memories to S3")
 
 
 async def _read_json_list(file_path: str) -> List[Dict]:

@@ -1,15 +1,12 @@
 import asyncio
-from typing import List, Dict
-import asyncio
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict
 from typing import List
 
-from galadriel_agent.clients.database import DatabaseClient
+from galadriel_agent.clients.client import Client
+from galadriel_agent.clients.client import PushOnlyQueue
 from galadriel_agent.clients.s3 import S3Client
-from galadriel_agent.logging_utils import get_agent_logger
-from galadriel_agent.models import Memory
 from dotenv import load_dotenv
 
 
@@ -18,44 +15,15 @@ class AgentConfig:
     pass
 
 
-@dataclass
-class AgentState:
-    pass
-
-
 class UserAgent:
 
     async def run(self, request: Dict) -> Dict:
         raise RuntimeError("Function not implemented")
 
 
-class PushOnlyQueue:
-    def __init__(self, queue: asyncio.Queue):
-        self._queue = queue
-
-    async def put(self, item):
-        await self._queue.put(item)
-
-
-class UserAgent:
-    async def run(self, request: Dict) -> Dict:
-        raise RuntimeError("Function not implemented")
-
 class AgentState:
-    memories: List[Memory]
-    database: DatabaseClient
     # TODO: knowledge_base: KnowledgeBase
-
-# This is just a rough sketch on how the GaladrielAgent itself will be implemented
-# This is not meant to be read or modified by the end developer
-# Client interface, client itself can be Twitter, Discord, CLI, API etc...
-class Client:
-
-    async def start(self, queue: PushOnlyQueue) -> Dict:
-        pass
-
-    async def post_output(self, response: Dict, proof: str):
-        pass
+    pass
 
 
 # This is just a rough sketch on how the GaladrielAgent itself will be implemented

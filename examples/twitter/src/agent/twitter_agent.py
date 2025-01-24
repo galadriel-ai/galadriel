@@ -3,14 +3,14 @@ from typing import Dict
 from typing import Optional
 
 from galadriel_agent.agent import UserAgent
-from galadriel_agent.clients.database import DatabaseClient
-from galadriel_agent.clients.llms.galadriel import GaladrielClient
+from galadriel_agent.clients.llms.galadriel import LlmClient
 from galadriel_agent.clients.perplexity import PerplexityClient
 from galadriel_agent.logging_utils import get_agent_logger
-from galadriel_agent.models import TwitterAgentConfig
-from galadriel_agent.plugins.twitter.twitter_post_agent import TwitterPostAgent
-from galadriel_agent.plugins.twitter.twitter_reply_agent import TwitterReplyAgent
 from galadriel_agent.tools.twitter import TwitterSearchTool
+from src.agent.twitter_post_agent import TwitterPostAgent
+from src.agent.twitter_reply_agent import TwitterReplyAgent
+from src.models import TwitterAgentConfig
+from src.repository.database import DatabaseClient
 
 logger = get_agent_logger()
 
@@ -22,7 +22,7 @@ class TwitterAgent(UserAgent):
     def __init__(
         self,
         agent_config: TwitterAgentConfig,
-        llm_client: GaladrielClient,
+        llm_client: LlmClient,
         database_client: DatabaseClient,
     ):
         self.reply_agent = TwitterReplyAgent(

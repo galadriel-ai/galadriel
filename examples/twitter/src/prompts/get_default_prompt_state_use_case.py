@@ -2,9 +2,9 @@ import random
 from typing import Dict
 from typing import List
 
-from galadriel_agent.clients.database import DatabaseClient
-from galadriel_agent.models import TwitterAgentConfig
-from galadriel_agent.utils import format_timestamp
+from src.models import TwitterAgentConfig
+from src.repository.database import DatabaseClient
+from src.utils import format_timestamp
 
 
 async def execute(

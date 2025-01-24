@@ -14,7 +14,7 @@ logger = get_agent_logger()
 RETRY_COUNT: int = 3
 
 
-class GaladrielClient:
+class LlmClient:
     api_key: str
 
     def __init__(

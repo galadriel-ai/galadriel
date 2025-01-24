@@ -1,4 +1,4 @@
-from galadriel_agent.responses import format_response
+from src.responses import format_response
 
 
 def test_success():

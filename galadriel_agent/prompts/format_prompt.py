@@ -2,11 +2,13 @@ from typing import Dict
 import json
 import random
 
+
 def execute(prompt_template: str, prompt_state: Dict) -> str:
     prompt = prompt_template
     for k, v in prompt_state.items():
         prompt = prompt.replace("{{" + k + "}}", str(v))
     return prompt
+
 
 def load_agent_template(template: str, json_path: str) -> str:
     """
@@ -22,7 +24,7 @@ def load_agent_template(template: str, json_path: str) -> str:
     try:
         with open(json_path, 'r') as f:
             data = json.load(f)
-        
+
         agent_values = {
             'knowledge': random.choice(data.get('knowledge', [])),
             'agent_name': data.get('name'),
@@ -31,11 +33,11 @@ def load_agent_template(template: str, json_path: str) -> str:
             'lore': random.choice(data.get('lore', [])),
             'topics': random.choice(data.get('topics', []))
         }
-        
+
         updated_template = execute(template, agent_values)
-        
+
         return updated_template, data.get('name')
-        
+
     except FileNotFoundError:
         raise FileNotFoundError(f"Agent personality file not found: {json_path}")
     except json.JSONDecodeError:

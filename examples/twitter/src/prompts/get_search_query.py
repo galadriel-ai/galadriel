@@ -1,9 +1,9 @@
 import random
 from dataclasses import dataclass
 
-from galadriel_agent.clients.database import DatabaseClient
 from galadriel_agent.logging_utils import get_agent_logger
-from galadriel_agent.models import TwitterAgentConfig
+from src.models import TwitterAgentConfig
+from src.repository.database import DatabaseClient
 
 MAX_SEARCH_TOPICS_COUNT = 7
 

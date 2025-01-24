@@ -6,18 +6,18 @@ from typing import List
 from typing import Optional
 
 from galadriel_agent.agent import UserAgent
-from galadriel_agent.clients.database import DatabaseClient
-from galadriel_agent.clients.llms.galadriel import GaladrielClient
+from galadriel_agent.clients.llms.galadriel import LlmClient
 from galadriel_agent.clients.perplexity import PerplexityClient
 from galadriel_agent.clients.twitter import SearchResult
 from galadriel_agent.logging_utils import get_agent_logger
-from galadriel_agent.models import TwitterAgentConfig
-from galadriel_agent.models import TwitterPost
 from galadriel_agent.prompts import format_prompt
-from galadriel_agent.prompts import get_default_prompt_state_use_case
-from galadriel_agent.prompts import get_search_query
-from galadriel_agent.responses import format_response
 from galadriel_agent.tools.twitter import TwitterSearchTool
+from src.models import TwitterAgentConfig
+from src.models import TwitterPost
+from src.prompts import get_default_prompt_state_use_case
+from src.prompts import get_search_query
+from src.repository.database import DatabaseClient
+from src.responses import format_response
 
 logger = get_agent_logger()
 
@@ -68,7 +68,7 @@ class TwitterPostAgent(UserAgent):
     agent: TwitterAgentConfig
 
     database_client: DatabaseClient
-    llm_client: GaladrielClient
+    llm_client: LlmClient
 
     twitter_search_tool: Optional[TwitterSearchTool]
 
@@ -80,7 +80,7 @@ class TwitterPostAgent(UserAgent):
     def __init__(
         self,
         agent_config: TwitterAgentConfig,
-        llm_client: GaladrielClient,
+        llm_client: LlmClient,
         database_client: DatabaseClient,
         perplexity_client: PerplexityClient,
         twitter_search_tool: Optional[TwitterSearchTool] = None

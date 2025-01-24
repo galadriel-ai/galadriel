@@ -5,7 +5,7 @@ from typing import Optional
 
 from smolagents import Tool
 
-from galadriel_agent.clients.twitter import TwitterClient
+from galadriel_agent.clients.twitter import TwitterApiClient
 from galadriel_agent.clients.twitter import TwitterCredentials
 from galadriel_agent.logging_utils import get_agent_logger
 
@@ -16,7 +16,7 @@ TWITTER_SEARCH_TOOL_NAME = "twitter_search_tool"
 TWITTER_REPLIES_TOOL_NAME = "twitter_replies_tool"
 
 
-class TwitterPostTool(TwitterClient, Tool):
+class TwitterPostTool(TwitterApiClient, Tool):
     name = TWITTER_POST_TOOL_NAME
     description = "This is a tool that posts a tweet to twitter. It returns a boolean indicating if the posting was successful."
     inputs = {
@@ -36,7 +36,7 @@ class TwitterPostTool(TwitterClient, Tool):
         return self.post_tweet(tweet, in_reply_to_id)
 
 
-class TwitterSearchTool(TwitterClient, Tool):
+class TwitterSearchTool(TwitterApiClient, Tool):
     name = TWITTER_SEARCH_TOOL_NAME
     description = "This is a tool that searches tweets. It returns a list of results."
     inputs = {}
@@ -55,7 +55,7 @@ class TwitterSearchTool(TwitterClient, Tool):
         return json.dumps(results)
 
 
-class TwitterRepliesTool(TwitterClient, Tool):
+class TwitterRepliesTool(TwitterApiClient, Tool):
     name = TWITTER_REPLIES_TOOL_NAME
     description = "This is a tool that gets replies to a tweet. It returns a list of results."
     inputs = {

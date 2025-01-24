@@ -2,14 +2,14 @@ from typing import Dict
 from typing import Optional
 
 from galadriel_agent.agent import UserAgent
-from galadriel_agent.clients.database import DatabaseClient
-from galadriel_agent.clients.llms.galadriel import GaladrielClient
+from galadriel_agent.clients.llms.galadriel import LlmClient
 from galadriel_agent.clients.twitter import SearchResult
 from galadriel_agent.logging_utils import get_agent_logger
-from galadriel_agent.models import TwitterAgentConfig
-from galadriel_agent.models import TwitterPost
 from galadriel_agent.prompts import format_prompt
-from galadriel_agent.prompts import get_default_prompt_state_use_case
+from src.models import TwitterAgentConfig
+from src.models import TwitterPost
+from src.prompts import get_default_prompt_state_use_case
+from src.repository.database import DatabaseClient
 
 logger = get_agent_logger()
 
@@ -77,12 +77,12 @@ class TwitterReplyAgent(UserAgent):
     agent: TwitterAgentConfig
 
     database_client: DatabaseClient
-    llm_client: GaladrielClient
+    llm_client: LlmClient
 
     def __init__(
         self,
         agent_config: TwitterAgentConfig,
-        llm_client: GaladrielClient,
+        llm_client: LlmClient,
         database_client: DatabaseClient,
     ):
         self.agent = agent_config
