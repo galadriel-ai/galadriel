@@ -54,7 +54,7 @@ class GaladrielAgent:
         for client in self.clients:
             asyncio.create_task(client.start(push_only_queue))
 
-        await self.load_state("")
+        await self.load_state(agent_state=None)
         while True:
             request = await client_input_queue.get()
             response = await self.user_agent.run(request)
@@ -79,9 +79,9 @@ class GaladrielAgent:
         pass
 
     async def upload_state(self):
-        state = await self.export_state()
-        # upload(state)
+        state = self.export_state()
+        await self.s3_client.upload_file(state)
 
     async def restore_state(self):
-        # state = download()
-        await self.load_state("state")
+        state = await self.s3_client.download_file()
+        self.load_state(state)
