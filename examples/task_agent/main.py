@@ -1,5 +1,4 @@
 import os
-import argparse
 import asyncio
 
 from galadriel_agent.agent import AgentConfig
@@ -7,6 +6,7 @@ from galadriel_agent.agent import GaladrielAgent
 
 from clients.twitter_mention_client import TwitterCredentials
 from clients.twitter_mention_client import TwitterMentionClient
+from galadriel_agent.clients.test_client import TestClient
 from research_agent import ResearchAgent
 
 
@@ -19,6 +19,14 @@ async def main():
             access_token_secret=os.getenv("TWITTER_ACCESS_TOKEN_SECRET"),
         ),
         user_id=os.getenv("TWITTER_USER_ID"),
+    )
+    test_client = TestClient(
+        request={
+            "id": "mockid123",
+            "author_id": "authorid123",
+            "conversation_id": "conversationid123",
+            "text": "is BTC good investment now with high prices? 5aqB4BGzQyFybjvKBjdcP8KAstZo81ooUZnf64vSbLLWbUqNSGgXWaGHNteiK2EJrjTmDKdLYHamJpdQBFevWuvy"
+        }
     )
     research_agent = ResearchAgent()
     agent = GaladrielAgent(
@@ -36,7 +44,7 @@ async def main():
             knowledge=[],
             search_queries={},
         ),
-        clients=[twitter_client],
+        clients=[test_client],
         user_agent=research_agent,
         s3_client=None,
     )
