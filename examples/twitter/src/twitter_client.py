@@ -61,7 +61,7 @@ class TwitterClient(Client):
         asyncio.create_task(self._run_post_loop())
         asyncio.create_task(self._run_reply_loop())
 
-    async def post_output(self, response: Dict, proof: str) -> None:
+    async def post_output(self, request: Dict, response: Dict, proof: str) -> None:
         if response.get("type") == "tweet":
             await self._post_tweet(TwitterPost.from_dict(response))
         if response.get("type") == "tweet_excluded":
