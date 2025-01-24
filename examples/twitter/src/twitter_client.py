@@ -140,8 +140,8 @@ class TwitterClient(Client):
         conversations = []
         for tweet in reversed(tweets):
             if (
-                tweet.quoted_tweet_username is None and tweet.quoted_tweet_id is None
-                and tweet.conversation_id is not None
+                # if tweet.id == tweet.conversation_id means its an original tweet
+                tweet.conversation_id is not None and tweet.id == tweet.conversation_id
             ):
                 conversation_id = tweet.conversation_id
                 if conversation_id not in conversations and conversation_id != "dry_run":
@@ -178,7 +178,7 @@ class TwitterClient(Client):
             await self.database_client.add_memory(
                 Memory(
                     id=tweet_id,
-                    conversation_id=twitter_post.conversation_id,
+                    conversation_id=twitter_post.conversation_id or tweet_id,
                     type="tweet",
                     text=twitter_post.text,
                     topics=[],
