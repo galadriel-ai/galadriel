@@ -5,12 +5,13 @@ from typing import Optional
 
 import requests
 
+from galadriel_agent.entities import Message
 from galadriel_agent.logging_utils import get_agent_logger
 
 logger = get_agent_logger()
 
 
-def execute(request: Dict, response: Dict, hashed_data: str) -> bool:
+def execute(request: Message, response: Message, hashed_data: str) -> bool:
     # TODO: url = "https://api.galadriel.com/v1/verified/chat/log"
     url = "http://localhost:5000/v1/verified/chat/log"
     headers = {
@@ -22,8 +23,8 @@ def execute(request: Dict, response: Dict, hashed_data: str) -> bool:
         "attestation": "TODO:",  # TODO
         "hash": hashed_data,
         "public_key": "TODO:",  # TODO
-        "request": request,
-        "response": response,
+        "request": request.model_dump(),
+        "response": response.model_dump(),
         "signature": "TODO:",  # TODO
     }
     try:

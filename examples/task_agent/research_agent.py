@@ -1,17 +1,15 @@
 import os
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import List
 
-from smolagents.agents import ActionStep
-from smolagents.models import ChatMessage
 from smolagents import CodeAgent
 from smolagents import LiteLLMModel
-from smolagents import Tool
 
 from galadriel_agent.agent import UserAgent
 
 from domain import parse_twitter_message
 from entities import Memory
 from entities import ShortTermMemory
+from galadriel_agent.entities import Message
 from repositories.memory_repository import MemoryRepository
 from tools.coin_price_tool import coin_price_api
 from tools.dex_screener_tool import dex_screener_api
@@ -20,14 +18,17 @@ from tools import solana_tool
 
 AGENT_WALLET_ADDRESS = "5RYHzQuknP2viQjYzP27wXVWKeaxonZgMBPQA86GV92t"
 
-
 memory_repository = MemoryRepository()
 
 
 class ResearchAgent(UserAgent):
 
-    async def run(self, request: Dict) -> Dict:
-        task = request["text"]
+    async def run(self, request: Message) -> Message:
+        conversation_id = request.conversation_id
+        request_id = request.additional_kwargs["id"]
+        author_id = request.additional_kwargs["author_id"]
+        task = request.content
+
         twitter_message = parse_twitter_message.execute(task)
         if twitter_message:
             is_payment_valid = solana_tool.solana_payment_tool(
@@ -35,19 +36,22 @@ class ResearchAgent(UserAgent):
                 wallet_address=AGENT_WALLET_ADDRESS,
             )
             if not is_payment_valid:
-                return {"text": "Invalid payment", "reply_to_id": request["id"]}
+                return Message(
+                    content="Invalid payment",
+                    additional_kwargs={"reply_to_id": request_id},
+                )
             # call out agent now after payment has been validated
             if not memory_repository.add_payment_signature(
                 twitter_message.payment_signature, twitter_message.task
             ):
-                return {"text": "Funds already spent", "reply_to_id": request["id"]}
-            agent = self._get_agent()
+                return Message(
+                    content="Funds already spent",
+                    additional_kwargs={"reply_to_id": request_id},
+                )
             short_term_memory = memory_repository.get_short_term_memory(
-                request["author_id"], request["conversation_id"]
+                author_id, conversation_id
             )
-            long_term_memory = memory_repository.query_long_term_memory(
-                request["author_id"], task
-            )
+            long_term_memory = memory_repository.query_long_term_memory(author_id, task)
             if short_term_memory:
                 task = (
                     task
@@ -63,13 +67,15 @@ class ResearchAgent(UserAgent):
             agent = self._get_agent()
             answer = agent.run(task)
             memory = ShortTermMemory(task=(task), result=str(answer))
-            memory_repository.add_short_term_memory(
-                request["author_id"], request["conversation_id"], memory
+            memory_repository.add_short_term_memory(author_id, conversation_id, memory)
+            update_long_term_memory(memory_repository, author_id, memory)
+            return Message(
+                content=answer, additional_kwargs={"reply_to_id": request_id}
             )
-            update_long_term_memory(memory_repository, request["author_id"], memory)
-            return {"text": answer, "reply_to_id": request["id"]}
         else:
-            return {"text": "Invalid request", "reply_to_id": request["id"]}
+            return Message(
+                content="Invalid request", additional_kwargs={"reply_to_id": request_id}
+            )
 
     def _format_memories(self, memories: List[Memory]) -> str:
         return "\n".join([str(memory) for memory in memories])

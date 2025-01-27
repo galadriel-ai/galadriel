@@ -11,7 +11,6 @@ from smolagents.agents import LogLevel
 
 from galadriel_agent.clients.client import Client
 
-
 @dataclass
 class Message:
     """Data class to store message information"""
