@@ -1,19 +1,20 @@
 from galadriel_agent.domain import generate_proof
+from galadriel_agent.entities import Message
 
 
 def test_none():
     result = generate_proof.execute(None, None)
-    assert result == "2c7bddafa6f824cb0e682091aa1d9ca392883cb1f5bcff95389adc9feae77fcd"
+    assert result == "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
 
 
 def test_empty():
-    result = generate_proof.execute({}, {})
-    assert result == "b51f08b698d88d8027a935d9db649774949f5fb41a0c559bfee6a9a13225c72d"
+    result = generate_proof.execute(Message(content=""), Message(content=""))
+    assert result == "48b31d5a4b8d609632cef2b1ad68e0e8dd1c56b6f7fd0888d4e1e11263185e0e"
 
 
 def test_hello_world():
     result = generate_proof.execute(
-        {"hello": "world"},
-        {"hello": "result"}
+        Message(content="hello"),
+        Message(content="world"),
     )
-    assert result == "a18b334640a39f0c821ccb26e339ee2451398085727f652315548b031c53ddc9"
+    assert result == "9041cb20b1ab3c83a4945cbab0c651d3e8eb1fd0a2239203a331a7ad2a5be4f0"

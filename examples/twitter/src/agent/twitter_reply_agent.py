@@ -101,9 +101,13 @@ class TwitterReplyAgent(UserAgent):
             raise Exception("Error running agent")
         elif request_type == "tweet_original":
             pass
-        logger.debug(f"TwitterClient got unexpected request_type: {request_type}, skipping")
+        logger.debug(
+            f"TwitterClient got unexpected request_type: {request_type}, skipping"
+        )
 
-    async def _handle_reply(self, reply_to_id: str, reply: SearchResult) -> Optional[Dict]:
+    async def _handle_reply(
+        self, reply_to_id: str, reply: SearchResult
+    ) -> Optional[Dict]:
 
         tweets = await self.database_client.get_tweets()
         filtered_tweets = [t for t in tweets if t.id == reply_to_id]
@@ -111,12 +115,15 @@ class TwitterReplyAgent(UserAgent):
             return None
 
         prompt_state = await get_default_prompt_state_use_case.execute(
-            self.agent, self.database_client,
+            self.agent,
+            self.database_client,
         )
-        prompt_state["current_post"] = f"""ID: ${reply.id}
+        prompt_state[
+            "current_post"
+        ] = f"""ID: ${reply.id}
     From: @{reply.username}
     Text: {reply.text}"""
-        # "TODO":
+        # TODO: "current_post" should be the original post, and "formatted_conversation" should contain the reply(ies)
         prompt_state["formatted_conversation"] = ""
 
         prompt = format_prompt.execute(PROMPT_SHOULD_REPLY_TEMPLATE, prompt_state)
@@ -139,7 +146,10 @@ class TwitterReplyAgent(UserAgent):
         ):
             message = response.choices[0].message.content
             # Is this check good enough?
-            if "RESPOND".lower() not in message.lower() and "true" not in message.lower():
+            if (
+                "RESPOND".lower() not in message.lower()
+                and "true" not in message.lower()
+            ):
                 return None
 
             return await self._generate_reply(prompt_state, reply_to_id, reply)
@@ -149,7 +159,9 @@ class TwitterReplyAgent(UserAgent):
             )
         return None
 
-    async def _generate_reply(self, prompt_state: Dict, conversation_id: str, reply: SearchResult) -> Optional[Dict]:
+    async def _generate_reply(
+        self, prompt_state: Dict, conversation_id: str, reply: SearchResult
+    ) -> Optional[Dict]:
         prompt = format_prompt.execute(PROMPT_REPLY_TEMPLATE, prompt_state)
         messages = [
             {"role": "system", "content": self.agent.system},

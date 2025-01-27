@@ -1,11 +1,12 @@
 from smolagents.models import LiteLLMModel
 from dotenv import load_dotenv
 from pathlib import Path
-from galadriel_agent.examples.discord.tools import get_time, get_weather
+
+from examples.discord.discord_agent import DiscordMultiStepAgent
+from examples.discord.tools import get_weather, get_time
 from galadriel_agent.clients.memory_repository import memory_repository
 from galadriel_agent.agent import GaladrielAgent
 from galadriel_agent.clients.discord_bot import DiscordClient
-from galadriel_agent.examples.discord.discord_agent import DiscordMultiStepAgent
 import os
 import asyncio
 
@@ -21,12 +22,12 @@ discord_agent = DiscordMultiStepAgent(
     character_json_path="galadriel_agent/agent_configuration/example_elon_musk.json",
     tools=[get_weather, get_time],
     model=model,
-    max_steps=6
+    max_steps=6,
 )
 
 agent = GaladrielAgent(
     agent_config=None,
-    clients=[discord_client], 
+    clients=[discord_client],
     user_agent=discord_agent,
     s3_client=None,
 )

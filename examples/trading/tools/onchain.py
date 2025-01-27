@@ -3,12 +3,13 @@ from typing import Dict
 
 from smolagents import tool
 
-from tools.price_feed import get_token_price
+from examples.trading.tools.price_feed import get_token_price
 
 Portfolio = Dict[str, float]
 
 # Dictionary to store user balances
 user_portfolios: Dict[str, Portfolio] = {}
+
 
 # This isn't a tool, but a helper function to update user balances
 def deposit_usdc(user_address: str, amount: float) -> str:
@@ -78,7 +79,9 @@ def swap_token(user_address: str, token1: str, token2: str, amount: float) -> st
         return f"User does not have enough {token1} to swap."
 
     if token2 not in user_portfolios[user_address]:
-        user_portfolios[user_address][token2] = 0.0  # Initialize token2 balance if needed
+        user_portfolios[user_address][
+            token2
+        ] = 0.0  # Initialize token2 balance if needed
 
     user_portfolios[user_address][token1] -= amount
     user_portfolios[user_address][token2] += amount
@@ -105,6 +108,7 @@ def update_user_balance(user_address: str, token: str, amount: float) -> str:
 
     user_portfolios[user_address][token] += amount
     return "User balance updated successfully."
+
 
 @tool
 def get_all_users() -> str:  # Return type is now str
@@ -146,9 +150,12 @@ def get_user_balance(user_address: str, token: str) -> float:
         The user's balance for the specified token.
     """
     if user_address in user_portfolios:
-        return user_portfolios[user_address].get(token, 0.0)  # Return 0 if token not found
+        return user_portfolios[user_address].get(
+            token, 0.0
+        )  # Return 0 if token not found
     else:
         return 0.0
+
 
 @tool
 def place_buy_order(user_address: str, asset: str, quantity: float) -> str:

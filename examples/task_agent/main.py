@@ -4,14 +4,16 @@ import asyncio
 from galadriel_agent.agent import AgentConfig
 from galadriel_agent.agent import GaladrielAgent
 
-from clients.twitter_mention_client import TwitterCredentials
-from clients.twitter_mention_client import TwitterMentionClient
+# from clients.twitter_mention_client import TwitterCredentials
+# from clients.twitter_mention_client import TwitterMentionClient
 from galadriel_agent.clients.test_client import TestClient
+from galadriel_agent.entities import Message
+from galadriel_agent.memory.in_memory import InMemoryShortTermMemory
 from research_agent import ResearchAgent
 
 
 async def main():
-    twitter_client = TwitterMentionClient(
+    """twitter_client = TwitterMentionClient(
         TwitterCredentials(
             consumer_api_key=os.getenv("TWITTER_CONSUMER_API_KEY"),
             consumer_api_secret=os.getenv("TWITTER_CONSUMER_API_SECRET"),
@@ -19,34 +21,28 @@ async def main():
             access_token_secret=os.getenv("TWITTER_ACCESS_TOKEN_SECRET"),
         ),
         user_id=os.getenv("TWITTER_USER_ID"),
+    )"""
+    message1 = Message(
+        content="is ShitCoin good investment now with high prices? 5aqB4BGzQyFybjvKBjdcP8KAstZo81ooUZnf64vSbLLWbUqNSGgXWaGHNteiK2EJrjTmDKdLYHamJpdQBFevWuvy",
+        conversation_id="conversationid123",
+        additional_kwargs={"id": "id123", "author_id": "authorid123"},
     )
-    test_client = TestClient(
-        request={
-            "id": "mockid123",
-            "author_id": "authorid123",
-            "conversation_id": "conversationid123",
-            "text": "is BTC good investment now with high prices? 5aqB4BGzQyFybjvKBjdcP8KAstZo81ooUZnf64vSbLLWbUqNSGgXWaGHNteiK2EJrjTmDKdLYHamJpdQBFevWuvy"
-        }
+    message2 = Message(
+        content="is FartoCoin good investment now with high prices? 5aqB4BGzQyFybjvKBjdcP8KAstZo81ooUZnf64vSbLLWbUqNSGgXWaGHNteiK2EJrjTmDKdLYHamJpdQBFevWuvy",
+        conversation_id="conversationid123",
+        additional_kwargs={"id": "id124", "author_id": "authorid123"},
     )
+    test_client = TestClient(messages=[message1, message2])
+
+    short_term_memory = InMemoryShortTermMemory()
+
     research_agent = ResearchAgent()
     agent = GaladrielAgent(
-        AgentConfig(
-            name="task_agent",
-            settings={},
-            system="",
-            bio=[],
-            lore=[],
-            adjectives=[],
-            topics=[],
-            style={},
-            goals_template=[],
-            facts_template=[],
-            knowledge=[],
-            search_queries={},
-        ),
+        AgentConfig(),
         clients=[test_client],
         user_agent=research_agent,
         s3_client=None,
+        short_term_memory=short_term_memory,
     )
     await agent.run()
 
