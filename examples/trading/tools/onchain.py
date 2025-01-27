@@ -3,7 +3,7 @@ from typing import Dict
 
 from smolagents import tool
 
-from tools.price_feed import get_token_price
+from examples.trading.tools.price_feed import get_token_price
 
 Portfolio = Dict[str, float]
 
