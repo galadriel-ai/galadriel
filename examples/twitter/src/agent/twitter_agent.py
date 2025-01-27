@@ -40,7 +40,9 @@ class TwitterAgent(UserAgent):
                 twitter_search_tool=TwitterSearchTool(),
             )
         else:
-            logger.warning("Missing PERPLEXITY_API_KEY in .env, skipping TwitterPostAgent initialization")
+            logger.warning(
+                "Missing PERPLEXITY_API_KEY in .env, skipping TwitterPostAgent initialization"
+            )
 
     async def run(self, request: Dict) -> Dict:
         try:
@@ -52,4 +54,3 @@ class TwitterAgent(UserAgent):
         except Exception as e:
             logger.error("Error in twitter_agent", exc_info=True)
             return {}
-

@@ -22,12 +22,12 @@ discord_agent = DiscordMultiStepAgent(
     character_json_path="galadriel_agent/agent_configuration/example_elon_musk.json",
     tools=[get_weather, get_time],
     model=model,
-    max_steps=6
+    max_steps=6,
 )
 
 agent = GaladrielAgent(
     agent_config=None,
-    clients=[discord_client], 
+    clients=[discord_client],
     user_agent=discord_agent,
     s3_client=None,
 )

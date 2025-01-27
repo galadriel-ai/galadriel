@@ -106,9 +106,11 @@ class TwitterClient(Client):
                 await asyncio.sleep(sleep_time * 60)
 
         while True:
-            await self.event_queue.put({
-                "type": "tweet_original",
-            })
+            await self.event_queue.put(
+                {
+                    "type": "tweet_original",
+                }
+            )
             sleep_time = random.randint(
                 self.post_interval_minutes_min,
                 self.post_interval_minutes_max,
@@ -141,10 +143,14 @@ class TwitterClient(Client):
         for tweet in reversed(tweets):
             if (
                 # if tweet.id == tweet.conversation_id means its an original tweet
-                tweet.conversation_id is not None and tweet.id == tweet.conversation_id
+                tweet.conversation_id is not None
+                and tweet.id == tweet.conversation_id
             ):
                 conversation_id = tweet.conversation_id
-                if conversation_id not in conversations and conversation_id != "dry_run":
+                if (
+                    conversation_id not in conversations
+                    and conversation_id != "dry_run"
+                ):
                     conversations.append(conversation_id)
             if len(conversations) > self.max_conversations_count_for_replies:
                 break
@@ -163,14 +169,18 @@ class TwitterClient(Client):
                 if len(existing_response) or reply.id in reply_to_ids:
                     continue
                 reply_to_ids.append(reply.id)
-                await self.event_queue.put({
-                    "type": "tweet_reply",
-                    "conversation_id": conversation_id,
-                    "reply": reply.to_dict(),
-                })
+                await self.event_queue.put(
+                    {
+                        "type": "tweet_reply",
+                        "conversation_id": conversation_id,
+                        "reply": reply.to_dict(),
+                    }
+                )
 
     async def _post_tweet(self, twitter_post: TwitterPost):
-        twitter_response = self.twitter_post_tool(twitter_post.text, twitter_post.reply_to_id or "")
+        twitter_response = self.twitter_post_tool(
+            twitter_post.text, twitter_post.reply_to_id or ""
+        )
         if tweet_id := (
             twitter_response and twitter_response.get("data", {}).get("id")
         ):

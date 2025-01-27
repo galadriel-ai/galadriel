@@ -57,18 +57,14 @@ async def _get_topics(
     latest_tweet = await database_client.get_latest_tweet()
     if latest_tweet and latest_tweet.topics:
         recently_used_topics = latest_tweet.topics
-    available_topics = [
-        topic for topic in topics if topic not in recently_used_topics
-    ]
+    available_topics = [topic for topic in topics if topic not in recently_used_topics]
     shuffled_topics = random.sample(available_topics, len(available_topics))
 
     return shuffled_topics[:5]
 
 
 def _get_formatted_knowledge(agent: TwitterAgentConfig):
-    shuffled_knowledge = random.sample(
-        agent.knowledge, len(agent.knowledge)
-    )
+    shuffled_knowledge = random.sample(agent.knowledge, len(agent.knowledge))
     return "\n".join(shuffled_knowledge[:3])
 
 
@@ -99,9 +95,7 @@ def _get_formatted_topics(agent: TwitterAgentConfig, selected_topics: List[str])
 def _get_formatted_post_directions(agent: TwitterAgentConfig) -> str:
     style = agent.style
     merged_styles = "\n".join(style.get("all", []) + style.get("post", []))
-    return _add_header(
-        f"# Post Directions for {agent.name}", merged_styles
-    )
+    return _add_header(f"# Post Directions for {agent.name}", merged_styles)
 
 
 def _add_header(header: str, body: str) -> str:

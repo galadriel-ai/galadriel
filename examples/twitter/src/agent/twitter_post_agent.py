@@ -83,7 +83,7 @@ class TwitterPostAgent(UserAgent):
         llm_client: LlmClient,
         database_client: DatabaseClient,
         perplexity_client: PerplexityClient,
-        twitter_search_tool: Optional[TwitterSearchTool] = None
+        twitter_search_tool: Optional[TwitterSearchTool] = None,
     ):
         self.agent = agent_config
 
@@ -103,7 +103,9 @@ class TwitterPostAgent(UserAgent):
             raise Exception("Error running agent")
         elif request_type == "tweet_original":
             pass
-        logger.debug(f"TwitterClient got unexpected request_type: {request_type}, skipping")
+        logger.debug(
+            f"TwitterClient got unexpected request_type: {request_type}, skipping"
+        )
 
     async def _generate_original_tweet(self) -> Dict:
         if random.random() < 0.4 and self.twitter_search_tool:
@@ -175,7 +177,9 @@ class TwitterPostAgent(UserAgent):
 
     async def _post_quote(self) -> Optional[Dict]:
         logger.info("Generating tweet with quote")
-        results = self.twitter_search_tool()
+        results = self.twitter_search_tool(
+            self.agent.extra_fields["twitter_profile"].get("search_query", "")
+        )
         if not results:
             logger.info("Failed to get twitter search results")
             return None
@@ -226,7 +230,8 @@ class TwitterPostAgent(UserAgent):
 
     async def _get_post_prompt_state(self) -> Dict:
         data = await get_default_prompt_state_use_case.execute(
-            self.agent, self.database_client,
+            self.agent,
+            self.database_client,
         )
 
         search_query = await get_search_query.execute(self.agent, self.database_client)
@@ -246,7 +251,8 @@ class TwitterPostAgent(UserAgent):
 
     async def _get_quote_prompt_state(self, quote: str) -> Dict:
         data = await get_default_prompt_state_use_case.execute(
-            self.agent, self.database_client,
+            self.agent,
+            self.database_client,
         )
         data["quote"] = quote
         return data

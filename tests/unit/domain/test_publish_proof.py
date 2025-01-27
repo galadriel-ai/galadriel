@@ -46,12 +46,14 @@ def test_execute_calls_endpoint():
             "Content-Type": "application/json",
             "Authorization": None,
         },
-        data=json.dumps({
-            "attestation": "TODO:",
-            "hash": hashed_data,
-            "public_key": "TODO:",
-            "request": request,
-            "response": response,
-            "signature": "TODO:",
-        })
+        data=json.dumps(
+            {
+                "attestation": "TODO:",
+                "hash": hashed_data,
+                "public_key": "TODO:",
+                "request": request,
+                "response": response,
+                "signature": "TODO:",
+            }
+        ),
     )

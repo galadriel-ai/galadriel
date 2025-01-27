@@ -41,7 +41,9 @@ class TrafficForwarder:
             dock_socket.bind((self.local_ip, self.local_port))
             dock_socket.listen(5)
 
-            logger.info(f"Traffic forwarder listening on {self.local_ip}:{self.local_port}")
+            logger.info(
+                f"Traffic forwarder listening on {self.local_ip}:{self.local_port}"
+            )
             while True:
                 client_socket = dock_socket.accept()[0]
                 data = client_socket.recv(self.BUFFER_SIZE)

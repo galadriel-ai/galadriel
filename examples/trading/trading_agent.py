@@ -1,9 +1,12 @@
 import os
 from typing import Dict
 
-from smolagents import CodeAgent, LiteLLMModel
+from smolagents import CodeAgent
+from smolagents import LiteLLMModel
 
-from tools import markets, onchain
+from galadriel_agent.agent import UserAgent
+from tools import markets
+from tools import onchain
 
 TRADING_PROMPT = """
         You are an expert crypto trading advisor. Based on the user's portfolio, current market data, and trading patterns, your task is to suggest one of three actions for each token: Buy, Sell, or Hold. Follow these steps to determine the decision and execute the trade:
@@ -22,7 +25,7 @@ TRADING_PROMPT = """
         """
 
 
-class TradingAgent:
+class TradingAgent(UserAgent):
     def __init__(self):
         model = LiteLLMModel(
             model_id="openai/gpt-4o",

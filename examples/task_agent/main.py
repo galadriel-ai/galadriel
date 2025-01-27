@@ -25,7 +25,7 @@ async def main():
             "id": "mockid123",
             "author_id": "authorid123",
             "conversation_id": "conversationid123",
-            "text": "is BTC good investment now with high prices? 5aqB4BGzQyFybjvKBjdcP8KAstZo81ooUZnf64vSbLLWbUqNSGgXWaGHNteiK2EJrjTmDKdLYHamJpdQBFevWuvy"
+            "text": "is BTC good investment now with high prices? 5aqB4BGzQyFybjvKBjdcP8KAstZo81ooUZnf64vSbLLWbUqNSGgXWaGHNteiK2EJrjTmDKdLYHamJpdQBFevWuvy",
         }
     )
     research_agent = ResearchAgent()

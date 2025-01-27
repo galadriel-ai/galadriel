@@ -17,7 +17,9 @@ class AttestationManager:
 
     def _initialize_keypair(self):
         """Generate and store the Ed25519 keypair if it doesn't exist."""
-        if not os.path.exists(self.PRIVATE_KEY_FILE) or not os.path.exists(self.PUBLIC_KEY_FILE):
+        if not os.path.exists(self.PRIVATE_KEY_FILE) or not os.path.exists(
+            self.PUBLIC_KEY_FILE
+        ):
             private_key = Ed25519PrivateKey.generate()
             public_key = private_key.public_key()
 
@@ -56,7 +58,6 @@ class AttestationManager:
                 attestation_doc = self.nsm_util.get_attestation_doc(public_key)
                 # Encode the attestation document in base64
                 return base64.b64encode(attestation_doc).decode("utf-8")
-            else:
-                return "Invalid command"
+            return "Invalid command"
         except Exception as e:
             return f"Error: {str(e)}"
