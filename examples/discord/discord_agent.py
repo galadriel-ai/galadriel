@@ -2,10 +2,10 @@ import json
 import os
 from datetime import datetime
 from pathlib import Path
-from typing import Callable
-from typing import Dict
-from typing import List
-from typing import Optional
+
+from typing import List, Callable
+from typing import Optional, Dict
+
 from uuid import uuid4
 
 from rich.text import Text
@@ -15,9 +15,13 @@ from smolagents.agents import LogLevel
 
 from examples.discord.prompts import DISCORD_SYSTEM_PROMPT
 from galadriel_agent.agent import UserAgent
-from galadriel_agent.clients.memory_repository import EmbeddingClient
-from galadriel_agent.clients.memory_repository import Memory
-from galadriel_agent.clients.memory_repository import MemoryRepository
+
+from galadriel_agent.clients.memory_repository import (
+    EmbeddingClient,
+    MemoryRepository,
+    Memory,
+)
+
 from galadriel_agent.prompts.format_prompt import load_agent_template
 
 

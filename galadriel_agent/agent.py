@@ -1,12 +1,16 @@
 import asyncio
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict
-from typing import List
 
 from dotenv import load_dotenv
+from typing import List
+from typing import Optional
+
+from galadriel_agent.domain import add_conversation_history
 from galadriel_agent.domain import generate_proof
 from galadriel_agent.domain import publish_proof
+from galadriel_agent.entities import Message
+from galadriel_agent.entities import ShortTermMemory
 
 from galadriel_agent.clients.client import Client
 from galadriel_agent.clients.client import PushOnlyQueue
@@ -20,7 +24,7 @@ class AgentConfig:
 
 class UserAgent:
 
-    async def run(self, request: Dict) -> Dict:
+    async def run(self, request: Message) -> Message:
         raise RuntimeError("Function not implemented")
 
 
@@ -37,12 +41,14 @@ class GaladrielAgent:
         agent_config: AgentConfig,
         clients: List[Client],
         user_agent: UserAgent,
-        s3_client: S3Client,
+        s3_client: Optional[S3Client] = None,
+        short_term_memory: Optional[ShortTermMemory] = None,
     ):
         self.agent_config = agent_config
         self.clients = clients
         self.user_agent = user_agent
         self.s3_client = s3_client
+        self.short_term_memory = short_term_memory
 
         env_path = Path(".") / ".env"
         load_dotenv(dotenv_path=env_path)
@@ -56,18 +62,27 @@ class GaladrielAgent:
         await self.load_state(agent_state=None)
         while True:
             request = await client_input_queue.get()
-            response = await self.user_agent.run(request)
-            if response:
-                proof = await self.generate_proof(request, response)
-                await self.publish_proof(request, response, proof)
-                for client in self.clients:
-                    await client.post_output(request, response, proof)
-            # await self.upload_state()
+            await self.run_request(request)
 
-    async def generate_proof(self, request: Dict, response: Dict) -> str:
+    async def run_request(self, request: Message):
+        request = await self._add_conversation_history(request)
+        response = await self.user_agent.run(request)
+        if response:
+            proof = await self._generate_proof(request, response)
+            await self._publish_proof(request, response, proof)
+            for client in self.clients:
+                await client.post_output(request, response, proof)
+        # await self.upload_state()
+
+    async def _add_conversation_history(self, request: Message) -> Message:
+        if self.short_term_memory:
+            return add_conversation_history.execute(request, self.short_term_memory)
+        return request
+
+    async def _generate_proof(self, request: Message, response: Message) -> str:
         return generate_proof.execute(request, response)
 
-    async def publish_proof(self, request: Dict, response: Dict, proof: str):
+    async def _publish_proof(self, request: Message, response: Message, proof: str):
         publish_proof.execute(request, response, proof)
 
     # State management functions

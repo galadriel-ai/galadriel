@@ -1,7 +1,9 @@
 import json
+import os
 from unittest.mock import MagicMock
 
 from galadriel_agent.domain import publish_proof
+from galadriel_agent.entities import Message
 
 
 class MockResponse:
@@ -14,8 +16,8 @@ def setup_function():
 
 
 def test_execute_success():
-    request = {"hello": "request"}
-    response = {"hello": "response"}
+    request = Message(content="request")
+    response = Message(content="response")
     hashed_data = "mock_hash"
     result = publish_proof.execute(request, response, hashed_data)
     assert result
@@ -26,16 +28,16 @@ def test_execute_error():
     mock_response.status_code = 500
     publish_proof.requests.post.return_value = mock_response
 
-    request = {"hello": "request"}
-    response = {"hello": "response"}
+    request = Message(content="request")
+    response = Message(content="response")
     hashed_data = "mock_hash"
     result = publish_proof.execute(request, response, hashed_data)
     assert not result
 
 
 def test_execute_calls_endpoint():
-    request = {"hello": "request"}
-    response = {"hello": "response"}
+    request = Message(content="request")
+    response = Message(content="response")
     hashed_data = "mock_hash"
     publish_proof.execute(request, response, hashed_data)
 
@@ -44,15 +46,15 @@ def test_execute_calls_endpoint():
         headers={
             "accept": "application/json",
             "Content-Type": "application/json",
-            "Authorization": None,
+            "Authorization": publish_proof._get_authorization(),
         },
         data=json.dumps(
             {
                 "attestation": "TODO:",
                 "hash": hashed_data,
                 "public_key": "TODO:",
-                "request": request,
-                "response": response,
+                "request": request.model_dump(),
+                "response": response.model_dump(),
                 "signature": "TODO:",
             }
         ),

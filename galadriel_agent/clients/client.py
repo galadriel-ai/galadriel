@@ -1,12 +1,14 @@
 import asyncio
 from typing import Dict
 
+from galadriel_agent.entities import Message
+
 
 class PushOnlyQueue:
     def __init__(self, queue: asyncio.Queue):
         self._queue = queue
 
-    async def put(self, item):
+    async def put(self, item: Message):
         await self._queue.put(item)
 
 
@@ -15,5 +17,5 @@ class Client:
     async def start(self, queue: PushOnlyQueue) -> Dict:
         pass
 
-    async def post_output(self, request, response: Dict, proof: str):
+    async def post_output(self, request: Message, response: Message, proof: str):
         pass
