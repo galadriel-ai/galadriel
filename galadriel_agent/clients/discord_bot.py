@@ -99,4 +99,3 @@ class DiscordClient(commands.Bot, Client):
         channel = self.get_channel(response["channel_id"])
         if channel:
             await channel.send(response["agent_response"])
-        self.message_queue.task_done()
