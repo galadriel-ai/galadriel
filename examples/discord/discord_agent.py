@@ -13,7 +13,7 @@ from galadriel_agent.clients.memory_repository import EmbeddingClient, MemoryRep
 from galadriel_agent.prompts.format_prompt import load_agent_template
 
 
-class DiscordMultiStepAgent(ToolCallingAgent, UserAgent):
+class DiscordAgent(ToolCallingAgent, UserAgent):
     def __init__(
         self,
         character_json_path: str,
