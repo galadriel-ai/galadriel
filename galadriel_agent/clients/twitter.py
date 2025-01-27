@@ -89,7 +89,7 @@ class TwitterApiClient:
                 f"Would have posted tweet, reply_id: {reply_to_id or ''}: {message}"
             )
             return {"data": {"id": "dry_run"}}
-        json_data = {"text": message}
+        json_data: Dict = {"text": message}
         if reply_to_id:
             json_data["reply"] = {}
             json_data["reply"]["in_reply_to_tweet_id"] = reply_to_id

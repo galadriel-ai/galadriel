@@ -46,11 +46,11 @@ class EmbeddingClient:
 
 
 class MemoryRepository:
-    def __init__(self, client: chromadb.Client):
+    def __init__(self, client: chromadb.ClientAPI):
         self.client = client
 
     async def add_memory(
-        self, user_id: str, memory: Memory, conversation_id: str = None
+        self, user_id: str, memory: Memory, conversation_id: Optional[str] = None
     ):
         try:
             collection_name = (

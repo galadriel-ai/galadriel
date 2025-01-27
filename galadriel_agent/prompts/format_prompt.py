@@ -10,7 +10,7 @@ def execute(prompt_template: str, prompt_state: Dict) -> str:
     return prompt
 
 
-def load_agent_template(template: str, json_path: str) -> str:
+def load_agent_template(template: str, json_path: str) -> tuple[str, str]:
     """
     Load agent personality from JSON and update template with random values.
 

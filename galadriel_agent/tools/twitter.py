@@ -43,7 +43,8 @@ class TwitterPostTool(TwitterApiClient, Tool):
         super().__init__(credentials)
 
     def forward(self, tweet: str, in_reply_to_id: str) -> Dict:  # pylint:disable=W0221
-        return self.post_tweet(tweet, in_reply_to_id)
+        response = self.post_tweet(tweet, in_reply_to_id)
+        return response or {}
 
 
 class TwitterSearchTool(TwitterApiClient, Tool):
@@ -104,8 +105,8 @@ def _get_credentials_from_env() -> TwitterCredentials:
     ):
         raise CredentialsException("Missing Twitter environment variables")
     return TwitterCredentials(
-        consumer_api_key=os.getenv("TWITTER_CONSUMER_API_KEY"),
-        consumer_api_secret=os.getenv("TWITTER_CONSUMER_API_SECRET"),
-        access_token=os.getenv("TWITTER_ACCESS_TOKEN"),
-        access_token_secret=os.getenv("TWITTER_ACCESS_TOKEN_SECRET"),
+        consumer_api_key=os.getenv("TWITTER_CONSUMER_API_KEY", ""),
+        consumer_api_secret=os.getenv("TWITTER_CONSUMER_API_SECRET", ""),
+        access_token=os.getenv("TWITTER_ACCESS_TOKEN", ""),
+        access_token_secret=os.getenv("TWITTER_ACCESS_TOKEN_SECRET", ""),
     )
