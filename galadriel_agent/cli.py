@@ -16,7 +16,7 @@ API_BASE_URL = "https://api.galadriel.com/v1"
 
 @click.group(
     help="""
-Galadriel: A CLI tool to create automous agents and deploy them to Galadriel L1.
+Galadriel: A CLI tool to create autonomous agents and deploy them to Galadriel L1.
 
 Usage:
   galadriel [resource] [subcommand] [options]
@@ -334,6 +334,10 @@ GALADRIEL_API_KEY={galadriel_api_key}"""
     shutil.copy(
         os.path.join(docker_files_dir, "Dockerfile"),
         os.path.join(docker_dir, "Dockerfile"),
+    )
+    shutil.copy(
+        os.path.join(docker_files_dir, ".dockerignore"),
+        os.path.join(agent_name, ".dockerignore"),
     )
     shutil.copy(
         os.path.join(docker_files_dir, "logrotate_logs"),

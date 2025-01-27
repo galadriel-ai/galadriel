@@ -142,7 +142,7 @@ class DiscordMultiStepAgent(ToolCallingAgent, UserAgent):
                     author=message["author"],
                     channel_id=message["channel_id"],
                     agent_name=self.character_name,
-                    timestamp=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                    timestamp=datetime.now().isoformat(),
                 )
                 await self.memory_repository.add_memory(
                     user_id=message["author"],
