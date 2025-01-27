@@ -1,20 +1,16 @@
-import asyncio
 from datetime import datetime
-from pathlib import Path
+from typing import List, Callable
 from typing import Optional, Dict
-import os
 from uuid import uuid4
+
+from rich.text import Text
 from smolagents import Tool, ToolCallingAgent
 from smolagents.agents import LogLevel
-from typing import List, Callable
-from rich.text import Text
-from galadriel_agent.agent import UserAgent
-import json
 
+from examples.discord.prompts import DISCORD_SYSTEM_PROMPT
+from galadriel_agent.agent import UserAgent
 from galadriel_agent.clients.memory_repository import EmbeddingClient, MemoryRepository, Memory
 from galadriel_agent.prompts.format_prompt import load_agent_template
-from galadriel_agent.examples.discord.prompts import DISCORD_SYSTEM_PROMPT
-
 
 
 class DiscordMultiStepAgent(ToolCallingAgent, UserAgent):
