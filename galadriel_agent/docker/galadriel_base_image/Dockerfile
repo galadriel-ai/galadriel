@@ -1,7 +1,7 @@
 FROM amazonlinux:2023.6.20250107.0
 
 # Install python 3.12
-RUN dnf install iproute shadow-utils python3.12 python3.12-pip -y
+RUN dnf install iproute shadow-utils sqlite-devel python3.12 python3.12-pip -y
 
 WORKDIR /app
 

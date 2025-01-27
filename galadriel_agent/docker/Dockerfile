@@ -1,4 +1,4 @@
-FROM h4n00/galadriel_base:latest
+FROM isaac4real/galadriel_base:latest
 
 # Logrotate
 COPY docker/logrotate_logs /etc/logrotate.d/log-file
