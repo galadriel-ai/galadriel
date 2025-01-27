@@ -10,13 +10,30 @@ from typing import Tuple
 
 API_BASE_URL = "https://api.galadriel.com/v1"
 
-@click.group()
-def main():
-    """Sentience CLI"""
+@click.group(help="""
+Galadriel: A CLI tool to create automous agents and deploy them to Galadriel L1.
+
+Usage:
+  galadriel [resource] [subcommand] [options]
+
+Resources:
+  agent     Manage agents (create, update, etc.)
+
+Options:
+  -h, --help    Show this help message and exit
+
+For more information about each resource, use:
+  galadriel <resource> --help
+""")
+def galadriel():
     pass
 
+@galadriel.group()
+def agent():
+    """Agent management commands"""
+    pass
 
-@main.command()
+@agent.command()
 def init() -> None:
     """Create a new Agent folder template in the current directory."""
     agent_name = click.prompt("Enter agent name", type=str)
@@ -36,7 +53,7 @@ def init() -> None:
         click.echo(f"Error creating agent template: {str(e)}", err=True)
 
 
-@main.command()
+@agent.command()
 @click.option("--image-name", default="agent", help="Name of the Docker image")
 def build(image_name: str) -> None:
     """Build the agent Docker image."""
@@ -49,7 +66,7 @@ def build(image_name: str) -> None:
         raise click.ClickException(str(e))
 
 
-@main.command()
+@agent.command()
 @click.option("--image-name", default="agent", help="Name of the Docker image")
 def publish(image_name: str) -> None:
     """Publish the agent Docker image to the Docker Hub."""
@@ -66,7 +83,7 @@ def publish(image_name: str) -> None:
         raise click.ClickException(str(e))
 
 
-@main.command()
+@agent.command()
 @click.option("--image-name", default="agent", help="Name of the Docker image")
 def deploy(image_name: str) -> None:
     """Build, publish and deploy the agent."""
@@ -91,8 +108,24 @@ def deploy(image_name: str) -> None:
     except Exception as e:
         raise click.ClickException(str(e))
 
+@agent.command()
+@click.option("--agent-id", help="ID of the agent to update")
+@click.option("--image-name", default="agent", help="Name of the Docker image")
+def update(agent_id: str, image_name: str):
+    """Update the agent"""
+    click.echo(f"Updating agent {agent_id}")
+    try:
+        docker_username, _ = _assert_config_files(image_name=image_name)
+        status = _galadriel_update(image_name=image_name, docker_username=docker_username, agent_id=agent_id)
+        if status:
+            click.echo(f"Successfully updated agent {agent_id}")
+        else:
+            raise click.ClickException(f"Failed to update agent {agent_id}")
+    except Exception as e:
+        raise click.ClickException(str(e))
 
-@main.command()
+
+@agent.command()
 @click.option("--agent-id", help="ID of the agent to get state for")
 def state(agent_id: str):
     """Get information about a deployed agent from Galadriel platform."""
@@ -119,7 +152,7 @@ def state(agent_id: str):
         click.echo(f"Failed to get agent state: {str(e)}")
 
 
-@main.command()
+@agent.command()
 def states():
     """Get all agent states"""
     try:
@@ -144,7 +177,7 @@ def states():
     except Exception as e:
         click.echo(f"Failed to get agent state: {str(e)}")
 
-@main.command()
+@agent.command()
 @click.argument("agent_id")
 def destroy(agent_id: str):
     """Destroy a deployed agent from Galadriel platform."""
@@ -209,10 +242,11 @@ def _create_agent_template(
 
     # Generate <agent_name>.py
     class_name = "".join(word.capitalize() for word in agent_name.split("_"))
-    agent_code = f"""from galadriel_agent.agent import GaladrielAgent
+    agent_code = f"""from galadriel_agent.agent import UserAgent
+from typing import Dict
 
-class {class_name}(GaladrielAgent):
-    async def run(self):
+class {class_name}(UserAgent):
+    async def run(self, request: Dict) -> Dict:
         # Implement your agent's logic here
         print(f"Running {class_name} with agent configuration: {{self.agent_config}}")
 """
@@ -231,29 +265,23 @@ class {class_name}(GaladrielAgent):
 
     # generate main.py
     main_code = f"""import asyncio
-
 from agent.{agent_name} import {class_name}
+from galadriel_agent.agent import GaladrielAgent
 
 if __name__ == "__main__":
-    agent = {class_name}(agent_name=\"{agent_name}\")
+    {agent_name} = {class_name}()
+    client = None
+    agent = GaladrielAgent(
+        agent_config=None,
+        clients=[client], 
+        user_agent={agent_name},
+        s3_client=None,
+    )
     asyncio.run(agent.run())
 """
     with open(os.path.join(agent_name, "main.py"), "w") as f:
         f.write(main_code)
 
-    # Generate test.py
-    test_code = f"""from agent.{agent_name} import {class_name}
-from sentience import GaladrielAgent 
-
-def main():
-    agent = GaladrielAgent(agent_name={agent_name})
-    agent.run()
-
-if __name__ == "__main__":
-    main()
-"""
-    with open(os.path.join(agent_name, "test.py"), "w") as f:
-        f.write(test_code)
 
     # Generate pyproject.toml
     pyproject_toml = f"""
@@ -264,7 +292,7 @@ description = ""
 authors = ["Your Name <your.email@example.com>"]
 
 [tool.poetry.dependencies]
-python = "^3.12"
+python = "^3.10"
 galadriel_agent = {{path = "./galadriel-agent"}}
 
 [build-system]
@@ -397,3 +425,49 @@ Request Body: {response.request.body}
 """
         click.echo(error_msg)
         return None
+
+
+def _galadriel_update(image_name: str, docker_username: str, agent_id: str) -> bool:
+    """Update agent on Galadriel platform."""
+
+    if not os.path.exists(".agents.env"):
+        raise click.ClickException(
+            "No .agents.env file found in current directory. Please create one."
+        )
+
+    env_vars = dict(dotenv_values('.agents.env'))
+
+    load_dotenv(dotenv_path=Path(".") / ".env")
+    api_key = os.getenv("GALADRIEL_API_KEY")
+    if not api_key:
+        raise click.ClickException("GALADRIEL_API_KEY not found in environment")
+
+    payload = {
+        "name": image_name,
+        "docker_image": f"{docker_username}/{image_name}:latest",
+        "env_vars": env_vars,
+    }
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {api_key}",
+        "accept": "application/json",
+    }
+    response = requests.put(
+        f"{API_BASE_URL}/agents/{agent_id}",
+        json=payload,
+        headers=headers,
+    )
+
+    if response.status_code == 200:
+        return True
+    else:
+        error_msg = f"""
+Failed to update agent:
+Status Code: {response.status_code}
+Response: {response.text}
+Request URL: {response.request.url}
+Request Headers: {dict(response.request.headers)}
+Request Body: {response.request.body}
+"""
+        click.echo(error_msg)
+        return False
