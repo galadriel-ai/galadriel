@@ -12,8 +12,5 @@ def test_empty():
 
 
 def test_hello_world():
-    result = generate_proof.execute(
-        {"hello": "world"},
-        {"hello": "result"}
-    )
+    result = generate_proof.execute({"hello": "world"}, {"hello": "result"})
     assert result == "a18b334640a39f0c821ccb26e339ee2451398085727f652315548b031c53ddc9"

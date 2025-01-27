@@ -1,16 +1,21 @@
+import json
 import os
 import shutil
-import click
-import requests
-import json
 import subprocess
 from pathlib import Path
-from dotenv import load_dotenv, dotenv_values
+from typing import Optional
 from typing import Tuple
+
+import click
+import requests
+from dotenv import dotenv_values
+from dotenv import load_dotenv
 
 API_BASE_URL = "https://api.galadriel.com/v1"
 
-@click.group(help="""
+
+@click.group(
+    help="""
 Galadriel: A CLI tool to create automous agents and deploy them to Galadriel L1.
 
 Usage:
@@ -24,14 +29,16 @@ Options:
 
 For more information about each resource, use:
   galadriel <resource> --help
-""")
+"""
+)
 def galadriel():
     pass
+
 
 @galadriel.group()
 def agent():
     """Agent management commands"""
-    pass
+
 
 @agent.command()
 def init() -> None:
@@ -108,6 +115,7 @@ def deploy(image_name: str) -> None:
     except Exception as e:
         raise click.ClickException(str(e))
 
+
 @agent.command()
 @click.option("--agent-id", help="ID of the agent to update")
 @click.option("--image-name", default="agent", help="Name of the Docker image")
@@ -116,7 +124,9 @@ def update(agent_id: str, image_name: str):
     click.echo(f"Updating agent {agent_id}")
     try:
         docker_username, _ = _assert_config_files(image_name=image_name)
-        status = _galadriel_update(image_name=image_name, docker_username=docker_username, agent_id=agent_id)
+        status = _galadriel_update(
+            image_name=image_name, docker_username=docker_username, agent_id=agent_id
+        )
         if status:
             click.echo(f"Successfully updated agent {agent_id}")
         else:
@@ -176,6 +186,7 @@ def states():
         click.echo(json.dumps(response.json(), indent=2))
     except Exception as e:
         click.echo(f"Failed to get agent state: {str(e)}")
+
 
 @agent.command()
 @click.argument("agent_id")
@@ -250,7 +261,7 @@ class {class_name}(UserAgent):
         # Implement your agent's logic here
         print(f"Running {class_name} with agent configuration: {{self.agent_config}}")
 """
-    with open(os.path.join(agent_dir, f"{agent_name}.py"), "w") as f:
+    with open(os.path.join(agent_dir, f"{agent_name}.py"), "w", encoding="utf-8") as f:
         f.write(agent_code)
 
     # Generate <agent_name>.json
@@ -260,7 +271,11 @@ class {class_name}(UserAgent):
         "prompt": "The initial prompt for the agent",
         "tools": [],
     }
-    with open(os.path.join(agent_configurator_dir, f"{agent_name}.json"), "w") as f:
+    with open(
+        os.path.join(agent_configurator_dir, f"{agent_name}.json"),
+        "w",
+        encoding="utf-8",
+    ) as f:
         json.dump(initial_data, f, indent=2)
 
     # generate main.py
@@ -279,12 +294,11 @@ if __name__ == "__main__":
     )
     asyncio.run(agent.run())
 """
-    with open(os.path.join(agent_name, "main.py"), "w") as f:
+    with open(os.path.join(agent_name, "main.py"), "w", encoding="utf-8") as f:
         f.write(main_code)
 
-
     # Generate pyproject.toml
-    pyproject_toml = f"""
+    pyproject_toml = """
 [tool.poetry]
 name = "agent"
 version = "0.1.0"
@@ -293,22 +307,22 @@ authors = ["Your Name <your.email@example.com>"]
 
 [tool.poetry.dependencies]
 python = "^3.10"
-galadriel_agent = {{path = "./galadriel-agent"}}
+galadriel_agent = {path = "./galadriel-agent"}
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
 """
-    with open(os.path.join(agent_name, "pyproject.toml"), "w") as f:
+    with open(os.path.join(agent_name, "pyproject.toml"), "w", encoding="utf-8") as f:
         f.write(pyproject_toml)
 
     # Create .env and .agents.env file in the agent directory
     env_content = f"""DOCKER_USERNAME={docker_username}
 DOCKER_PASSWORD={docker_password}
 GALADRIEL_API_KEY={galadriel_api_key}"""
-    with open(os.path.join(agent_name, ".env"), "w") as f:
+    with open(os.path.join(agent_name, ".env"), "w", encoding="utf-8") as f:
         f.write(env_content)
-    open(os.path.join(agent_name, ".agents.env"), "w").close()
+    open(os.path.join(agent_name, ".agents.env"), "w", encoding="utf-8").close()
 
     # copy docker files from sentience/galadriel_agent/docker to user current directory
     docker_files_dir = os.path.join(os.path.dirname(__file__), "docker")
@@ -380,7 +394,7 @@ def _publish_image(image_name: str, docker_username: str, docker_password: str) 
     click.echo("Successfully pushed Docker image!")
 
 
-def _galadriel_deploy(image_name: str, docker_username: str) -> str:
+def _galadriel_deploy(image_name: str, docker_username: str) -> Optional[str]:
     """Deploy agent to Galadriel platform."""
 
     if not os.path.exists(".agents.env"):
@@ -388,7 +402,7 @@ def _galadriel_deploy(image_name: str, docker_username: str) -> str:
             "No .agents.env file found in current directory. Please create one."
         )
 
-    env_vars = dict(dotenv_values('.agents.env'))
+    env_vars = dict(dotenv_values(".agents.env"))
 
     load_dotenv(dotenv_path=Path(".") / ".env")
     api_key = os.getenv("GALADRIEL_API_KEY")
@@ -414,8 +428,7 @@ def _galadriel_deploy(image_name: str, docker_username: str) -> str:
     if response.status_code == 200:
         agent_id = response.json()["agent_id"]
         return agent_id
-    else:
-        error_msg = f"""
+    error_msg = f"""
 Failed to deploy agent:
 Status Code: {response.status_code}
 Response: {response.text}
@@ -423,8 +436,8 @@ Request URL: {response.request.url}
 Request Headers: {dict(response.request.headers)}
 Request Body: {response.request.body}
 """
-        click.echo(error_msg)
-        return None
+    click.echo(error_msg)
+    return None
 
 
 def _galadriel_update(image_name: str, docker_username: str, agent_id: str) -> bool:
@@ -435,7 +448,7 @@ def _galadriel_update(image_name: str, docker_username: str, agent_id: str) -> b
             "No .agents.env file found in current directory. Please create one."
         )
 
-    env_vars = dict(dotenv_values('.agents.env'))
+    env_vars = dict(dotenv_values(".agents.env"))
 
     load_dotenv(dotenv_path=Path(".") / ".env")
     api_key = os.getenv("GALADRIEL_API_KEY")

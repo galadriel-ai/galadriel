@@ -30,7 +30,7 @@ def execute(request: Dict, response: Dict, hashed_data: str) -> bool:
         result = requests.post(url, headers=headers, data=json.dumps(data))
         if result.status_code == 200:
             return True
-    except:
+    except Exception:
         pass
     return False
 
@@ -40,3 +40,4 @@ def _get_authorization() -> Optional[str]:
     if api_key:
         return "Bearer " + api_key
     logger.info("GALADRIEL_API_KEY missing, set this as export GALADRIEL_API_KEY=<key>")
+    return None

@@ -2,6 +2,7 @@ from smolagents import tool
 from datetime import datetime
 from typing import Optional
 
+
 @tool
 def get_time(location: str) -> str:
     """
@@ -10,6 +11,7 @@ def get_time(location: str) -> str:
         location: the location
     """
     return f"The time in {location} is {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+
 
 @tool
 def get_weather(location: str, celsius: Optional[bool] = False) -> str:

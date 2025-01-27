@@ -64,10 +64,6 @@ class TwitterAPIError(TwitterConnectionError):
     """Raised when Twitter API requests fail"""
 
 
-# TODO: Should not be hardcoded
-# pylint: disable=C0301:
-SEARCH_QUERY = "(-is:retweet -is:reply -is:quote) (from:aixbt_agent OR from:iruletheworldmo OR from:VitalikButerin OR from:lexfridman OR from:SpaceX OR from:sama OR from:OpenAI OR from:xai OR from:balajis from:karpathy)"
-
 MAX_SEARCH_HISTORY_HOURS = 24
 
 
@@ -85,9 +81,13 @@ class TwitterApiClient:
             resource_owner_secret=_credentials.access_token_secret,
         )
 
-    def post_tweet(self, message: str, reply_to_id: Optional[str] = None) -> Optional[Dict]:
+    def post_tweet(
+        self, message: str, reply_to_id: Optional[str] = None
+    ) -> Optional[Dict]:
         if os.getenv("DRY_RUN"):
-            logger.info(f"Would have posted tweet, reply_id: {reply_to_id or ''}: {message}")
+            logger.info(
+                f"Would have posted tweet, reply_id: {reply_to_id or ''}: {message}"
+            )
             return {"data": {"id": "dry_run"}}
         json_data = {"text": message}
         if reply_to_id:
@@ -97,13 +97,13 @@ class TwitterApiClient:
         logger.info(f"Tweet posted successfully: {message}")
         return response
 
-    def search(self) -> List[Dict]:
+    def search(self, search_query: str) -> List[Dict]:
         try:
             response = self._make_request(
                 "GET",
                 "tweets/search/recent",
                 params={
-                    "query": SEARCH_QUERY,
+                    "query": search_query,
                     "sort_order": "relevancy",
                     "start_time": get_iso_datetime(MAX_SEARCH_HISTORY_HOURS),
                     "tweet.fields": "public_metrics,text,author_id,referenced_tweets,attachments",

@@ -29,7 +29,6 @@ class AgentState:
     pass
 
 
-
 # This is just a rough sketch on how the GaladrielAgent itself will be implemented
 # This is not meant to be read or modified by the end developer
 class GaladrielAgent:
