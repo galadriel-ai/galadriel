@@ -1,4 +1,4 @@
--e ../../../. # Install dependencies from pyproject.toml in galadriel-agent
+-e ../../. # Install dependencies from pyproject.toml in galadriel-agent
 
 litellm
 smolagents
