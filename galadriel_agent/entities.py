@@ -4,6 +4,8 @@ from typing import Optional
 
 from pydantic import BaseModel
 
+GALADRIEL_API_BASE_URL = "https://api.galadriel.com/v1"
+
 
 class Message(BaseModel):
     content: str
