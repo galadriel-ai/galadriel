@@ -1,5 +1,6 @@
 import json
 import os
+from datetime import datetime
 from pathlib import Path
 
 from typing import List, Callable
@@ -12,7 +13,7 @@ from smolagents import Tool
 from smolagents import ToolCallingAgent
 from smolagents.agents import LogLevel
 
-from prompts import DISCORD_SYSTEM_PROMPT
+from examples.telegram.prompts import TELEGRAM_SYSTEM_PROMPT
 from galadriel_agent.agent import UserAgent
 
 from galadriel_agent.clients.memory_repository import (
@@ -24,7 +25,7 @@ from galadriel_agent.entities import Message, AgentMessage
 from galadriel_agent.prompts.format_prompt import load_agent_template
 
 
-class DiscordMultiStepAgent(ToolCallingAgent, UserAgent):
+class TelegramAgent(ToolCallingAgent, UserAgent):
     def __init__(
         self,
         character_json_path: str,
@@ -57,11 +58,10 @@ class DiscordMultiStepAgent(ToolCallingAgent, UserAgent):
             planning_interval=planning_interval,
         )
 
-        # Discord-specific initialization
         self.character_json_path = character_json_path
         try:
             self.character_prompt, self.character_name = load_agent_template(
-                DISCORD_SYSTEM_PROMPT, Path(self.character_json_path)
+                TELEGRAM_SYSTEM_PROMPT, Path(self.character_json_path)
             )
         except Exception as e:
             print(f"Error loading agent json: {e}")

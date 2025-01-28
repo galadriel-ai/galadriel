@@ -1,37 +1,12 @@
 from datetime import datetime
 from typing import List
-from typing import Optional
-from uuid import uuid4
+import uuid
 
 import chromadb
 from openai import AsyncOpenAI
-from pydantic import BaseModel
-from pydantic import Field
 
+from galadriel_agent.entities import Message
 
-class Memory(BaseModel):
-    id: str = Field(default_factory=lambda: str(uuid4()))
-    message: str
-    agent_response: str
-    channel_id: int
-    author: str
-    agent_name: str
-    embedding: Optional[List[float]] = None
-    timestamp: datetime = Field(default_factory=datetime.now)
-
-    def __str__(self):
-        return f"{self.author}: {self.message} - {self.agent_name}: {self.agent_response} - {self.timestamp}"
-
-    def to_dict(self):
-        return {
-            "id": self.id,
-            "message": self.message,
-            "agent_response": self.agent_response,
-            "channel_id": self.channel_id,
-            "author": self.author,
-            "agent_name": self.agent_name,
-            "timestamp": self.timestamp,
-        }
 
 
 class EmbeddingClient:
@@ -49,66 +24,66 @@ class MemoryRepository:
     def __init__(self, client: chromadb.ClientAPI):
         self.client = client
 
-    async def add_memory(
-        self, user_id: str, memory: Memory, conversation_id: Optional[str] = None
-    ):
+    async def add_memory(self, memory: Message):
         try:
-            collection_name = (
-                f"{user_id}-{conversation_id}" if conversation_id else user_id
-            )
+            collection_name=f"{memory.additional_kwargs['author'].replace(' ', '')}-{memory.conversation_id}"
             try:
                 collection = self.client.get_collection(collection_name)
             except Exception:
                 collection = self.client.create_collection(collection_name)
 
             collection.add(
-                documents=[memory.message],
+                documents=[memory.content],
                 metadatas=[
                     {
-                        "author": memory.author,
-                        "answer": memory.agent_response,
-                        "channel_id": str(memory.channel_id),
-                        "timestamp": memory.timestamp.isoformat(),
-                        "agent_name": memory.agent_name,
+                        "author": memory.additional_kwargs["author"],
+                        "answer": memory.additional_kwargs["agent_response"],
+                        "channel_id": str(memory.conversation_id),
+                        "timestamp": memory.additional_kwargs["timestamp"],
+                        "agent_name": memory.additional_kwargs["agent_name"],
                     }
                 ],
-                embeddings=[memory.embedding] if memory.embedding else None,
-                ids=[memory.id],
+                embeddings=[memory.additional_kwargs["embeddings"]]
+                if memory.additional_kwargs["embeddings"]
+                else None,
+                ids=[str(uuid.uuid4())],
             )
         except Exception as e:
             print(e)
 
     async def get_short_term_memory(
         self, user_id: str, conversation_id: str, limit: int = 10
-    ) -> List[Memory]:
+    ) -> List[Message]:
         try:
-            collection = self.client.get_collection(f"{user_id}-{conversation_id}")
+            collection = self.client.get_collection(f"{user_id.replace(' ', '')}-{conversation_id}")
             result = collection.get(include=["documents", "metadatas"])
             memories = []
             for document, metadata in zip(result["documents"], result["metadatas"]):
                 memories.append(
-                    Memory(
-                        message=document,
-                        agent_response=metadata["answer"],
-                        author=metadata["author"],
-                        agent_name=metadata["agent_name"],
-                        timestamp=datetime.fromisoformat(metadata["timestamp"]),
-                        embedding=None,  # no need to return the embedding
-                        channel_id=metadata["channel_id"],
+                    Message(
+                        content=document,
+                        additional_kwargs={
+                            "agent_response": metadata["answer"],
+                            "author": metadata["author"],
+                            "agent_name": metadata["agent_name"],
+                            "timestamp": metadata["timestamp"],
+                        },
+                        conversation_id=metadata["channel_id"],
+                        type="memory",
                     )
                 )
             # Sort memories by timestamp in descending order and limit the results
-            memories.sort(key=lambda x: x.timestamp, reverse=True)
-            return memories[:limit]
+            memories.sort(key=lambda x: x.additional_kwargs["timestamp"], reverse=True)
+            return self._parse_memory(memories[:limit])
         except Exception as e:
             print(e)
             return []
 
     async def query_long_term_memory(
         self, user_id: str, conversation_id: str, embedding: List[float], top_k: int = 2
-    ) -> List[Memory]:
+    ) -> List[Message]:
         try:
-            collection = self.client.get_collection(f"{user_id}-{conversation_id}")
+            collection = self.client.get_collection(f"{user_id.replace(' ', '')}-{conversation_id}")
             result = collection.query(
                 query_embeddings=[embedding],
                 n_results=top_k,
@@ -117,21 +92,28 @@ class MemoryRepository:
             memories = []
             for document, metadata in zip(result["documents"], result["metadatas"]):
                 memories.append(
-                    Memory(
-                        message=document[0],
-                        agent_response=metadata[0]["answer"],
-                        author=metadata[0]["author"],
-                        agent_name=metadata[0]["agent_name"],
-                        timestamp=datetime.fromisoformat(metadata[0]["timestamp"]),
-                        embedding=None,  # no need to return the embedding
-                        channel_id=metadata[0]["channel_id"],
+                    Message(
+                        content=document[0],
+                        additional_kwargs={
+                            "agent_response": metadata[0]["answer"],
+                            "author": metadata[0]["author"],
+                            "agent_name": metadata[0]["agent_name"],
+                            "timestamp": metadata[0]["timestamp"],
+                        },
+                        conversation_id=metadata[0]["channel_id"],
+                        type="memory",
                     )
                 )
-            return memories
+            return self._parse_memory(memories)
         except Exception as e:
             print(e)
             return []
-
+        
+    def _parse_memory(self, memories: List[Message]) -> List[str]:
+        parsed_memories = []
+        for memory in memories:
+            parsed_memories.append(f"{memory.additional_kwargs['author']}: {memory.content} ({memory.additional_kwargs['timestamp']}) \n {memory.additional_kwargs['agent_name']}: {memory.additional_kwargs['agent_response']}")
+        return parsed_memories
 
 # singleton
 memory_repository = MemoryRepository(chromadb.Client())

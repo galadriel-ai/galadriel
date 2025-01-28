@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import os
 from dataclasses import dataclass
 from datetime import datetime
@@ -10,27 +11,7 @@ from rich.text import Text
 from smolagents.agents import LogLevel
 
 from galadriel_agent.clients.client import Client
-
-@dataclass
-class Message:
-    """Data class to store message information"""
-
-    content: str
-    channel_id: int
-    author: str
-    message_id: int
-    timestamp: datetime
-
-    def to_dict(self) -> Dict:
-        """Convert Message object to dictionary"""
-        return {
-            "content": self.content,
-            "channel_id": self.channel_id,
-            "author": self.author,
-            "message_id": self.message_id,
-            "timestamp": self.timestamp.isoformat(),
-        }
-
+from galadriel_agent.entities import HumanMessage, Message
 
 class CommandsCog(commands.Cog):
     def __init__(self, bot):
@@ -48,7 +29,7 @@ class CommandsCog(commands.Cog):
 
 
 class DiscordClient(commands.Bot, Client):
-    def __init__(self, guild_id: str, logger):
+    def __init__(self, guild_id: str, logger: logging):
         # Set up intents
         intents = discord.Intents.default()
         intents.message_content = True
@@ -70,10 +51,10 @@ class DiscordClient(commands.Bot, Client):
         guild = discord.Object(id=int(self.guild_id))
         try:
             await self.tree.sync(guild=guild)
-            # self.logger.log(Text(f"Connected to guild {self.guild_id}"), level=LogLevel.INFO)
-        except discord.HTTPException:
-            # self.logger.log(Text(f"Failed to sync commands to guild {self.guild_id}: {e}"), level=LogLevel.ERROR)
-            pass
+            self.logger.info(f"Connected to guild {self.guild_id}")
+        except discord.HTTPException as e:
+            self.logger.error(f"Failed to sync commands to guild {self.guild_id}: {e}")
+
 
     async def on_message(self, message: discord.Message):
         # Ignore messages from the bot itself
@@ -81,21 +62,31 @@ class DiscordClient(commands.Bot, Client):
             return
 
         # Create Message object and add to queue
-        msg = Message(
-            content=message.content,
-            channel_id=message.channel.id,
-            author=message.author.name,
-            message_id=message.id,
-            timestamp=message.created_at,
-        )
-        await self.message_queue.put(msg.to_dict())
-        # self.logger.log(Text(f"Added message to queue: {msg}"), level=LogLevel.INFO)
+        try:
+            msg = HumanMessage(
+                content=message.content,
+                conversation_id=str(message.channel.id),
+                additional_kwargs={
+                    "author": message.author.name,
+                    "message_id": message.id,
+                    "timestamp": str(message.created_at.isoformat()),
+                },
+            )
+            await self.message_queue.put(msg)
+            self.logger.info(f"Added message to queue: {msg}")
+        except Exception as e:
+            self.logger.error(f"Failed to add message to queue: {e}")
+            raise e
 
     async def start(self, queue: asyncio.Queue) -> Message:
         self.message_queue = queue
         await super().start(os.getenv("DISCORD_TOKEN"))
 
-    async def post_output(self, request, response: Dict, proof: str):
-        channel = self.get_channel(response["channel_id"])
-        if channel:
-            await channel.send(response["agent_response"])
+    async def post_output(self, request, response: Message, proof: str):
+        try:
+            channel = self.get_channel(int(response.conversation_id))
+            await channel.send(response.content)
+        except Exception as e:
+            self.logger.error(f"Failed to post output: {e}")
+            raise e
+
