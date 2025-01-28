@@ -58,7 +58,6 @@ class LogsExportHandler(logging.Handler):
             )
             if is_export_success:
                 self.log_records = self.log_records[len(formatted_logs) :]
-            time.sleep(self.export_interval_seconds)
 
     def _format_logs(self) -> List[Dict]:
         logs = self.log_records[:]  # shallow copy
