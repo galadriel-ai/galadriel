@@ -1,5 +1,4 @@
 import asyncio
-from typing import Dict
 
 from galadriel_agent.entities import Message
 

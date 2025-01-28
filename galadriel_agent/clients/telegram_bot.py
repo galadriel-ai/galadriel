@@ -1,13 +1,13 @@
 from datetime import datetime
 import logging
 
+from typing import Optional
+from telebot import types
 
 from galadriel_agent.clients.client import Client, PushOnlyQueue
 from galadriel_agent.entities import Message, HumanMessage
 
-from typing import Optional
 from telebot.async_telebot import AsyncTeleBot
-from telebot import types
 
 
 class TelegramClient(Client):
@@ -27,7 +27,8 @@ class TelegramClient(Client):
                 return
             user = message.from_user
             author = (
-                f"{user.first_name} {user.last_name}".strip() if user.first_name 
+                f"{user.first_name} {user.last_name}".strip()
+                if user.first_name
                 else user.username or str(user.id)
             )
             incoming = HumanMessage(

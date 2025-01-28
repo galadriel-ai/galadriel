@@ -40,7 +40,6 @@ def agent():
     """Agent management commands"""
 
 
-
 @agent.command()
 def init() -> None:
     """Create a new Agent folder template in the current directory."""

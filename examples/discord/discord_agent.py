@@ -15,10 +15,7 @@ from smolagents.agents import LogLevel
 from prompts import DISCORD_SYSTEM_PROMPT
 from galadriel_agent.agent import UserAgent
 
-from galadriel_agent.clients.memory_repository import (
-    EmbeddingClient,
-    MemoryRepository
-)
+from galadriel_agent.clients.memory_repository import EmbeddingClient, MemoryRepository
 
 from galadriel_agent.entities import Message, AgentMessage
 from galadriel_agent.prompts.format_prompt import load_agent_template
@@ -77,9 +74,7 @@ class DiscordMultiStepAgent(ToolCallingAgent, UserAgent):
 
     async def run(self, message: Message) -> Message:
         try:
-            message_embedding = await self.embedding_client.embed_text(
-                message.content
-            )
+            message_embedding = await self.embedding_client.embed_text(message.content)
             # todo: retrieve long term memory with similarity above threshold instead of only top_k
             long_term_memories = await self.memory_repository.query_long_term_memory(
                 user_id=message.additional_kwargs["author"],

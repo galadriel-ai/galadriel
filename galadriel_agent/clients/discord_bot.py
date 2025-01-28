@@ -1,17 +1,13 @@
 import asyncio
 import logging
 import os
-from dataclasses import dataclass
-from datetime import datetime
-from typing import Dict
 
 import discord
 from discord.ext import commands
-from rich.text import Text
-from smolagents.agents import LogLevel
 
 from galadriel_agent.clients.client import Client
 from galadriel_agent.entities import HumanMessage, Message
+
 
 class CommandsCog(commands.Cog):
     def __init__(self, bot):
@@ -29,7 +25,7 @@ class CommandsCog(commands.Cog):
 
 
 class DiscordClient(commands.Bot, Client):
-    def __init__(self, guild_id: str, logger: logging):
+    def __init__(self, guild_id: str, logger: logging.Logger):
         # Set up intents
         intents = discord.Intents.default()
         intents.message_content = True
@@ -41,7 +37,7 @@ class DiscordClient(commands.Bot, Client):
         self.logger = logger
 
     async def on_ready(self):
-        self.logger.log(Text(f"Bot connected as {self.user.name}"), level=LogLevel.INFO)
+        self.logger.info(f"Bot connected as {self.user.name}")
 
     async def setup_hook(self):
         # Register commands
@@ -54,7 +50,6 @@ class DiscordClient(commands.Bot, Client):
             self.logger.info(f"Connected to guild {self.guild_id}")
         except discord.HTTPException as e:
             self.logger.error(f"Failed to sync commands to guild {self.guild_id}: {e}")
-
 
     async def on_message(self, message: discord.Message):
         # Ignore messages from the bot itself
@@ -78,15 +73,14 @@ class DiscordClient(commands.Bot, Client):
             self.logger.error(f"Failed to add message to queue: {e}")
             raise e
 
-    async def start(self, queue: asyncio.Queue) -> Message:
+    async def start(self, queue: asyncio.Queue) -> None:
         self.message_queue = queue
         await super().start(os.getenv("DISCORD_TOKEN"))
 
-    async def post_output(self, request, response: Message, proof: str):
+    async def post_output(self, request: Message, response: Message, proof: str) -> None:
         try:
             channel = self.get_channel(int(response.conversation_id))
             await channel.send(response.content)
         except Exception as e:
             self.logger.error(f"Failed to post output: {e}")
             raise e
-

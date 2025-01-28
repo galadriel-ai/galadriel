@@ -18,9 +18,7 @@ model = LiteLLMModel(model_id="gpt-4o", api_key=os.getenv("OPENAI_API_KEY"))
 
 logger = get_agent_logger()
 
-discord_client = DiscordClient(
-    guild_id=os.getenv("DISCORD_GUILD_ID"), logger=logger
-)
+discord_client = DiscordClient(guild_id=os.getenv("DISCORD_GUILD_ID"), logger=logger)
 
 discord_agent = DiscordMultiStepAgent(
     memory_repository=memory_repository,

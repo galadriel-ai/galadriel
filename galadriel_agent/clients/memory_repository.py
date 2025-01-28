@@ -1,4 +1,3 @@
-from datetime import datetime
 from typing import List
 import uuid
 
@@ -6,7 +5,6 @@ import chromadb
 from openai import AsyncOpenAI
 
 from galadriel_agent.entities import Message
-
 
 
 class EmbeddingClient:
@@ -26,7 +24,7 @@ class MemoryRepository:
 
     async def add_memory(self, memory: Message):
         try:
-            collection_name=f"{memory.additional_kwargs['author'].replace(' ', '')}-{memory.conversation_id}"
+            collection_name = f"{memory.additional_kwargs['author'].replace(' ', '')}-{memory.conversation_id}"
             try:
                 collection = self.client.get_collection(collection_name)
             except Exception:
@@ -43,9 +41,11 @@ class MemoryRepository:
                         "agent_name": memory.additional_kwargs["agent_name"],
                     }
                 ],
-                embeddings=[memory.additional_kwargs["embeddings"]]
-                if memory.additional_kwargs["embeddings"]
-                else None,
+                embeddings=(
+                    [memory.additional_kwargs["embeddings"]]
+                    if memory.additional_kwargs["embeddings"]
+                    else None
+                ),
                 ids=[str(uuid.uuid4())],
             )
         except Exception as e:
@@ -55,7 +55,9 @@ class MemoryRepository:
         self, user_id: str, conversation_id: str, limit: int = 10
     ) -> List[Message]:
         try:
-            collection = self.client.get_collection(f"{user_id.replace(' ', '')}-{conversation_id}")
+            collection = self.client.get_collection(
+                f"{user_id.replace(' ', '')}-{conversation_id}"
+            )
             result = collection.get(include=["documents", "metadatas"])
             memories = []
             for document, metadata in zip(result["documents"], result["metadatas"]):
@@ -83,7 +85,9 @@ class MemoryRepository:
         self, user_id: str, conversation_id: str, embedding: List[float], top_k: int = 2
     ) -> List[Message]:
         try:
-            collection = self.client.get_collection(f"{user_id.replace(' ', '')}-{conversation_id}")
+            collection = self.client.get_collection(
+                f"{user_id.replace(' ', '')}-{conversation_id}"
+            )
             result = collection.query(
                 query_embeddings=[embedding],
                 n_results=top_k,
@@ -108,12 +112,20 @@ class MemoryRepository:
         except Exception as e:
             print(e)
             return []
-        
+
     def _parse_memory(self, memories: List[Message]) -> List[str]:
         parsed_memories = []
         for memory in memories:
-            parsed_memories.append(f"{memory.additional_kwargs['author']}: {memory.content} ({memory.additional_kwargs['timestamp']}) \n {memory.additional_kwargs['agent_name']}: {memory.additional_kwargs['agent_response']}")
+            author = memory.additional_kwargs["author"]
+            content = memory.content
+            timestamp = memory.additional_kwargs["timestamp"]
+            agent_name = memory.additional_kwargs["agent_name"]
+            agent_response = memory.additional_kwargs["agent_response"]
+            parsed_memories.append(
+                f"{author}: {content} ({timestamp})\n" f"{agent_name}: {agent_response}"
+            )
         return parsed_memories
+
 
 # singleton
 memory_repository = MemoryRepository(chromadb.Client())
