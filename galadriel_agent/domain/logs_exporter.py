@@ -38,7 +38,7 @@ class LogsExportHandler(logging.Handler):
         log_entry = self.format(record)
         self.log_records.append(log_entry)
 
-    def _run_export_logs_job(self):
+    def _run_export_logs_job(self) -> None:
         """
         Blocking function that exports logs every self.export_interval_seconds
         """
@@ -46,8 +46,10 @@ class LogsExportHandler(logging.Handler):
         agent_instance_id = os.getenv("AGENT_INSTANCE_ID")
         if not api_key:
             self.logger.info("Didn't find GALADRIEL_API_KEY, skipping logs exporting")
+            return
         if not agent_instance_id:
             self.logger.info("AGENT_INSTANCE_ID not found, skipping logs exporting")
+            return
         while True:
             time.sleep(self.export_interval_seconds)
             formatted_logs = self._format_logs()
