@@ -61,16 +61,21 @@ class DiscordMultiStepAgent(ToolCallingAgent, UserAgent):
                 DISCORD_SYSTEM_PROMPT, Path(self.character_json_path)
             )
         except Exception as e:
-            print(f"Error loading agent json: {e}")
+            self.logger.log(
+                    Text(f"Error loading agent json: {e}"), level=LogLevel.ERROR
+                )
         try:
             self.embedding_client = EmbeddingClient(api_key=os.getenv("OPENAI_API_KEY"))
         except Exception as e:
-            print(f"Error loading embedding client: {e}")
+            self.logger.log(
+                Text(f"Error loading embedding client: {e}"), level=LogLevel.ERROR
+            )
         try:
             self.memory_repository = memory_repository
         except Exception as e:
-            print(f"Error loading memory repository: {e}")
-        self.is_running = False
+            self.logger.log(
+                Text(f"Error loading memory repository: {e}"), level=LogLevel.ERROR
+            )
 
     async def run(self, message: Message) -> Message:
         try:
