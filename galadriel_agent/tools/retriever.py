@@ -29,9 +29,7 @@ class RetrieverTool(Tool):
 
     def __init__(self, docs: List[Document], **kwargs):
         super().__init__(**kwargs)
-        self.retriever = BM25Retriever.from_documents(
-            docs, k=10
-        )
+        self.retriever = BM25Retriever.from_documents(docs, k=10)
 
     def forward(self, query: str) -> str:
         assert isinstance(query, str), "Your search query must be a string"
