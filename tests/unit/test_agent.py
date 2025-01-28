@@ -12,9 +12,7 @@ from galadriel_agent.entities import Message
 from galadriel_agent.memory.in_memory import InMemoryShortTermMemory
 
 CONVERSATION_ID = "ci1"
-RESPONSE_MESSAGE = Message(
-    content="goodbye"
-)
+RESPONSE_MESSAGE = Message(content="goodbye")
 
 
 class MockUserAgent(UserAgent):
@@ -82,7 +80,8 @@ async def test_publishes_proof():
     )
     await galadriel_agent.run_request(request)
     agent.publish_proof.execute.assert_called_with(
-        request, RESPONSE_MESSAGE, "mock_proof")
+        request, RESPONSE_MESSAGE, "mock_proof"
+    )
 
 
 async def test_post_output_to_client():
