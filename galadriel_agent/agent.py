@@ -5,11 +5,9 @@ from typing import List
 from typing import Optional
 
 from dotenv import load_dotenv
-from galadriel_agent.entities import Message
+from galadriel_agent.entities import Message, PushOnlyQueue
 from galadriel_agent.entities import ShortTermMemory
 
-from galadriel_agent.clients.client import AgentInput, AgentOutput
-from galadriel_agent.clients.client import PushOnlyQueue
 from galadriel_agent.clients.s3 import S3Client
 from galadriel_agent.domain import add_conversation_history
 from galadriel_agent.domain import generate_proof
@@ -25,6 +23,15 @@ class AgentConfig:
 class Agent:
     async def run(self, request: Message) -> Message:
         raise RuntimeError("Function not implemented")
+
+class AgentInput:
+    async def start(self, queue: PushOnlyQueue) -> None:
+        pass
+
+
+class AgentOutput:
+    async def send(self, request: Message, response: Message, proof: str) -> None:
+        pass
 
 
 class AgentState:

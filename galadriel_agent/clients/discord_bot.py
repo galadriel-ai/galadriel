@@ -5,8 +5,8 @@ import os
 import discord
 from discord.ext import commands
 
-from galadriel_agent.clients.client import AgentInput, AgentOutput
-from galadriel_agent.entities import HumanMessage, Message
+from galadriel_agent.agent import AgentInput, AgentOutput
+from galadriel_agent.entities import HumanMessage, Message, PushOnlyQueue
 
 
 class CommandsCog(commands.Cog):
@@ -73,7 +73,7 @@ class DiscordClient(commands.Bot, AgentInput, AgentOutput):
             self.logger.error(f"Failed to add message to queue: {e}")
             raise e
 
-    async def start(self, queue: asyncio.Queue) -> None:
+    async def start(self, queue: PushOnlyQueue) -> None:
         self.message_queue = queue
         await super().start(os.getenv("DISCORD_TOKEN"))
 

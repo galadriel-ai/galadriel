@@ -1,8 +1,8 @@
 import asyncio
 from typing import List
 
-from galadriel_agent.clients.client import AgentInput, AgentOutput
-from galadriel_agent.entities import Message
+from galadriel_agent.agent import AgentInput, AgentOutput
+from galadriel_agent.entities import Message, PushOnlyQueue
 
 
 class TestClient(AgentInput, AgentOutput):
@@ -10,7 +10,7 @@ class TestClient(AgentInput, AgentOutput):
         self.messages = messages
         self.interval_seconds = interval_seconds
 
-    async def start(self, queue: asyncio.Queue):
+    async def start(self, queue: PushOnlyQueue):
         while True:
             try:
                 for message in self.messages:

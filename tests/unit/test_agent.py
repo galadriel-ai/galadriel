@@ -6,8 +6,8 @@ from galadriel_agent import agent
 from galadriel_agent.agent import AgentConfig
 from galadriel_agent.agent import AgentRuntime
 from galadriel_agent.agent import Agent
-from galadriel_agent.clients.client import AgentInput, AgentOutput, PushOnlyQueue
-from galadriel_agent.entities import Message
+from galadriel_agent.agent import AgentInput, AgentOutput
+from galadriel_agent.entities import Message, PushOnlyQueue
 from galadriel_agent.memory.in_memory import InMemoryShortTermMemory
 
 CONVERSATION_ID = "ci1"
