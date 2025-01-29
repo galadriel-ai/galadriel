@@ -58,14 +58,14 @@ class AgentRuntime:
         init_logging(False)
 
     async def run(self):
-        client_input_queue = asyncio.Queue()
-        push_only_queue = PushOnlyQueue(client_input_queue)
-        for input_client in self.inputs:
-            asyncio.create_task(input_client.start(push_only_queue))
+        input_queue = asyncio.Queue()
+        push_only_queue = PushOnlyQueue(input_queue)
+        for input in self.inputs:
+            asyncio.create_task(input.start(push_only_queue))
 
         await self.load_state(agent_state=None)
         while True:
-            request = await client_input_queue.get()
+            request = await input_queue.get()
             await self.run_request(request)
 
     async def run_request(self, request: Message):
@@ -74,8 +74,8 @@ class AgentRuntime:
         if response:
             proof = await self._generate_proof(request, response)
             await self._publish_proof(request, response, proof)
-            for output_client in self.outputs:
-                await output_client.send(request, response, proof)
+            for output in self.outputs:
+                await output.send(request, response, proof)
         # await self.upload_state()
 
     async def _add_conversation_history(self, request: Message) -> Message:
