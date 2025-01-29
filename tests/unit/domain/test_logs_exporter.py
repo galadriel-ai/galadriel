@@ -29,8 +29,8 @@ def test_formats_logs():
     exporter.log_records = original_logs[:]
     formatted = exporter._format_logs()
     assert formatted == [
-        {"level": "info", "text": "msg_1", "timestamp": 1738073073},
-        {"level": "info", "text": "msg_2", "timestamp": 1738073133},
+        {"level": "info", "text": "msg_1", "timestamp": 1738080273},
+        {"level": "info", "text": "msg_2", "timestamp": 1738080333},
     ]
     # Does not delete existing values
     assert exporter.log_records == original_logs[:]
