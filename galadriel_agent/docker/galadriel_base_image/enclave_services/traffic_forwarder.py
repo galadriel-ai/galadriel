@@ -81,7 +81,7 @@ class TrafficForwarder:
                 destination_and_data = ip_encoded + port_encoded + data
 
                 server_socket = socket.socket(socket.AF_VSOCK, socket.SOCK_STREAM)
-                server_socket.connect((self.REMOTE_CID, self.PORT))
+                server_socket.connect((self.REMOTE_CID, self.REMOTE_PORT))
 
                 outgoing_thread = threading.Thread(
                     target=self.forward,

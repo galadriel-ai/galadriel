@@ -5,10 +5,18 @@ ip addr add 127.0.0.1/32 dev lo
 
 ip link set dev lo up
 
+# Add a route to the default gateway
+ip route add default dev lo src 127.0.0.1
+
+# Verify routing table
+ip route show
+
+echo "nameserver 127.0.0.1" > /etc/resolv.conf
+
 # Add a hosts record, pointing target site calls to local loopback
 
 # Setup forwarding
-exec setup_forwarding.sh
+/app/setup_forwarding.sh
 
 # Start the server
 echo "Starting enclave services"

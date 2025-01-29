@@ -4,7 +4,7 @@ import socket
 class DNSForwarder:
     VSOCK_CID = 3  # Host CID
     VSOCK_PORT = 5053  # VSOCK port on host
-    LOCAL_PORT = 5053  # Local DNS listener in enclave
+    LOCAL_PORT = 53  # Local DNS listener in enclave
 
     def forward_dns_request(self, dns_request):
         """Send DNS request via vsock and return the response."""
@@ -17,7 +17,7 @@ class DNSForwarder:
             return response
 
     def start(self):
-        """Listen on TCP & UDP port 5053 and forward DNS requests via vsock."""
+        """Listen on TCP & UDP port 53 and forward DNS requests via vsock."""
         # UDP socket for DNS queries
         udp_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         udp_sock.bind(("127.0.0.1", self.LOCAL_PORT))
