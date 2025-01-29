@@ -1,10 +1,13 @@
-import asyncio
-from typing import Dict, List, Optional
+from typing import Dict
+from typing import List
+from typing import Optional
 
-from galadriel_agent.agent import AgentInput, AgentOutput
-from galadriel_agent.clients.twitter import TwitterApiClient
-from galadriel_agent.clients.twitter import TwitterCredentials
-from galadriel_agent.entities import Message, PushOnlyQueue
+from galadriel_agent.agent import AgentInput
+from galadriel_agent.agent import AgentOutput
+from galadriel_agent.connectors.twitter import TwitterApiClient
+from galadriel_agent.connectors.twitter import TwitterCredentials
+from galadriel_agent.entities import Message
+from galadriel_agent.entities import PushOnlyQueue
 
 
 class TwitterMentionClient(TwitterApiClient, AgentInput, AgentOutput):

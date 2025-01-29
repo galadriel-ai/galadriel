@@ -1,22 +1,23 @@
 import json
 import os
 from pathlib import Path
-
-from typing import List, Callable
-from typing import Optional, Dict
+from typing import Callable
+from typing import Dict
+from typing import List
+from typing import Optional
 
 from rich.text import Text
 from smolagents import Tool
 from smolagents import ToolCallingAgent
 from smolagents.agents import LogLevel
 
-from prompts import DISCORD_SYSTEM_PROMPT
 from galadriel_agent.agent import Agent
-
-from galadriel_agent.memory.memory_repository import EmbeddingClient, MemoryRepository
-
-from galadriel_agent.entities import Message, AgentMessage
-from galadriel_agent.prompts.format_prompt import load_agent_template
+from galadriel_agent.domain.prompts.format_prompt import load_agent_template
+from galadriel_agent.entities import AgentMessage
+from galadriel_agent.entities import Message
+from galadriel_agent.memory.memory_repository import EmbeddingClient
+from galadriel_agent.memory.memory_repository import MemoryRepository
+from prompts import DISCORD_SYSTEM_PROMPT
 
 
 class ElonMuskAgent(ToolCallingAgent, Agent):
