@@ -24,6 +24,7 @@ class Agent:
     async def run(self, request: Message) -> Message:
         raise RuntimeError("Function not implemented")
 
+
 class AgentInput:
     async def start(self, queue: PushOnlyQueue) -> None:
         pass

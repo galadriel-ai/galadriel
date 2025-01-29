@@ -64,7 +64,7 @@ async def test_adds_history():
         conversation_id=CONVERSATION_ID,
     )
     await galadriel_agent.run_request(request)
-    expected = Message(content="hello world", conversation_id=CONVERSATION_ID)
+    expected = Message(content="hello\n\nworld", conversation_id=CONVERSATION_ID)
     assert user_agent.called_messages[0] == expected
 
 
