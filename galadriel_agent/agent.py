@@ -5,14 +5,15 @@ from typing import List
 from typing import Optional
 
 from dotenv import load_dotenv
-from galadriel_agent.entities import Message, PushOnlyQueue
-from galadriel_agent.entities import ShortTermMemory
 
-from galadriel_agent.storage.s3 import S3Client
 from galadriel_agent.domain import add_conversation_history
 from galadriel_agent.domain import generate_proof
 from galadriel_agent.domain import publish_proof
+from galadriel_agent.entities import Message
+from galadriel_agent.entities import PushOnlyQueue
+from galadriel_agent.entities import ShortTermMemory
 from galadriel_agent.logging_utils import init_logging
+from galadriel_agent.storage.s3 import S3Client
 
 
 @dataclass
@@ -23,6 +24,7 @@ class AgentConfig:
 class Agent:
     async def run(self, request: Message) -> Message:
         raise RuntimeError("Function not implemented")
+
 
 class AgentInput:
     async def start(self, queue: PushOnlyQueue) -> None:
@@ -74,6 +76,7 @@ class AgentRuntime:
         while True:
             request = await input_queue.get()
             await self.run_request(request)
+            # await self.upload_state()
 
     async def run_request(self, request: Message):
         request = await self._add_conversation_history(request)
@@ -83,7 +86,6 @@ class AgentRuntime:
             await self._publish_proof(request, response, proof)
             for output in self.outputs:
                 await output.send(request, response, proof)
-        # await self.upload_state()
 
     async def _add_conversation_history(self, request: Message) -> Message:
         if self.short_term_memory:

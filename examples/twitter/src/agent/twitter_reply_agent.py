@@ -2,11 +2,11 @@ from typing import Dict
 from typing import Optional
 
 from galadriel_agent.agent import Agent
-from galadriel_agent.llms.galadriel import LlmClient
-from galadriel_agent.clients.twitter import SearchResult
+from galadriel_agent.connectors.llm import LlmClient
+from galadriel_agent.connectors.twitter import SearchResult
+from galadriel_agent.domain.prompts import format_prompt
 from galadriel_agent.entities import Message
 from galadriel_agent.logging_utils import get_agent_logger
-from galadriel_agent.prompts import format_prompt
 from src.models import TwitterAgentConfig
 from src.models import TwitterPost
 from src.prompts import get_default_prompt_state_use_case
