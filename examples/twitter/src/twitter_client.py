@@ -7,6 +7,7 @@ from typing import Optional
 from galadriel_agent.agent import Client
 from galadriel_agent.agent import PushOnlyQueue
 from galadriel_agent.clients.twitter import SearchResult
+from galadriel_agent.entities import Message
 from galadriel_agent.logging_utils import get_agent_logger
 from galadriel_agent.tools.twitter import TwitterPostTool
 from galadriel_agent.tools.twitter import TwitterRepliesTool
@@ -61,11 +62,16 @@ class TwitterClient(Client):
         asyncio.create_task(self._run_post_loop())
         asyncio.create_task(self._run_reply_loop())
 
-    async def post_output(self, request: Dict, response: Dict, proof: str) -> None:
-        if response.get("type") == "tweet":
-            await self._post_tweet(TwitterPost.from_dict(response))
-        if response.get("type") == "tweet_excluded":
-            twitter_post = TwitterPost.from_dict(response)
+    async def post_output(
+        self, request: Message, response: Message, proof: str
+    ) -> None:
+        response_type = response.type
+        if not response_type or not response.additional_kwargs:
+            return
+        if response_type == "tweet":
+            await self._post_tweet(TwitterPost.from_dict(response.additional_kwargs))
+        if response_type == "tweet_excluded":
+            twitter_post = TwitterPost.from_dict(response.additional_kwargs)
             await self.database_client.add_memory(
                 Memory(
                     id=f"{utils.get_current_timestamp()}",
@@ -107,9 +113,10 @@ class TwitterClient(Client):
 
         while True:
             await self.event_queue.put(
-                {
-                    "type": "tweet_original",
-                }
+                Message(
+                    content="",
+                    type="tweet_original",
+                ),
             )
             sleep_time = random.randint(
                 self.post_interval_minutes_min,
@@ -142,7 +149,7 @@ class TwitterClient(Client):
         conversations = []
         for tweet in reversed(tweets):
             if (
-                # if tweet.id == tweet.conversation_id means its an original tweet
+                # if tweet.id == tweet.conversation_id means it's an original tweet
                 tweet.conversation_id is not None
                 and tweet.id == tweet.conversation_id
             ):
@@ -170,11 +177,12 @@ class TwitterClient(Client):
                     continue
                 reply_to_ids.append(reply.id)
                 await self.event_queue.put(
-                    {
-                        "type": "tweet_reply",
-                        "conversation_id": conversation_id,
-                        "reply": reply.to_dict(),
-                    }
+                    Message(
+                        content="",
+                        conversation_id=conversation_id,
+                        type="tweet_reply",
+                        additional_kwargs=reply.to_dict(),
+                    )
                 )
 
     async def _post_tweet(self, twitter_post: TwitterPost):

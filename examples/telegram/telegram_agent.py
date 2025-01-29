@@ -62,8 +62,8 @@ class TelegramAgent(ToolCallingAgent, UserAgent):
             )
         except Exception as e:
             self.logger.log(
-                    Text(f"Error loading agent json: {e}"), level=LogLevel.ERROR
-                )
+                Text(f"Error loading agent json: {e}"), level=LogLevel.ERROR
+            )
         try:
             self.embedding_client = EmbeddingClient(api_key=os.getenv("OPENAI_API_KEY"))
         except Exception as e:
