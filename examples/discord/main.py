@@ -4,7 +4,7 @@ from pathlib import Path
 
 from discord_agent import ElonMuskAgent
 from tools import get_weather, get_time
-from galadriel_agent.clients.memory_repository import memory_repository
+from galadriel_agent.memory.memory_repository import memory_repository
 from galadriel_agent.agent import AgentRuntime
 from galadriel_agent.clients.discord_client import DiscordClient
 import os

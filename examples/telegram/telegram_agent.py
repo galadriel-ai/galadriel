@@ -13,7 +13,7 @@ from smolagents.agents import LogLevel
 from examples.telegram.prompts import TELEGRAM_SYSTEM_PROMPT
 from galadriel_agent.agent import Agent
 
-from galadriel_agent.clients.memory_repository import EmbeddingClient, MemoryRepository
+from galadriel_agent.memory.memory_repository import EmbeddingClient, MemoryRepository
 
 from galadriel_agent.entities import Message, AgentMessage
 from galadriel_agent.prompts.format_prompt import load_agent_template
