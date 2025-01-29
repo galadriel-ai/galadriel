@@ -1,20 +1,20 @@
 import asyncio
 from dataclasses import dataclass
 from pathlib import Path
-
-from dotenv import load_dotenv
 from typing import List
 from typing import Optional
 
-from galadriel_agent.domain import add_conversation_history
-from galadriel_agent.domain import generate_proof
-from galadriel_agent.domain import publish_proof
+from dotenv import load_dotenv
 from galadriel_agent.entities import Message
 from galadriel_agent.entities import ShortTermMemory
 
 from galadriel_agent.clients.client import AgentInput, AgentOutput
 from galadriel_agent.clients.client import PushOnlyQueue
 from galadriel_agent.clients.s3 import S3Client
+from galadriel_agent.domain import add_conversation_history
+from galadriel_agent.domain import generate_proof
+from galadriel_agent.domain import publish_proof
+from galadriel_agent.logging_utils import init_logging
 
 
 @dataclass
@@ -36,8 +36,9 @@ class AgentState:
 # This is not meant to be read or modified by the end developer
 class AgentRuntime:
     def __init__(
+        # pylint:disable=R0917
         self,
-        agent_config: AgentConfig,
+        agent_config: Optional[AgentConfig],
         inputs: List[AgentInput],
         outputs: List[AgentOutput],
         agent: Agent,
@@ -53,6 +54,8 @@ class AgentRuntime:
 
         env_path = Path(".") / ".env"
         load_dotenv(dotenv_path=env_path)
+        # AgentConfig should have some settings for debug?
+        init_logging(False)
 
     async def run(self):
         client_input_queue = asyncio.Queue()

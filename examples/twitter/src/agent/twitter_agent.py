@@ -1,10 +1,10 @@
 import os
-from typing import Dict
 from typing import Optional
 
 from galadriel_agent.agent import Agent
 from galadriel_agent.clients.llms.galadriel import LlmClient
 from galadriel_agent.clients.perplexity import PerplexityClient
+from galadriel_agent.entities import Message
 from galadriel_agent.logging_utils import get_agent_logger
 from galadriel_agent.tools.twitter import TwitterSearchTool
 from src.agent.twitter_post_agent import TwitterPostAgent
@@ -44,13 +44,18 @@ class TwitterAgent(Agent):
                 "Missing PERPLEXITY_API_KEY in .env, skipping TwitterPostAgent initialization"
             )
 
-    async def run(self, request: Dict) -> Dict:
+    async def run(self, request: Message) -> Message:
         try:
-            request_type = request.get("type")
-            if request_type == "tweet_reply" and self.reply_agent:
-                return await self.reply_agent.run(request)
-            if request_type == "tweet_original" and self.post_agent:
-                return await self.post_agent.run(request)
+            request_type = request.type
+            if request_type:
+                if request_type and request_type == "tweet_reply" and self.reply_agent:
+                    return await self.reply_agent.run(request)
+                if (
+                    request_type
+                    and request_type == "tweet_original"
+                    and self.post_agent
+                ):
+                    return await self.post_agent.run(request)
         except Exception as e:
             logger.error("Error in twitter_agent", exc_info=True)
-            return {}
+        return Message(content="")

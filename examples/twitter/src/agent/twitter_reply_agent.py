@@ -4,6 +4,7 @@ from typing import Optional
 from galadriel_agent.agent import Agent
 from galadriel_agent.clients.llms.galadriel import LlmClient
 from galadriel_agent.clients.twitter import SearchResult
+from galadriel_agent.entities import Message
 from galadriel_agent.logging_utils import get_agent_logger
 from galadriel_agent.prompts import format_prompt
 from src.models import TwitterAgentConfig
@@ -90,11 +91,11 @@ class TwitterReplyAgent(Agent):
         self.llm_client = llm_client
         self.database_client = database_client
 
-    async def run(self, request: Dict) -> Dict:
-        request_type = request.get("type")
-        if request_type == "tweet_reply":
-            conversation_id = request["conversation_id"]
-            reply = SearchResult.from_dict(request["reply"])
+    async def run(self, request: Message) -> Message:
+        request_type = request.type
+        if request_type and request_type == "tweet_reply":
+            conversation_id = request.conversation_id
+            reply = SearchResult.from_dict(request.additional_kwargs)
             response = await self._handle_reply(conversation_id, reply)
             if response:
                 return response
@@ -107,7 +108,7 @@ class TwitterReplyAgent(Agent):
 
     async def _handle_reply(
         self, reply_to_id: str, reply: SearchResult
-    ) -> Optional[Dict]:
+    ) -> Optional[Message]:
 
         tweets = await self.database_client.get_tweets()
         filtered_tweets = [t for t in tweets if t.id == reply_to_id]
@@ -161,7 +162,7 @@ class TwitterReplyAgent(Agent):
 
     async def _generate_reply(
         self, prompt_state: Dict, conversation_id: str, reply: SearchResult
-    ) -> Optional[Dict]:
+    ) -> Optional[Message]:
         prompt = format_prompt.execute(PROMPT_REPLY_TEMPLATE, prompt_state)
         messages = [
             {"role": "system", "content": self.agent.system},
@@ -179,10 +180,15 @@ class TwitterReplyAgent(Agent):
             and reply_response.choices[0].message.content
         ):
             reply_message = reply_response.choices[0].message.content
-            return TwitterPost(
+            return Message(
+                content="",
+                conversation_id=None,
                 type="tweet",
-                conversation_id=conversation_id,
-                text=reply_message,
-                reply_to_id=reply.id,
-            ).to_dict()
+                additional_kwargs=TwitterPost(
+                    type="tweet",
+                    conversation_id=conversation_id,
+                    text=reply_message,
+                    reply_to_id=reply.id,
+                ).to_dict(),
+            )
         return None

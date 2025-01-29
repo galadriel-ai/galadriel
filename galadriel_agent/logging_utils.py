@@ -2,26 +2,39 @@ import logging
 import os
 from logging import DEBUG
 from logging import INFO
+from typing import Optional
 
 from pythonjsonlogger import jsonlogger
+
+from galadriel_agent.domain.logs_exporter import LogsExportHandler
 
 GALADRIEL_NODE_LOGGER = "galadriel_agent"
 
 LOG_FILE_PATH = "logs/logs.log"
 LOGGING_MESSAGE_FORMAT = "%(asctime)s %(name)-12s %(levelname)s %(message)s"
 
+logger: Optional[logging.Logger] = None
+
 
 def init_logging(debug: bool):
+    global logger  # pylint:disable=W0603
+    if logger:
+        return
     log_level = DEBUG if debug else INFO
     file_handler = _get_file_logger()
     console_handler = _get_console_logger()
-    logger = logging.getLogger(GALADRIEL_NODE_LOGGER)
+    logger = logging.getLogger()
+    logs_exports_handler = LogsExportHandler(logger)
     logger.setLevel(log_level)
     logger.addHandler(console_handler)
     logger.addHandler(file_handler)
+    logger.addHandler(logs_exports_handler)
     apply_default_formatter(file_handler)
     apply_default_formatter(console_handler)
+    apply_default_formatter(logs_exports_handler)
     logger.propagate = False
+
+    logs_exports_handler.run()
 
 
 def _get_file_logger() -> logging.FileHandler:
@@ -43,4 +56,4 @@ def apply_default_formatter(handler: logging.Handler):
 
 
 def get_agent_logger():
-    return logging.getLogger(GALADRIEL_NODE_LOGGER)
+    return logging.getLogger()

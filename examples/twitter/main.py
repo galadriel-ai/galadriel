@@ -8,7 +8,6 @@ from dotenv import load_dotenv
 from galadriel_agent.agent import AgentRuntime
 from galadriel_agent.clients.llms.galadriel import LlmClient
 from galadriel_agent.clients.s3 import S3Client
-from galadriel_agent.logging_utils import init_logging
 from src.agent.twitter_agent import TwitterAgent
 from src.models import TwitterAgentConfig
 from src.repository.database import DatabaseClient
@@ -47,13 +46,12 @@ async def main():
     await galadriel_agent.run()
 
 
-def _load_agent_config():
+def _load_agent_config() -> TwitterAgentConfig:
     _load_dotenv()
     agent_name = "daige"
     agent_path = Path("agent_configurator") / f"{agent_name}.json"
     with open(agent_path, "r", encoding="utf-8") as f:
         agent_dict = json.loads(f.read())
-    init_logging(agent_dict.get("settings", {}).get("debug"))
     missing_fields: List[str] = [
         field
         for field in TwitterAgentConfig.required_fields()

@@ -9,6 +9,7 @@ from galadriel_agent.agent import Agent
 from galadriel_agent.clients.llms.galadriel import LlmClient
 from galadriel_agent.clients.perplexity import PerplexityClient
 from galadriel_agent.clients.twitter import SearchResult
+from galadriel_agent.entities import Message
 from galadriel_agent.logging_utils import get_agent_logger
 from galadriel_agent.prompts import format_prompt
 from galadriel_agent.tools.twitter import TwitterSearchTool
@@ -94,9 +95,9 @@ class TwitterPostAgent(Agent):
 
         self.twitter_search_tool = twitter_search_tool
 
-    async def run(self, request: Dict) -> Dict:
-        request_type = request.get("type")
-        if request_type == "tweet_original":
+    async def run(self, request: Message) -> Message:
+        request_type = request.type
+        if request_type and request_type == "tweet_original":
             response = await self._generate_original_tweet()
             if response:
                 return response
@@ -107,7 +108,7 @@ class TwitterPostAgent(Agent):
             f"TwitterClient got unexpected request_type: {request_type}, skipping"
         )
 
-    async def _generate_original_tweet(self) -> Dict:
+    async def _generate_original_tweet(self) -> Message:
         if random.random() < 0.4 and self.twitter_search_tool:
             response = await self._post_quote()
             if response:
@@ -119,7 +120,7 @@ class TwitterPostAgent(Agent):
             return response
         raise Exception("Error running agent")
 
-    async def _post_perplexity_tweet_with_retries(self) -> Optional[Dict]:
+    async def _post_perplexity_tweet_with_retries(self) -> Optional[Message]:
         for i in range(TWEET_RETRY_COUNT):
             response = await self._post_perplexity_tweet()
             if response:
@@ -130,7 +131,7 @@ class TwitterPostAgent(Agent):
                 )
                 await asyncio.sleep(i * 5)
 
-    async def _post_perplexity_tweet(self) -> Optional[Dict]:
+    async def _post_perplexity_tweet(self) -> Optional[Message]:
         logger.info("Generating tweet with perplexity")
         prompt_state = await self._get_post_prompt_state()
 
@@ -151,31 +152,42 @@ class TwitterPostAgent(Agent):
             message = response.choices[0].message.content or ""
             formatted_message = format_response.execute(message)
             if not formatted_message:
-                return TwitterPost(
-                    type="tweet_excluded",
+                return Message(
+                    content="",
                     conversation_id=None,
-                    text=message,
+                    type="tweet_excluded",
+                    additional_kwargs=TwitterPost(
+                        type="tweet_excluded",
+                        conversation_id=None,
+                        text=message,
+                        topics=prompt_state.get("topics_data", []),
+                        search_topic=prompt_state.get("search_topic"),
+                        quoted_tweet_id=None,
+                        quoted_tweet_username=None,
+                    ).to_dict(),
+                )
+
+            return Message(
+                content="",
+                conversation_id=None,
+                type="tweet",
+                additional_kwargs=TwitterPost(
+                    type="tweet",
+                    conversation_id=None,
+                    text=formatted_message,
                     topics=prompt_state.get("topics_data", []),
                     search_topic=prompt_state.get("search_topic"),
                     quoted_tweet_id=None,
                     quoted_tweet_username=None,
-                ).to_dict()
-            return TwitterPost(
-                type="tweet",
-                conversation_id=None,
-                text=formatted_message,
-                topics=prompt_state.get("topics_data", []),
-                search_topic=prompt_state.get("search_topic"),
-                quoted_tweet_id=None,
-                quoted_tweet_username=None,
-            ).to_dict()
+                ).to_dict(),
+            )
         else:
             logger.error(
                 f"Unexpected API response from Galadriel: \n{response.to_json()}"
             )
         return None
 
-    async def _post_quote(self) -> Optional[Dict]:
+    async def _post_quote(self) -> Optional[Message]:
         logger.info("Generating tweet with quote")
         results = self.twitter_search_tool(
             self.agent.extra_fields["twitter_profile"].get("search_query", "")
@@ -213,15 +225,20 @@ class TwitterPostAgent(Agent):
             and response.choices[0].message.content
         ):
             message = response.choices[0].message.content + " " + quote_url
-            return TwitterPost(
-                type="tweet",
+            return Message(
+                content="",
                 conversation_id=None,
-                text=message,
-                topics=prompt_state.get("topics_data", []),
-                search_topic=None,
-                quoted_tweet_id=quoted_tweet_id,
-                quoted_tweet_username=quoted_tweet_username,
-            ).to_dict()
+                type="tweet",
+                additional_kwargs=TwitterPost(
+                    type="tweet",
+                    conversation_id=None,
+                    text=message,
+                    topics=prompt_state.get("topics_data", []),
+                    search_topic=None,
+                    quoted_tweet_id=quoted_tweet_id,
+                    quoted_tweet_username=quoted_tweet_username,
+                ).to_dict(),
+            )
         else:
             logger.error(
                 f"Unexpected API response from Galadriel: \n{response.to_json()}"
