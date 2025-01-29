@@ -6,7 +6,7 @@ from discord_agent import ElonMuskAgent
 from tools import get_weather, get_time
 from galadriel_agent.clients.memory_repository import memory_repository
 from galadriel_agent.agent import AgentRuntime
-from galadriel_agent.clients.discord_bot import DiscordClient
+from galadriel_agent.clients.discord_client import DiscordClient
 import os
 import asyncio
 from galadriel_agent.logging_utils import get_agent_logger
