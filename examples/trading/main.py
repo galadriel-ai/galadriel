@@ -3,7 +3,7 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-from galadriel_agent.agent import GaladrielAgent
+from galadriel_agent.agent import AgentRuntime
 from galadriel_agent.clients.cron import Cron
 from tools import onchain
 from trading_agent import TradingAgent
@@ -20,10 +20,11 @@ def main():
     onchain.deposit_usdc("Bob", 500)
     onchain.deposit_token("Bob", "ELON", 5)
 
-    agent = GaladrielAgent(
+    agent = AgentRuntime(
         agent_config=None,
-        clients=[Cron(TRADING_INTERVAL_SECONDS)],
-        user_agent=TradingAgent(),
+        inputs=[Cron(TRADING_INTERVAL_SECONDS)],
+        outputs=[Cron(TRADING_INTERVAL_SECONDS)],
+        agent=TradingAgent(),
         s3_client=None,
     )
 

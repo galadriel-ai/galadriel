@@ -1,10 +1,10 @@
 import asyncio
 from typing import Dict
 
-from galadriel_agent.clients.client import Client
+from galadriel_agent.clients.client import AgentInput, AgentOutput
 
 
-class Cron(Client):
+class Cron(AgentInput, AgentOutput):
     def __init__(self, interval_seconds: int):
         self.interval_seconds = interval_seconds
 
@@ -16,5 +16,5 @@ class Cron(Client):
             except asyncio.CancelledError:
                 break
 
-    async def post_output(self, request, response: Dict, proof: str):
+    async def send(self, request: Dict, response: Dict, proof: str):
         pass

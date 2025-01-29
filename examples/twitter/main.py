@@ -5,7 +5,7 @@ from typing import List
 
 from dotenv import load_dotenv
 
-from galadriel_agent.agent import GaladrielAgent
+from galadriel_agent.agent import AgentRuntime
 from galadriel_agent.clients.llms.galadriel import LlmClient
 from galadriel_agent.clients.s3 import S3Client
 from src.agent.twitter_agent import TwitterAgent
@@ -36,10 +36,11 @@ async def main():
         database_client=database_client,
     )
 
-    galadriel_agent = GaladrielAgent(
+    galadriel_agent = AgentRuntime(
         agent_config=agent_config,
-        clients=[twitter_client],
-        user_agent=twitter_agent,
+        inputs=[twitter_client],
+        outputs=[twitter_client],
+        agent=twitter_agent,
         s3_client=S3Client("twitter"),
     )
     await galadriel_agent.run()

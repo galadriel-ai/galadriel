@@ -4,8 +4,7 @@ import random
 from typing import Dict
 from typing import Optional
 
-from galadriel_agent.agent import Client
-from galadriel_agent.agent import PushOnlyQueue
+from galadriel_agent.clients.client import AgentInput, AgentOutput, PushOnlyQueue
 from galadriel_agent.clients.twitter import SearchResult
 from galadriel_agent.entities import Message
 from galadriel_agent.logging_utils import get_agent_logger
@@ -20,7 +19,7 @@ from src.repository.database import DatabaseClient
 logger = get_agent_logger()
 
 
-class TwitterClient(Client):
+class TwitterClient(AgentInput, AgentOutput):
     agent: TwitterAgentConfig
 
     event_queue: PushOnlyQueue
@@ -62,9 +61,7 @@ class TwitterClient(Client):
         asyncio.create_task(self._run_post_loop())
         asyncio.create_task(self._run_reply_loop())
 
-    async def post_output(
-        self, request: Message, response: Message, proof: str
-    ) -> None:
+    async def send(self, request: Message, response: Message, proof: str) -> None:
         response_type = response.type
         if not response_type or not response.additional_kwargs:
             return

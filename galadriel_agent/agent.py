@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 from galadriel_agent.entities import Message
 from galadriel_agent.entities import ShortTermMemory
 
-from galadriel_agent.clients.client import Client
+from galadriel_agent.clients.client import AgentInput, AgentOutput
 from galadriel_agent.clients.client import PushOnlyQueue
 from galadriel_agent.clients.s3 import S3Client
 from galadriel_agent.domain import add_conversation_history
@@ -22,8 +22,7 @@ class AgentConfig:
     pass
 
 
-class UserAgent:
-
+class Agent:
     async def run(self, request: Message) -> Message:
         raise RuntimeError("Function not implemented")
 
@@ -35,19 +34,21 @@ class AgentState:
 
 # This is just a rough sketch on how the GaladrielAgent itself will be implemented
 # This is not meant to be read or modified by the end developer
-class GaladrielAgent:
+class AgentRuntime:
     def __init__(
         # pylint:disable=R0917
         self,
         agent_config: Optional[AgentConfig],
-        clients: List[Client],
-        user_agent: UserAgent,
+        inputs: List[AgentInput],
+        outputs: List[AgentOutput],
+        agent: Agent,
         s3_client: Optional[S3Client] = None,
         short_term_memory: Optional[ShortTermMemory] = None,
     ):
         self.agent_config = agent_config
-        self.clients = clients
-        self.user_agent = user_agent
+        self.inputs = inputs
+        self.outputs = outputs
+        self.agent = agent
         self.s3_client = s3_client
         self.short_term_memory = short_term_memory
 
@@ -57,24 +58,24 @@ class GaladrielAgent:
         init_logging(False)
 
     async def run(self):
-        client_input_queue = asyncio.Queue()
-        push_only_queue = PushOnlyQueue(client_input_queue)
-        for client in self.clients:
-            asyncio.create_task(client.start(push_only_queue))
+        input_queue = asyncio.Queue()
+        push_only_queue = PushOnlyQueue(input_queue)
+        for input in self.inputs:
+            asyncio.create_task(input.start(push_only_queue))
 
         await self.load_state(agent_state=None)
         while True:
-            request = await client_input_queue.get()
+            request = await input_queue.get()
             await self.run_request(request)
 
     async def run_request(self, request: Message):
         request = await self._add_conversation_history(request)
-        response = await self.user_agent.run(request)
+        response = await self.agent.run(request)
         if response:
             proof = await self._generate_proof(request, response)
             await self._publish_proof(request, response, proof)
-            for client in self.clients:
-                await client.post_output(request, response, proof)
+            for output in self.outputs:
+                await output.send(request, response, proof)
         # await self.upload_state()
 
     async def _add_conversation_history(self, request: Message) -> Message:

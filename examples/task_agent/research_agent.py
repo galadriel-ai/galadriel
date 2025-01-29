@@ -4,7 +4,7 @@ from typing import List
 from smolagents import CodeAgent
 from smolagents import LiteLLMModel
 
-from galadriel_agent.agent import UserAgent
+from galadriel_agent.agent import Agent
 
 from domain import parse_twitter_message
 from entities import Memory
@@ -21,7 +21,7 @@ AGENT_WALLET_ADDRESS = "5RYHzQuknP2viQjYzP27wXVWKeaxonZgMBPQA86GV92t"
 memory_repository = MemoryRepository()
 
 
-class ResearchAgent(UserAgent):
+class ResearchAgent(Agent):
 
     async def run(self, request: Message) -> Message:
         conversation_id = request.conversation_id

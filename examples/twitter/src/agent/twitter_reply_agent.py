@@ -1,7 +1,7 @@
 from typing import Dict
 from typing import Optional
 
-from galadriel_agent.agent import UserAgent
+from galadriel_agent.agent import Agent
 from galadriel_agent.clients.llms.galadriel import LlmClient
 from galadriel_agent.clients.twitter import SearchResult
 from galadriel_agent.entities import Message
@@ -74,7 +74,7 @@ Here is the current post text again.
 """
 
 
-class TwitterReplyAgent(UserAgent):
+class TwitterReplyAgent(Agent):
     agent: TwitterAgentConfig
 
     database_client: DatabaseClient

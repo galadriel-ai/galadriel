@@ -1,12 +1,9 @@
 import json
 import os
-from datetime import datetime
 from pathlib import Path
 
 from typing import List, Callable
 from typing import Optional, Dict
-
-from uuid import uuid4
 
 from rich.text import Text
 from smolagents import Tool
@@ -14,7 +11,7 @@ from smolagents import ToolCallingAgent
 from smolagents.agents import LogLevel
 
 from examples.telegram.prompts import TELEGRAM_SYSTEM_PROMPT
-from galadriel_agent.agent import UserAgent
+from galadriel_agent.agent import Agent
 
 from galadriel_agent.clients.memory_repository import EmbeddingClient, MemoryRepository
 
@@ -22,7 +19,7 @@ from galadriel_agent.entities import Message, AgentMessage
 from galadriel_agent.prompts.format_prompt import load_agent_template
 
 
-class TelegramAgent(ToolCallingAgent, UserAgent):
+class ElonMuskAgent(ToolCallingAgent, Agent):
     def __init__(
         self,
         character_json_path: str,

@@ -2,7 +2,7 @@ import os
 import asyncio
 
 from galadriel_agent.agent import AgentConfig
-from galadriel_agent.agent import GaladrielAgent
+from galadriel_agent.agent import AgentRuntime
 
 # from clients.twitter_mention_client import TwitterCredentials
 # from clients.twitter_mention_client import TwitterMentionClient
@@ -37,10 +37,11 @@ async def main():
     short_term_memory = InMemoryShortTermMemory()
 
     research_agent = ResearchAgent()
-    agent = GaladrielAgent(
+    agent = AgentRuntime(
         AgentConfig(),
-        clients=[test_client],
-        user_agent=research_agent,
+        inputs=[test_client],
+        outputs=[test_client],
+        agent=research_agent,
         s3_client=None,
         short_term_memory=short_term_memory,
     )

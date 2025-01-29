@@ -11,10 +11,11 @@ class PushOnlyQueue:
         await self._queue.put(item)
 
 
-# Client interface, client itself can be Twitter, Discord, CLI, API etc...
-class Client:
+class AgentInput:
     async def start(self, queue: PushOnlyQueue) -> None:
         pass
 
-    async def post_output(self, request: Message, response: Message, proof: str):
+
+class AgentOutput:
+    async def send(self, request: Message, response: Message, proof: str) -> None:
         pass

@@ -5,7 +5,7 @@ from typing import Dict
 from typing import List
 from typing import Optional
 
-from galadriel_agent.agent import UserAgent
+from galadriel_agent.agent import Agent
 from galadriel_agent.clients.llms.galadriel import LlmClient
 from galadriel_agent.clients.perplexity import PerplexityClient
 from galadriel_agent.clients.twitter import SearchResult
@@ -65,7 +65,7 @@ TWEET_RETRY_COUNT = 3
 QUOTED_USER_REOCCURRENCE_LIMIT = 3
 
 
-class TwitterPostAgent(UserAgent):
+class TwitterPostAgent(Agent):
     agent: TwitterAgentConfig
 
     database_client: DatabaseClient
