@@ -107,7 +107,9 @@ class LogsExportHandler(logging.Handler):
         if not asctime:
             return 0
         try:
-            dt_obj = datetime.strptime(asctime, "%Y-%m-%d %H:%M:%S,%f").replace(tzinfo=timezone.utc)
+            dt_obj = datetime.strptime(asctime, "%Y-%m-%d %H:%M:%S,%f").replace(
+                tzinfo=timezone.utc
+            )
             return int(dt_obj.timestamp())
         except Exception:
             return 0

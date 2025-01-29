@@ -20,8 +20,7 @@ class TwitterMentionClient(TwitterApiClient, AgentInput, AgentOutput):
 
     async def send(self, request: Message, response: Message, proof: str) -> None:
         await self._post_reply(
-            response.additional_kwargs["reply_to_id"],
-            response.content
+            response.additional_kwargs["reply_to_id"], response.content
         )
 
     async def _fetch_mentions(self, user_id: str) -> List[Dict]:

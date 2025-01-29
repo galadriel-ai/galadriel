@@ -3,22 +3,17 @@ from galadriel_agent.entities import ShortTermMemory
 
 
 def execute(request: Message, short_term_memory: ShortTermMemory) -> Message:
-    print("\nadd_conversation_history, request:", request)
-    # TODO: when conversation_id missing
     messages = short_term_memory.get(request.conversation_id)
-    print("messages:", messages)
     if not messages:
         return request
 
-    text = ""
+    message_contents = []
     for message in messages:
-        text += message.content
+        message_contents.append(message.content)
 
-    if not text:
+    if not message_contents:
         return request
 
-    request.content = text + " " + request.content
+    request.content = "\n\n".join(message_contents) + "\n\n" + request.content
     request.content = request.content.strip()
-    print("\n======== add_conversation_history ========")
-    print("request:", request)
     return request
