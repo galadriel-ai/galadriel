@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 from galadriel_agent.entities import Message, PushOnlyQueue
 from galadriel_agent.entities import ShortTermMemory
 
-from galadriel_agent.clients.s3 import S3Client
+from galadriel_agent.storage.s3 import S3Client
 from galadriel_agent.domain import add_conversation_history
 from galadriel_agent.domain import generate_proof
 from galadriel_agent.domain import publish_proof
