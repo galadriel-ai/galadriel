@@ -6,13 +6,9 @@ ip addr add 127.0.0.1/32 dev lo
 ip link set dev lo up
 
 # Add a hosts record, pointing target site calls to local loopback
-echo "127.0.0.1   api.openai.com" >> /etc/hosts
-echo "127.0.0.1   discord.com" >> /etc/hosts
-echo "127.0.0.1   api.galadriel.com" >> /etc/hosts
-echo "127.0.0.1   api.preplexity.ai" >> /etc/hosts
-echo "127.0.0.1   api.telegram.org" >> /etc/hosts
-echo "127.0.0.1   api.twitter.com" >> /etc/hosts
-echo "127.0.0.1   agents-memory-storage.s3.us-east-1.amazonaws.com" >> /etc/hosts
+
+# Setup forwarding
+exec setup_forwarding.sh
 
 # Start the server
 echo "Starting enclave services"
