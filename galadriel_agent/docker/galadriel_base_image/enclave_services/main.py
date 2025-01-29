@@ -1,6 +1,7 @@
 import logging
 import signal
 import sys
+import threading
 
 from enclave_server import EnclaveServer
 from traffic_forwarder import TrafficForwarder
@@ -27,8 +28,14 @@ def main():
     enclave_server = EnclaveServer()
     traffic_forwarder = TrafficForwarder(LOCAL_IP, LOCAL_PORT)
 
-    enclave_server.start()
-    traffic_forwarder.start()
+    enclave_thread = threading.Thread(target=enclave_server.start)
+    forwarder_thread = threading.Thread(target=traffic_forwarder.start)
+
+    enclave_thread.start()
+    forwarder_thread.start()
+
+    enclave_thread.join()
+    forwarder_thread.join()
 
 
 if __name__ == "__main__":
