@@ -15,6 +15,7 @@ class AgentInput:
     async def start(self, queue: PushOnlyQueue) -> None:
         pass
 
+
 class AgentOutput:
     async def send(self, request: Message, response: Message, proof: str) -> None:
         pass

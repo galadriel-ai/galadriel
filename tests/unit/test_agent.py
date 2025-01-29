@@ -28,6 +28,7 @@ class MockAgentInput(AgentInput):
     async def start(self, queue: PushOnlyQueue) -> Dict:
         pass
 
+
 class MockAgentOutput(AgentOutput):
     def __init__(self):
         self.output_requests: List[Message] = []
