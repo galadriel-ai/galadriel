@@ -1,24 +1,28 @@
 import asyncio
 from typing import Dict, List, Optional
 
-from galadriel_agent.clients.client import Client
-from galadriel_agent.clients.twitter import TwitterClient
+from galadriel_agent.agent import AgentInput, AgentOutput
+from galadriel_agent.clients.twitter import TwitterApiClient
 from galadriel_agent.clients.twitter import TwitterCredentials
+from galadriel_agent.entities import Message, PushOnlyQueue
 
 
-class TwitterMentionClient(TwitterClient, Client):
+class TwitterMentionClient(TwitterApiClient, AgentInput, AgentOutput):
     def __init__(self, _credentials: TwitterCredentials, user_id: str):
         super().__init__(_credentials)
         self.user_id = user_id
 
-    async def start(self, queue: asyncio.Queue) -> Dict:
+    async def start(self, queue: PushOnlyQueue) -> None:
         mentions = await self._fetch_mentions(self.user_id)
         for mention in mentions:
-            await queue.put(mention)
-        return {}
+            message = Message(content=mention)
+            await queue.put(message)
 
-    async def post_output(self, request: Dict, response: Dict, proof: str):
-        await self._post_reply(response["reply_to_id"], response["text"])
+    async def send(self, request: Message, response: Message, proof: str) -> None:
+        await self._post_reply(
+            response.additional_kwargs["reply_to_id"],
+            response.content
+        )
 
     async def _fetch_mentions(self, user_id: str) -> List[Dict]:
         try:

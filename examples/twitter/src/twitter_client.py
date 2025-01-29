@@ -1,12 +1,11 @@
 import asyncio
 import json
 import random
-from typing import Dict
 from typing import Optional
 
-from galadriel_agent.clients.client import AgentInput, AgentOutput, PushOnlyQueue
+from galadriel_agent.agent import AgentInput, AgentOutput
 from galadriel_agent.clients.twitter import SearchResult
-from galadriel_agent.entities import Message
+from galadriel_agent.entities import Message, PushOnlyQueue
 from galadriel_agent.logging_utils import get_agent_logger
 from galadriel_agent.tools.twitter import TwitterPostTool
 from galadriel_agent.tools.twitter import TwitterRepliesTool

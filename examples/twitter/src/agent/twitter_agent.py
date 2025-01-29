@@ -2,7 +2,7 @@ import os
 from typing import Optional
 
 from galadriel_agent.agent import Agent
-from galadriel_agent.clients.llms.galadriel import LlmClient
+from galadriel_agent.llms.galadriel import LlmClient
 from galadriel_agent.clients.perplexity import PerplexityClient
 from galadriel_agent.entities import Message
 from galadriel_agent.logging_utils import get_agent_logger

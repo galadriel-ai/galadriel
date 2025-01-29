@@ -4,8 +4,8 @@ import logging
 from typing import Optional
 from telebot import types
 
-from galadriel_agent.clients.client import AgentInput, AgentOutput, PushOnlyQueue
-from galadriel_agent.entities import Message, HumanMessage
+from galadriel_agent.agent import AgentInput, AgentOutput
+from galadriel_agent.entities import Message, HumanMessage, PushOnlyQueue
 
 from telebot.async_telebot import AsyncTeleBot
 

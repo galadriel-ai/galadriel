@@ -1,3 +1,4 @@
+import asyncio
 from typing import Dict
 from typing import List
 from typing import Optional
@@ -29,3 +30,10 @@ class ShortTermMemory:
 
     def add(self, conversation_id: str, message: Message):
         pass
+
+class PushOnlyQueue:
+    def __init__(self, queue: asyncio.Queue):
+        self._queue = queue
+
+    async def put(self, item: Message):
+        await self._queue.put(item)

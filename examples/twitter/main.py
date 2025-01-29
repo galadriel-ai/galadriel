@@ -6,8 +6,8 @@ from typing import List
 from dotenv import load_dotenv
 
 from galadriel_agent.agent import AgentRuntime
-from galadriel_agent.clients.llms.galadriel import LlmClient
-from galadriel_agent.clients.s3 import S3Client
+from galadriel_agent.llms.galadriel import LlmClient
+from galadriel_agent.storage.s3 import S3Client
 from src.agent.twitter_agent import TwitterAgent
 from src.models import TwitterAgentConfig
 from src.repository.database import DatabaseClient
