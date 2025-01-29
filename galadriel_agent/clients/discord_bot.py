@@ -5,7 +5,7 @@ import os
 import discord
 from discord.ext import commands
 
-from galadriel_agent.clients.client import Client
+from galadriel_agent.clients.client import AgentInput, AgentOutput
 from galadriel_agent.entities import HumanMessage, Message
 
 
@@ -24,7 +24,7 @@ class CommandsCog(commands.Cog):
         await ctx.send(f"Hello {ctx.author.name}! 👋")
 
 
-class DiscordClient(commands.Bot, Client):
+class DiscordClient(commands.Bot, AgentInput, AgentOutput):
     def __init__(self, guild_id: str, logger: logging.Logger):
         # Set up intents
         intents = discord.Intents.default()
@@ -77,7 +77,7 @@ class DiscordClient(commands.Bot, Client):
         self.message_queue = queue
         await super().start(os.getenv("DISCORD_TOKEN"))
 
-    async def post_output(self, request: Message, response: Message, proof: str) -> None:
+    async def send(self, request: Message, response: Message, proof: str) -> None:
         try:
             channel = self.get_channel(int(response.conversation_id))
             await channel.send(response.content)

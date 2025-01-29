@@ -1,12 +1,11 @@
 import asyncio
-from typing import Dict
 from typing import List
 
-from galadriel_agent.clients.client import Client
+from galadriel_agent.clients.client import AgentInput, AgentOutput
 from galadriel_agent.entities import Message
 
 
-class TestClient(Client):
+class TestClient(AgentInput, AgentOutput):
     def __init__(self, messages: List[Message], interval_seconds: int = 60):
         self.messages = messages
         self.interval_seconds = interval_seconds
@@ -20,7 +19,7 @@ class TestClient(Client):
             except asyncio.CancelledError:
                 break
 
-    async def post_output(self, request, response: Dict, proof: str):
+    async def send(self, request: Message, response: Message, proof: str):
         print("\n======== test.client.post_output ========")
         print("request:", request)
         print("response:", response)

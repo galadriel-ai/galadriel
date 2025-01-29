@@ -2,7 +2,7 @@ import os
 from typing import Dict
 from typing import Optional
 
-from galadriel_agent.agent import UserAgent
+from galadriel_agent.agent import Agent
 from galadriel_agent.clients.llms.galadriel import LlmClient
 from galadriel_agent.clients.perplexity import PerplexityClient
 from galadriel_agent.logging_utils import get_agent_logger
@@ -15,7 +15,7 @@ from src.repository.database import DatabaseClient
 logger = get_agent_logger()
 
 
-class TwitterAgent(UserAgent):
+class TwitterAgent(Agent):
     reply_agent: Optional[TwitterReplyAgent]
     post_agent: Optional[TwitterPostAgent]
 

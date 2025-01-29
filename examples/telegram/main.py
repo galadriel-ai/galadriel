@@ -2,10 +2,10 @@ from smolagents.models import LiteLLMModel
 from dotenv import load_dotenv
 from pathlib import Path
 
-from telegram_agent import TelegramAgent
+from telegram_agent import ElonMuskAgent
 from tools import get_weather, get_time
 from galadriel_agent.clients.memory_repository import memory_repository
-from galadriel_agent.agent import GaladrielAgent
+from galadriel_agent.agent import AgentRuntime
 from galadriel_agent.clients.telegram_bot import TelegramClient
 import os
 import asyncio
@@ -18,7 +18,7 @@ logger = get_agent_logger()
 
 telegram_client = TelegramClient(token=os.getenv("TELEGRAM_TOKEN"), logger=logger)
 
-telegram_agent = TelegramAgent(
+elon_musk_agent = ElonMuskAgent(
     memory_repository=memory_repository,
     character_json_path="./agent_configuration/example_elon_musk.json",
     tools=[get_weather, get_time],
@@ -26,10 +26,11 @@ telegram_agent = TelegramAgent(
     max_steps=6,
 )
 
-agent = GaladrielAgent(
+agent = AgentRuntime(
     agent_config=None,
-    clients=[telegram_client],
-    user_agent=telegram_agent,
+    inputs=[telegram_client],
+    outputs=[telegram_client],
+    agent=elon_musk_agent,
     s3_client=None,
 )
 

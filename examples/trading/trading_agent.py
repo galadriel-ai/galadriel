@@ -4,7 +4,7 @@ from typing import Dict
 from smolagents import CodeAgent
 from smolagents import LiteLLMModel
 
-from galadriel_agent.agent import UserAgent
+from galadriel_agent.agent import Agent
 from tools import markets
 from tools import onchain
 
@@ -25,7 +25,7 @@ TRADING_PROMPT = """
         """
 
 
-class TradingAgent(UserAgent):
+class TradingAgent(Agent):
     def __init__(self):
         model = LiteLLMModel(
             model_id="openai/gpt-4o",
