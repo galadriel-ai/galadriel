@@ -96,16 +96,26 @@ class SolanaRepository:
                 only_direct_routes=False,
                 slippage_bps=slippage_bps,
             )
-            raw_transaction = VersionedTransaction.from_bytes(base64.b64decode(transaction_data))
-            signature = wallet.sign_message(message.to_bytes_versioned(raw_transaction.message))
-            signed_txn = VersionedTransaction.populate(raw_transaction.message, [signature])
+            raw_transaction = VersionedTransaction.from_bytes(
+                base64.b64decode(transaction_data)
+            )
+            signature = wallet.sign_message(
+                message.to_bytes_versioned(raw_transaction.message)
+            )
+            signed_txn = VersionedTransaction.populate(
+                raw_transaction.message, [signature]
+            )
             opts = TxOpts(skip_preflight=False, preflight_commitment=Processed)
-            result = await self.async_client.send_raw_transaction(txn=bytes(signed_txn), opts=opts)
+            result = await self.async_client.send_raw_transaction(
+                txn=bytes(signed_txn), opts=opts
+            )
             print(f"Transaction sent: {json.loads(result.to_json())}")
             transaction_id = json.loads(result.to_json())["result"]
             print(f"Transaction sent: https://explorer.solana.com/tx/{transaction_id}")
             await self.async_client.confirm_transaction(signature, commitment=Confirmed)
-            print(f"Transaction confirmed: https://explorer.solana.com/tx/{transaction_id}")
+            print(
+                f"Transaction confirmed: https://explorer.solana.com/tx/{transaction_id}"
+            )
             return str(signature)
 
         except Exception as e:
@@ -127,10 +137,14 @@ class SolanaRepository:
         try:
             user_pubkey = Pubkey.from_string(user_address)
             if not token_address:
-                response = await self.async_client.get_balance(user_pubkey, commitment=Confirmed)
+                response = await self.async_client.get_balance(
+                    user_pubkey, commitment=Confirmed
+                )
                 return response.value / LAMPORTS_PER_SOL
             token_address = Pubkey.from_string(token_address)
-            spl_client = AsyncToken(self.async_client, token_address, TOKEN_PROGRAM_ID, user_pubkey)
+            spl_client = AsyncToken(
+                self.async_client, token_address, TOKEN_PROGRAM_ID, user_pubkey
+            )
 
             mint = await spl_client.get_mint_info()
             if not mint.is_initialized:

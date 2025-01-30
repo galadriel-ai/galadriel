@@ -15,6 +15,7 @@ user_portfolios: Dict[str, Portfolio] = {}
 
 solana_repository = SolanaRepository()
 
+
 # This isn't a tool, but a helper function to update user balances
 def deposit_usdc(user_address: str, amount: float) -> str:
     """
