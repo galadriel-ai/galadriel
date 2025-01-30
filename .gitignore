@@ -11,3 +11,4 @@ logs/
 data/
 __pycache__/
 .python-version
+.composio.lock
