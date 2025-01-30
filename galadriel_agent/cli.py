@@ -53,16 +53,16 @@ def init() -> None:
                 "Invalid agent name: name should only contain alphanumerical and _ symbols."
             )
 
-    docker_username = click.prompt("Enter Docker username", type=str)
-    docker_password = click.prompt("Enter Docker password", hide_input=True, type=str)
-    galadriel_api_key = click.prompt(
-        "Enter Galadriel API key", hide_input=True, type=str
-    )
+    # docker_username = click.prompt("Enter Docker username", type=str)
+    # docker_password = click.prompt("Enter Docker password", hide_input=True, type=str)
+    # galadriel_api_key = click.prompt(
+    #     "Enter Galadriel API key", hide_input=True, type=str
+    # )
 
     click.echo(f"Creating a new agent template in {os.getcwd()}...")
     try:
         _create_agent_template(
-            agent_name, docker_username, docker_password, galadriel_api_key
+            agent_name, "", "", ""
         )
         click.echo("Successfully created agent template!")
     except Exception as e:
@@ -254,11 +254,11 @@ def _create_agent_template(
 
     # Create directories
     agent_dir = os.path.join(agent_name, "agent")
-    agent_configurator_dir = os.path.join(agent_name, "agent_configurator")
-    docker_dir = os.path.join(agent_name, "docker")
+    # agent_configurator_dir = os.path.join(agent_name, "agent_configurator")
+    # docker_dir = os.path.join(agent_name, "docker")
     os.makedirs(agent_dir, exist_ok=True)
-    os.makedirs(agent_configurator_dir, exist_ok=True)
-    os.makedirs(docker_dir)
+    # os.makedirs(agent_configurator_dir, exist_ok=True)
+    # os.makedirs(docker_dir)
 
     # Generate <agent_name>.py
     class_name = "".join(word.capitalize() for word in agent_name.split("_"))
@@ -278,18 +278,18 @@ class {class_name}(Agent):
         f.write(agent_code)
 
     # Generate <agent_name>.json
-    initial_data = {
-        "name": class_name,
-        "description": "A brief description of your agent",
-        "prompt": "The initial prompt for the agent",
-        "tools": [],
-    }
-    with open(
-        os.path.join(agent_configurator_dir, f"{agent_name}.json"),
-        "w",
-        encoding="utf-8",
-    ) as f:
-        json.dump(initial_data, f, indent=2)
+    # initial_data = {
+    #     "name": class_name,
+    #     "description": "A brief description of your agent",
+    #     "prompt": "The initial prompt for the agent",
+    #     "tools": [],
+    # }
+    # with open(
+    #     os.path.join(agent_configurator_dir, f"{agent_name}.json"),
+    #     "w",
+    #     encoding="utf-8",
+    # ) as f:
+    #     json.dump(initial_data, f, indent=2)
 
     # generate main.py
     main_code = f"""import asyncio
@@ -340,31 +340,31 @@ build-backend = "poetry.core.masonry.api"
         f.write(pyproject_toml)
 
     # Create .env and .agents.env file in the agent directory
-    env_content = f"""DOCKER_USERNAME={docker_username}
-DOCKER_PASSWORD={docker_password}
-GALADRIEL_API_KEY={galadriel_api_key}"""
-    with open(os.path.join(agent_name, ".env"), "w", encoding="utf-8") as f:
-        f.write(env_content)
-    open(os.path.join(agent_name, ".agents.env"), "w", encoding="utf-8").close()
+#     env_content = f"""DOCKER_USERNAME={docker_username}
+# DOCKER_PASSWORD={docker_password}
+# GALADRIEL_API_KEY={galadriel_api_key}"""
+#     with open(os.path.join(agent_name, ".env"), "w", encoding="utf-8") as f:
+#         f.write(env_content)
+#     open(os.path.join(agent_name, ".agents.env"), "w", encoding="utf-8").close()
 
     # copy docker files from sentience/galadriel_agent/docker to user current directory
-    docker_files_dir = os.path.join(os.path.dirname(__file__), "docker")
-    shutil.copy(
-        os.path.join(os.path.join(os.path.dirname(__file__)), "docker-compose.yml"),
-        os.path.join(agent_name, "docker-compose.yml"),
-    )
-    shutil.copy(
-        os.path.join(docker_files_dir, "Dockerfile"),
-        os.path.join(docker_dir, "Dockerfile"),
-    )
-    shutil.copy(
-        os.path.join(docker_files_dir, ".dockerignore"),
-        os.path.join(agent_name, ".dockerignore"),
-    )
-    shutil.copy(
-        os.path.join(docker_files_dir, "logrotate_logs"),
-        os.path.join(docker_dir, "logrotate_logs"),
-    )
+    # docker_files_dir = os.path.join(os.path.dirname(__file__), "docker")
+    # shutil.copy(
+    #     os.path.join(os.path.join(os.path.dirname(__file__)), "docker-compose.yml"),
+    #     os.path.join(agent_name, "docker-compose.yml"),
+    # )
+    # shutil.copy(
+    #     os.path.join(docker_files_dir, "Dockerfile"),
+    #     os.path.join(docker_dir, "Dockerfile"),
+    # )
+    # shutil.copy(
+    #     os.path.join(docker_files_dir, ".dockerignore"),
+    #     os.path.join(agent_name, ".dockerignore"),
+    # )
+    # shutil.copy(
+    #     os.path.join(docker_files_dir, "logrotate_logs"),
+    #     os.path.join(docker_dir, "logrotate_logs"),
+    # )
 
 
 def _build_image(docker_username: str) -> None:
