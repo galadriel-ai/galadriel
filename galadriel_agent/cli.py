@@ -330,7 +330,7 @@ authors = ["Your Name <your.email@example.com>"]
 
 [tool.poetry.dependencies]
 python = "^3.10"
-galadriel_agent = {path = "./galadriel-agent"}
+galadriel = "^0.0.2"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
