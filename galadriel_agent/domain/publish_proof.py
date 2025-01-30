@@ -1,17 +1,16 @@
 import json
 import os
-from typing import Dict
 from typing import Optional
 
 import requests
 
-from galadriel_agent.entities import Message
+from galadriel_agent.entities import Message, Proof
 from galadriel_agent.logging_utils import get_agent_logger
 
 logger = get_agent_logger()
 
 
-def execute(request: Message, response: Message, hashed_data: str) -> bool:
+def execute(request: Message, response: Message, proof: Proof) -> bool:
     # TODO: url = "https://api.galadriel.com/v1/verified/chat/log"
     url = "http://localhost:5000/v1/verified/chat/log"
     headers = {
@@ -20,12 +19,12 @@ def execute(request: Message, response: Message, hashed_data: str) -> bool:
         "Authorization": _get_authorization(),
     }
     data = {
-        "attestation": "TODO:",  # TODO
-        "hash": hashed_data,
-        "public_key": "TODO:",  # TODO
+        "attestation": proof.attestation,
+        "hash": proof.hash,
+        "public_key": proof.public_key,
         "request": request.model_dump(),
         "response": response.model_dump(),
-        "signature": "TODO:",  # TODO
+        "signature": proof.signature,
     }
     try:
         result = requests.post(url, headers=headers, data=json.dumps(data))

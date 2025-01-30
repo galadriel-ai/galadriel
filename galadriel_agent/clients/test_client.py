@@ -2,7 +2,7 @@ import asyncio
 from typing import List
 
 from galadriel_agent.agent import AgentInput, AgentOutput
-from galadriel_agent.entities import Message, PushOnlyQueue
+from galadriel_agent.entities import Message, Proof, PushOnlyQueue
 
 
 class TestClient(AgentInput, AgentOutput):
@@ -19,7 +19,7 @@ class TestClient(AgentInput, AgentOutput):
             except asyncio.CancelledError:
                 break
 
-    async def send(self, request: Message, response: Message, proof: str):
+    async def send(self, request: Message, response: Message, proof: Proof):
         print("\n======== test.client.post_output ========")
         print("request:", request)
         print("response:", response)

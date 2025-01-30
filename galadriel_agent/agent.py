@@ -5,6 +5,7 @@ from typing import List
 from typing import Optional
 
 from dotenv import load_dotenv
+from galadriel_agent.entities import Message, PushOnlyQueue, Proof, ShortTermMemory
 
 from galadriel_agent.domain import add_conversation_history
 from galadriel_agent.domain import generate_proof
@@ -32,7 +33,7 @@ class AgentInput:
 
 
 class AgentOutput:
-    async def send(self, request: Message, response: Message, proof: str) -> None:
+    async def send(self, request: Message, response: Message, proof: Proof) -> None:
         pass
 
 
@@ -92,10 +93,10 @@ class AgentRuntime:
             return add_conversation_history.execute(request, self.short_term_memory)
         return request
 
-    async def _generate_proof(self, request: Message, response: Message) -> str:
+    async def _generate_proof(self, request: Message, response: Message) -> Proof:
         return generate_proof.execute(request, response)
 
-    async def _publish_proof(self, request: Message, response: Message, proof: str):
+    async def _publish_proof(self, request: Message, response: Message, proof: Proof):
         publish_proof.execute(request, response, proof)
 
     # State management functions
