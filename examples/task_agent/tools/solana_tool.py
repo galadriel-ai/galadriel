@@ -1,20 +1,26 @@
 from typing import List
+from typing import Optional
 
 from smolagents import tool
 from solders.pubkey import Pubkey
 from solders.signature import Signature
 
-PRICE = 10**7
+DEFAULT_PRICE_LAMPORT = int(0.01 * 10**9)
 
 
 @tool
-def solana_payment_tool(signature: str, wallet_address: str) -> bool:
+def solana_payment_tool(
+    signature: str,
+    wallet_address: str,
+    price_lamport: Optional[int] = DEFAULT_PRICE_LAMPORT,
+) -> bool:
     """
     This is a tool that returns if a certain payment has been made to a certain wallet
     The output is a boolean if payment has been made or not.
     Args:
         signature: The tx signature
         wallet_address: The wallet address of the receiver
+        price_lamport: The price expected to have been paid in lamport, defaults to 10000000
     """
     from solana.rpc.api import Client
 
@@ -38,7 +44,7 @@ def solana_payment_tool(signature: str, wallet_address: str) -> bool:
     pre_balance = meta.pre_balances[index]
     post_balance = meta.post_balances[index]
     amount_sent = post_balance - pre_balance
-    if amount_sent >= PRICE:
+    if amount_sent >= price_lamport:
         return True
     return False
 
