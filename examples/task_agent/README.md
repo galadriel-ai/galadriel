@@ -6,7 +6,7 @@ pip install -r requirements
 
 cp template.env .env
 # Add your OpenAI API key to .env
-# Edit the values in character.json
+# Edit the values in agent.json
 ```
 
 
