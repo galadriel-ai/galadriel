@@ -33,7 +33,7 @@ class ResearchAgent(Agent):
                 agent_config = json.loads(f.read())
         except:
             raise Exception(
-                f"Failed to read the provider character json: {character_json_path}"
+                f"Failed to read the provided character json: {character_json_path}"
             )
         pricing_config = agent_config.get("pricing", {})
         agent_wallet_address = pricing_config.get("wallet_address")
@@ -73,7 +73,6 @@ class ResearchAgent(Agent):
                 content="Invalid payment",
                 additional_kwargs={"reply_to_id": request_id},
             )
-        # call out agent now after payment has been validated
         if not memory_repository.add_payment_signature(
             twitter_message.payment_signature, twitter_message.task
         ):
