@@ -1,6 +1,6 @@
 [tool.poetry]
-name = "galadriel_agent"
-version = "0.0.1"
+name = "galadriel"
+version = "0.0.2"
 description = ""
 authors = [
     "Kaspar Peterson <kaspar@galadriel.com>",
@@ -11,6 +11,8 @@ authors = [
     "Han Zhao <han@galadriel.com>",
 ]
 readme = "README.md"
+
+packages = [{ include = "galadriel_agent" }]
 
 [tool.poetry.dependencies]
 python = "^3.10"
