@@ -4,7 +4,7 @@ from galadriel_agent.agent import AgentInput, AgentOutput
 from galadriel_agent.entities import Message, PushOnlyQueue
 
 
-class Cron(AgentInput, AgentOutput):
+class Cron(AgentInput):
     def __init__(self, interval_seconds: int):
         self.interval_seconds = interval_seconds
 
