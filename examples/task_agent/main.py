@@ -36,7 +36,7 @@ async def main():
 
     short_term_memory = InMemoryShortTermMemory()
 
-    research_agent = ResearchAgent()
+    research_agent = ResearchAgent("character.json")
     agent = AgentRuntime(
         AgentConfig(),
         inputs=[test_client],
