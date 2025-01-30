@@ -2,61 +2,15 @@
 
 ## Setup
 ```shell
-python -m venv venv
-source venv/bin/activate
-pip install -e ".[dev]"
-# or 
-pip install -e .
-
-cp template.env .env
-nano .env
+pip install galadriel_node
+galadriel agent init
 ```
 
-## Run an agent
-This takes the agent definition from `agents/daige.json`
+## Run your agent
 ```shell
+cd {your_agent_name}
 python main.py
 ```
-Can also run in docker
-```shell
-docker compose up --build
-```
-
-
-## Linting etc
-```shell
-source toolbox.sh
-lint
-format
-type-check
-```
-
-## Testing
-Ensure that dev dependencies are installed
-```shell
-source toolbox.sh
-unit-test
-```
-
-
-## Deployment
-
-```shell
-./deploy.sh
-```
-
-## Before using CLI - IMPORTANT
-
-After running `galadriel agent init` you'll need:
-1.  to copy the `galadriel-agent` folder to the root of the project.
-2. add the following line to `docker-compose.yml`, inside the `volumes` section:
-    ```
-    - ./galadriel-agent:/home/appuser/galadriel-agent
-    ```
-explanation:
-- galadriel-agent is not yet a package, so we need to mount it as a volume inside the docker container.
-- this is a temporary solution until the package is published on pypi.
-
 
 # Galadriel Agent CLI
 
@@ -71,8 +25,8 @@ galadriel agent init
 ```
 This will prompt you for:
 - Agent name
-- Docker username
-- Docker password
+- Docker username (can set up with random values to start off with)
+- Docker password (can set up with random values to start off with)
 - Galadriel API key
 
 The command creates:

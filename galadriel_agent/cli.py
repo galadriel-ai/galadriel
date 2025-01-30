@@ -1,5 +1,6 @@
 import json
 import os
+import re
 import shutil
 import subprocess
 from pathlib import Path
@@ -43,7 +44,13 @@ def agent():
 @agent.command()
 def init() -> None:
     """Create a new Agent folder template in the current directory."""
-    agent_name = click.prompt("Enter agent name", type=str)
+    agent_name = ""
+    while not agent_name:
+        agent_name_input = click.prompt("Enter agent name", type=str)
+        agent_name = _sanitize_agent_name(agent_name_input)
+        if not agent_name:
+            print("Invalid agent name: name should only contain alphanumerical and _ symbols.")
+
     docker_username = click.prompt("Enter Docker username", type=str)
     docker_password = click.prompt("Enter Docker password", hide_input=True, type=str)
     galadriel_api_key = click.prompt(
@@ -253,13 +260,17 @@ def _create_agent_template(
 
     # Generate <agent_name>.py
     class_name = "".join(word.capitalize() for word in agent_name.split("_"))
-    agent_code = f"""from galadriel_agent.agent import UserAgent
-from typing import Dict
+    agent_code = f"""from galadriel_agent.agent import Agent
+from galadriel_agent.entities import Message
 
-class {class_name}(UserAgent):
-    async def run(self, request: Dict) -> Dict:
+
+class {class_name}(Agent):
+    async def run(self, request: Message) -> Message:
         # Implement your agent's logic here
-        print(f"Running {class_name} with agent configuration: {{self.agent_config}}")
+        print(f"Running {class_name}")
+        return Message(
+            content="TODO"
+        )
 """
     with open(os.path.join(agent_dir, f"{agent_name}.py"), "w", encoding="utf-8") as f:
         f.write(agent_code)
@@ -280,17 +291,28 @@ class {class_name}(UserAgent):
 
     # generate main.py
     main_code = f"""import asyncio
+
+from galadriel_agent.agent import AgentOutput
+from galadriel_agent.agent import AgentRuntime
+from galadriel_agent.clients.cron import Cron
+from galadriel_agent.entities import Message
+
 from agent.{agent_name} import {class_name}
-from galadriel_agent.agent import GaladrielAgent
+
+
+class GenericOutput(AgentOutput):
+
+    async def send(self, request: Message, response: Message, proof: str) -> None:
+        print(f"Received response: {{response.content}}")
+
 
 if __name__ == "__main__":
     {agent_name} = {class_name}()
-    client = None
-    agent = GaladrielAgent(
+    agent = AgentRuntime(
         agent_config=None,
-        clients=[client], 
-        user_agent={agent_name},
-        s3_client=None,
+        inputs=[Cron(interval_seconds=30)],
+        outputs=[GenericOutput()],
+        agent={agent_name},
     )
     asyncio.run(agent.run())
 """
@@ -488,3 +510,17 @@ Request Body: {response.request.body}
 """
         click.echo(error_msg)
         return False
+
+
+def _sanitize_agent_name(user_input: str) -> str:
+    """
+    Sanitizes the user input to create a valid folder name.
+    Allows only alphanumeric characters and underscores (_).
+    Other characters are replaced with underscores.
+
+    :param user_input: The raw folder name input from the user.
+    :return: A sanitized string suitable for a folder name.
+    """
+    sanitized_name = re.sub(r'\W+', '_', user_input)  # Replace non-alphanumeric characters with _
+    sanitized_name = sanitized_name.strip('_')  # Remove leading/trailing underscores
+    return sanitized_name
