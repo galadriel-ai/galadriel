@@ -21,7 +21,9 @@ logger = get_agent_logger()
 
 discord_client = DiscordClient(guild_id=os.getenv("DISCORD_GUILD_ID"), logger=logger)
 
-composio_weather_tool = convert_action(os.getenv("COMPOSIO_API_KEY"), "WEATHERMAP_WEATHER")
+composio_weather_tool = convert_action(
+    os.getenv("COMPOSIO_API_KEY"), "WEATHERMAP_WEATHER"
+)
 
 elon_musk_agent = ElonMuskAgent(
     memory_repository=memory_repository,

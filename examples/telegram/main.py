@@ -19,7 +19,9 @@ logger = get_agent_logger()
 
 telegram_client = TelegramClient(token=os.getenv("TELEGRAM_TOKEN"), logger=logger)
 
-composio_weather_tool = convert_action(os.getenv("COMPOSIO_API_KEY"), "WEATHERMAP_WEATHER")
+composio_weather_tool = convert_action(
+    os.getenv("COMPOSIO_API_KEY"), "WEATHERMAP_WEATHER"
+)
 
 elon_musk_agent = ElonMuskAgent(
     memory_repository=memory_repository,
