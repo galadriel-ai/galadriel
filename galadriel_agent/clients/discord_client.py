@@ -1,4 +1,3 @@
-import asyncio
 import logging
 import os
 
@@ -6,7 +5,7 @@ import discord
 from discord.ext import commands
 
 from galadriel_agent.agent import AgentInput, AgentOutput
-from galadriel_agent.entities import HumanMessage, Message, PushOnlyQueue
+from galadriel_agent.entities import HumanMessage, Message, Proof, PushOnlyQueue
 
 
 class CommandsCog(commands.Cog):
@@ -77,7 +76,7 @@ class DiscordClient(commands.Bot, AgentInput, AgentOutput):
         self.message_queue = queue
         await super().start(os.getenv("DISCORD_TOKEN"))
 
-    async def send(self, request: Message, response: Message, proof: str) -> None:
+    async def send(self, request: Message, response: Message, proof: Proof) -> None:
         try:
             channel = self.get_channel(int(response.conversation_id))
             await channel.send(response.content)

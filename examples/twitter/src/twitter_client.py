@@ -5,7 +5,7 @@ from typing import Optional
 
 from galadriel_agent.agent import AgentInput, AgentOutput
 from galadriel_agent.clients.twitter import SearchResult
-from galadriel_agent.entities import Message, PushOnlyQueue
+from galadriel_agent.entities import Message, Proof, PushOnlyQueue
 from galadriel_agent.logging_utils import get_agent_logger
 from galadriel_agent.tools.twitter import TwitterPostTool
 from galadriel_agent.tools.twitter import TwitterRepliesTool
@@ -60,7 +60,7 @@ class TwitterClient(AgentInput, AgentOutput):
         asyncio.create_task(self._run_post_loop())
         asyncio.create_task(self._run_reply_loop())
 
-    async def send(self, request: Message, response: Message, proof: str) -> None:
+    async def send(self, request: Message, response: Message, proof: Proof) -> None:
         response_type = response.type
         if not response_type or not response.additional_kwargs:
             return

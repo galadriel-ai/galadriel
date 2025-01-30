@@ -37,3 +37,10 @@ class PushOnlyQueue:
 
     async def put(self, item: Message):
         await self._queue.put(item)
+
+
+class Proof(BaseModel):
+    hash: str
+    signature: str
+    public_key: str
+    attestation: str

@@ -1,7 +1,7 @@
 import asyncio
 
 from galadriel_agent.agent import AgentInput, AgentOutput
-from galadriel_agent.entities import Message, PushOnlyQueue
+from galadriel_agent.entities import Message, Proof, PushOnlyQueue
 
 
 class Cron(AgentInput, AgentOutput):
@@ -16,5 +16,5 @@ class Cron(AgentInput, AgentOutput):
             except asyncio.CancelledError:
                 break
 
-    async def send(self, request: Message, response: Message, proof: str):
+    async def send(self, request: Message, response: Message, proof: Proof):
         pass
