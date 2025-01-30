@@ -29,11 +29,9 @@ elon_musk_agent = ElonMuskAgent(
 )
 
 agent = AgentRuntime(
-    agent_config=None,
     inputs=[discord_client],
     outputs=[discord_client],
     agent=elon_musk_agent,
-    s3_client=None,
 )
 
 asyncio.run(agent.run())

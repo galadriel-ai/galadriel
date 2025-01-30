@@ -5,8 +5,8 @@ from galadriel_agent.entities import Message
 
 
 def execute(request: Message, response: Message) -> str:
-    print("request:", request)
-    print("response:", response)
+    # print("request:", request)
+    # print("response:", response)
     return _hash_data(request, response)
 
 

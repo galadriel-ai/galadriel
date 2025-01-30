@@ -49,7 +49,9 @@ def init() -> None:
         agent_name_input = click.prompt("Enter agent name", type=str)
         agent_name = _sanitize_agent_name(agent_name_input)
         if not agent_name:
-            print("Invalid agent name: name should only contain alphanumerical and _ symbols.")
+            print(
+                "Invalid agent name: name should only contain alphanumerical and _ symbols."
+            )
 
     docker_username = click.prompt("Enter Docker username", type=str)
     docker_password = click.prompt("Enter Docker password", hide_input=True, type=str)
@@ -309,7 +311,6 @@ class GenericOutput(AgentOutput):
 if __name__ == "__main__":
     {agent_name} = {class_name}()
     agent = AgentRuntime(
-        agent_config=None,
         inputs=[Cron(interval_seconds=30)],
         outputs=[GenericOutput()],
         agent={agent_name},
@@ -521,6 +522,8 @@ def _sanitize_agent_name(user_input: str) -> str:
     :param user_input: The raw folder name input from the user.
     :return: A sanitized string suitable for a folder name.
     """
-    sanitized_name = re.sub(r'\W+', '_', user_input)  # Replace non-alphanumeric characters with _
-    sanitized_name = sanitized_name.strip('_')  # Remove leading/trailing underscores
+    sanitized_name = re.sub(
+        r"\W+", "_", user_input
+    )  # Replace non-alphanumeric characters with _
+    sanitized_name = sanitized_name.strip("_")  # Remove leading/trailing underscores
     return sanitized_name

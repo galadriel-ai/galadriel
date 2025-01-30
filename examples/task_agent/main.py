@@ -1,7 +1,6 @@
 import os
 import asyncio
 
-from galadriel_agent.agent import AgentConfig
 from galadriel_agent.agent import AgentRuntime
 
 # from clients.twitter_mention_client import TwitterCredentials
@@ -38,11 +37,9 @@ async def main():
 
     research_agent = ResearchAgent("agent.json")
     agent = AgentRuntime(
-        AgentConfig(),
         inputs=[test_client],
         outputs=[test_client],
         agent=research_agent,
-        s3_client=None,
         short_term_memory=short_term_memory,
     )
     await agent.run()

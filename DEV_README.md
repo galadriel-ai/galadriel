@@ -33,3 +33,12 @@ Ensure that dev dependencies are installed
 source toolbox.sh
 unit-test
 ```
+
+
+## Running from a package locally
+
+In a separate venv
+```shell
+pip install --no-cache-dir -e ../galadriel-agent
+galadriel --help
+```
