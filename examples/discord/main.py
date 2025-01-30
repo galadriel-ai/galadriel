@@ -3,7 +3,8 @@ from dotenv import load_dotenv
 from pathlib import Path
 
 from discord_agent import ElonMuskAgent
-from tools import get_weather, get_time
+from galadriel_agent.tools.composio_converter import convert_action
+from tools import get_time
 from galadriel_agent.memory.memory_repository import memory_repository
 from galadriel_agent.agent import AgentRuntime
 from galadriel_agent.clients.discord_client import DiscordClient
@@ -20,10 +21,14 @@ logger = get_agent_logger()
 
 discord_client = DiscordClient(guild_id=os.getenv("DISCORD_GUILD_ID"), logger=logger)
 
+composio_weather_tool = convert_action(
+    os.getenv("COMPOSIO_API_KEY"), "WEATHERMAP_WEATHER"
+)
+
 elon_musk_agent = ElonMuskAgent(
     memory_repository=memory_repository,
     character_json_path="./agent_configuration/example_elon_musk.json",
-    tools=[get_weather, get_time],
+    tools=[composio_weather_tool, get_time],
     model=model,
     max_steps=6,
 )
