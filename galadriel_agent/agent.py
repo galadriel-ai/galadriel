@@ -1,5 +1,4 @@
 import asyncio
-from dataclasses import dataclass
 from pathlib import Path
 from typing import List
 from typing import Optional
@@ -13,12 +12,6 @@ from galadriel_agent.entities import Message
 from galadriel_agent.entities import PushOnlyQueue
 from galadriel_agent.entities import ShortTermMemory
 from galadriel_agent.logging_utils import init_logging
-from galadriel_agent.storage.s3 import S3Client
-
-
-@dataclass
-class AgentConfig:
-    pass
 
 
 class Agent:
@@ -47,18 +40,14 @@ class AgentRuntime:
     def __init__(
         # pylint:disable=R0917
         self,
-        agent_config: Optional[AgentConfig],
         inputs: List[AgentInput],
         outputs: List[AgentOutput],
         agent: Agent,
-        s3_client: Optional[S3Client] = None,
         short_term_memory: Optional[ShortTermMemory] = None,
     ):
-        self.agent_config = agent_config
         self.inputs = inputs
         self.outputs = outputs
         self.agent = agent
-        self.s3_client = s3_client
         self.short_term_memory = short_term_memory
 
         env_path = Path(".") / ".env"
@@ -72,7 +61,6 @@ class AgentRuntime:
         for agent_input in self.inputs:
             asyncio.create_task(agent_input.start(push_only_queue))
 
-        await self.load_state(agent_state=None)
         while True:
             request = await input_queue.get()
             await self.run_request(request)
@@ -97,18 +85,3 @@ class AgentRuntime:
 
     async def _publish_proof(self, request: Message, response: Message, proof: str):
         publish_proof.execute(request, response, proof)
-
-    # State management functions
-    async def export_state(self) -> AgentState:
-        pass
-
-    async def load_state(self, agent_state: AgentState):
-        pass
-
-    async def upload_state(self):
-        state = self.export_state()
-        await self.s3_client.upload_file(state)
-
-    async def restore_state(self):
-        state = await self.s3_client.download_file()
-        self.load_state(state)

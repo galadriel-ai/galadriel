@@ -2,7 +2,7 @@
 
 ## Setup
 ```shell
-pip install galadriel_node
+pip install galadriel
 galadriel agent init
 ```
 

@@ -21,11 +21,9 @@ def main():
     onchain.deposit_token("Bob", "ELON", 5)
 
     agent = AgentRuntime(
-        agent_config=None,
         inputs=[Cron(TRADING_INTERVAL_SECONDS)],
         outputs=[],
         agent=TradingAgent(),
-        s3_client=None,
     )
 
     asyncio.run(agent.run())

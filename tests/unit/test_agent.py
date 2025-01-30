@@ -3,7 +3,6 @@ from typing import List
 from unittest.mock import MagicMock
 
 from galadriel_agent import agent
-from galadriel_agent.agent import AgentConfig
 from galadriel_agent.agent import AgentRuntime
 from galadriel_agent.agent import Agent
 from galadriel_agent.agent import AgentInput, AgentOutput
@@ -53,7 +52,6 @@ async def test_adds_history():
     short_term_memory.add(message)
     user_agent = MockAgent()
     galadriel_agent = AgentRuntime(
-        agent_config=AgentConfig(),
         inputs=[],
         outputs=[],
         agent=user_agent,
@@ -71,7 +69,6 @@ async def test_adds_history():
 async def test_publishes_proof():
     user_agent = MockAgent()
     galadriel_agent = AgentRuntime(
-        agent_config=AgentConfig(),
         inputs=[],
         outputs=[],
         agent=user_agent,
@@ -91,7 +88,6 @@ async def test_post_output_to_client():
     input_client = MockAgentInput()
     output_client = MockAgentOutput()
     galadriel_agent = AgentRuntime(
-        agent_config=AgentConfig(),
         inputs=[input_client],
         outputs=[output_client],
         agent=user_agent,

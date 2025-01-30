@@ -37,11 +37,9 @@ async def main():
     )
 
     galadriel_agent = AgentRuntime(
-        agent_config=agent_config,
         inputs=[twitter_client],
         outputs=[twitter_client],
         agent=twitter_agent,
-        s3_client=S3Client("twitter"),
     )
     await galadriel_agent.run()
 

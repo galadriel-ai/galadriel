@@ -6,11 +6,9 @@ from typing import List
 from typing import Literal
 from typing import Optional
 
-from galadriel_agent.agent import AgentConfig
-
 
 @dataclass
-class TwitterAgentConfig(AgentConfig):
+class TwitterAgentConfig:
     name: str
     settings: Dict
     system: str

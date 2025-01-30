@@ -49,18 +49,20 @@ def init() -> None:
         agent_name_input = click.prompt("Enter agent name", type=str)
         agent_name = _sanitize_agent_name(agent_name_input)
         if not agent_name:
-            print("Invalid agent name: name should only contain alphanumerical and _ symbols.")
+            print(
+                "Invalid agent name: name should only contain alphanumerical and _ symbols."
+            )
 
-    docker_username = click.prompt("Enter Docker username", type=str)
-    docker_password = click.prompt("Enter Docker password", hide_input=True, type=str)
-    galadriel_api_key = click.prompt(
-        "Enter Galadriel API key", hide_input=True, type=str
-    )
+    # docker_username = click.prompt("Enter Docker username", type=str)
+    # docker_password = click.prompt("Enter Docker password", hide_input=True, type=str)
+    # galadriel_api_key = click.prompt(
+    #     "Enter Galadriel API key", hide_input=True, type=str
+    # )
 
     click.echo(f"Creating a new agent template in {os.getcwd()}...")
     try:
         _create_agent_template(
-            agent_name, docker_username, docker_password, galadriel_api_key
+            agent_name, "", "", ""
         )
         click.echo("Successfully created agent template!")
     except Exception as e:
@@ -252,11 +254,11 @@ def _create_agent_template(
 
     # Create directories
     agent_dir = os.path.join(agent_name, "agent")
-    agent_configurator_dir = os.path.join(agent_name, "agent_configurator")
-    docker_dir = os.path.join(agent_name, "docker")
+    # agent_configurator_dir = os.path.join(agent_name, "agent_configurator")
+    # docker_dir = os.path.join(agent_name, "docker")
     os.makedirs(agent_dir, exist_ok=True)
-    os.makedirs(agent_configurator_dir, exist_ok=True)
-    os.makedirs(docker_dir)
+    # os.makedirs(agent_configurator_dir, exist_ok=True)
+    # os.makedirs(docker_dir)
 
     # Generate <agent_name>.py
     class_name = "".join(word.capitalize() for word in agent_name.split("_"))
@@ -276,18 +278,18 @@ class {class_name}(Agent):
         f.write(agent_code)
 
     # Generate <agent_name>.json
-    initial_data = {
-        "name": class_name,
-        "description": "A brief description of your agent",
-        "prompt": "The initial prompt for the agent",
-        "tools": [],
-    }
-    with open(
-        os.path.join(agent_configurator_dir, f"{agent_name}.json"),
-        "w",
-        encoding="utf-8",
-    ) as f:
-        json.dump(initial_data, f, indent=2)
+    # initial_data = {
+    #     "name": class_name,
+    #     "description": "A brief description of your agent",
+    #     "prompt": "The initial prompt for the agent",
+    #     "tools": [],
+    # }
+    # with open(
+    #     os.path.join(agent_configurator_dir, f"{agent_name}.json"),
+    #     "w",
+    #     encoding="utf-8",
+    # ) as f:
+    #     json.dump(initial_data, f, indent=2)
 
     # generate main.py
     main_code = f"""import asyncio
@@ -309,7 +311,6 @@ class GenericOutput(AgentOutput):
 if __name__ == "__main__":
     {agent_name} = {class_name}()
     agent = AgentRuntime(
-        agent_config=None,
         inputs=[Cron(interval_seconds=30)],
         outputs=[GenericOutput()],
         agent={agent_name},
@@ -329,7 +330,7 @@ authors = ["Your Name <your.email@example.com>"]
 
 [tool.poetry.dependencies]
 python = "^3.10"
-galadriel_agent = {path = "./galadriel-agent"}
+galadriel = "^0.0.2"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
@@ -339,31 +340,31 @@ build-backend = "poetry.core.masonry.api"
         f.write(pyproject_toml)
 
     # Create .env and .agents.env file in the agent directory
-    env_content = f"""DOCKER_USERNAME={docker_username}
-DOCKER_PASSWORD={docker_password}
-GALADRIEL_API_KEY={galadriel_api_key}"""
-    with open(os.path.join(agent_name, ".env"), "w", encoding="utf-8") as f:
-        f.write(env_content)
-    open(os.path.join(agent_name, ".agents.env"), "w", encoding="utf-8").close()
+#     env_content = f"""DOCKER_USERNAME={docker_username}
+# DOCKER_PASSWORD={docker_password}
+# GALADRIEL_API_KEY={galadriel_api_key}"""
+#     with open(os.path.join(agent_name, ".env"), "w", encoding="utf-8") as f:
+#         f.write(env_content)
+#     open(os.path.join(agent_name, ".agents.env"), "w", encoding="utf-8").close()
 
     # copy docker files from sentience/galadriel_agent/docker to user current directory
-    docker_files_dir = os.path.join(os.path.dirname(__file__), "docker")
-    shutil.copy(
-        os.path.join(os.path.join(os.path.dirname(__file__)), "docker-compose.yml"),
-        os.path.join(agent_name, "docker-compose.yml"),
-    )
-    shutil.copy(
-        os.path.join(docker_files_dir, "Dockerfile"),
-        os.path.join(docker_dir, "Dockerfile"),
-    )
-    shutil.copy(
-        os.path.join(docker_files_dir, ".dockerignore"),
-        os.path.join(agent_name, ".dockerignore"),
-    )
-    shutil.copy(
-        os.path.join(docker_files_dir, "logrotate_logs"),
-        os.path.join(docker_dir, "logrotate_logs"),
-    )
+    # docker_files_dir = os.path.join(os.path.dirname(__file__), "docker")
+    # shutil.copy(
+    #     os.path.join(os.path.join(os.path.dirname(__file__)), "docker-compose.yml"),
+    #     os.path.join(agent_name, "docker-compose.yml"),
+    # )
+    # shutil.copy(
+    #     os.path.join(docker_files_dir, "Dockerfile"),
+    #     os.path.join(docker_dir, "Dockerfile"),
+    # )
+    # shutil.copy(
+    #     os.path.join(docker_files_dir, ".dockerignore"),
+    #     os.path.join(agent_name, ".dockerignore"),
+    # )
+    # shutil.copy(
+    #     os.path.join(docker_files_dir, "logrotate_logs"),
+    #     os.path.join(docker_dir, "logrotate_logs"),
+    # )
 
 
 def _build_image(docker_username: str) -> None:
@@ -521,6 +522,8 @@ def _sanitize_agent_name(user_input: str) -> str:
     :param user_input: The raw folder name input from the user.
     :return: A sanitized string suitable for a folder name.
     """
-    sanitized_name = re.sub(r'\W+', '_', user_input)  # Replace non-alphanumeric characters with _
-    sanitized_name = sanitized_name.strip('_')  # Remove leading/trailing underscores
+    sanitized_name = re.sub(
+        r"\W+", "_", user_input
+    )  # Replace non-alphanumeric characters with _
+    sanitized_name = sanitized_name.strip("_")  # Remove leading/trailing underscores
     return sanitized_name
