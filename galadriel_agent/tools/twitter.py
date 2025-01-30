@@ -5,8 +5,8 @@ from typing import Optional
 
 from smolagents import Tool
 
-from galadriel_agent.clients.twitter import TwitterApiClient
-from galadriel_agent.clients.twitter import TwitterCredentials
+from galadriel_agent.connectors.twitter import TwitterApiClient
+from galadriel_agent.connectors.twitter import TwitterCredentials
 from galadriel_agent.logging_utils import get_agent_logger
 
 logger = get_agent_logger()

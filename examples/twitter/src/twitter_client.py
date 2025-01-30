@@ -4,7 +4,7 @@ import random
 from typing import Optional
 
 from galadriel_agent.agent import AgentInput, AgentOutput
-from galadriel_agent.clients.twitter import SearchResult
+from galadriel_agent.connectors.twitter import SearchResult
 from galadriel_agent.entities import Message, Proof, PushOnlyQueue
 from galadriel_agent.logging_utils import get_agent_logger
 from galadriel_agent.tools.twitter import TwitterPostTool

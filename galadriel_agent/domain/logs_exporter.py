@@ -4,6 +4,7 @@ import os
 import threading
 import time
 from datetime import datetime
+from datetime import timezone
 from typing import Dict
 from typing import List
 from typing import Optional
@@ -106,7 +107,9 @@ class LogsExportHandler(logging.Handler):
         if not asctime:
             return 0
         try:
-            dt_obj = datetime.strptime(asctime, "%Y-%m-%d %H:%M:%S,%f")
+            dt_obj = datetime.strptime(asctime, "%Y-%m-%d %H:%M:%S,%f").replace(
+                tzinfo=timezone.utc
+            )
             return int(dt_obj.timestamp())
         except Exception:
             return 0

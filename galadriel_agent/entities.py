@@ -31,6 +31,7 @@ class ShortTermMemory:
     def add(self, conversation_id: str, message: Message):
         pass
 
+
 class PushOnlyQueue:
     def __init__(self, queue: asyncio.Queue):
         self._queue = queue
