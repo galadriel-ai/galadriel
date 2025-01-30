@@ -23,7 +23,7 @@ def main():
     agent = AgentRuntime(
         agent_config=None,
         inputs=[Cron(TRADING_INTERVAL_SECONDS)],
-        outputs=[Cron(TRADING_INTERVAL_SECONDS)],
+        outputs=[],
         agent=TradingAgent(),
         s3_client=None,
     )

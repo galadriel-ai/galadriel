@@ -25,7 +25,7 @@ class LlmClient:
         if _base_url:
             base_url = _base_url
         else:
-            base_url = os.getenv("LLM_BASE_URL")
+            base_url = os.getenv("LLM_BASE_URL", "")
         if not base_url:
             logger.debug(
                 "Missing LLM base_url, in constructor and/or LLM_BASE_URL environment variable, defaulting to OpenAI"

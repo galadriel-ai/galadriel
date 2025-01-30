@@ -12,3 +12,5 @@ data/
 __pycache__/
 .python-version
 .composio.lock
+
+dist

@@ -69,8 +69,8 @@ class AgentRuntime:
     async def run(self):
         input_queue = asyncio.Queue()
         push_only_queue = PushOnlyQueue(input_queue)
-        for input in self.inputs:
-            asyncio.create_task(input.start(push_only_queue))
+        for agent_input in self.inputs:
+            asyncio.create_task(agent_input.start(push_only_queue))
 
         await self.load_state(agent_state=None)
         while True:
