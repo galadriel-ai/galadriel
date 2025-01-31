@@ -52,9 +52,7 @@ def _get_pricing(agent_json_path: str) -> Pricing:
         with open(agent_json_path, "r", encoding="utf-8") as f:
             agent_config = json.loads(f.read())
     except:
-            raise Exception(
-                f"Failed to read pricing {agent_json_path}"
-            )
+        raise Exception(f"Failed to read pricing {agent_json_path}")
     pricing_config = agent_config.get("pricing", {})
     agent_wallet_address = pricing_config.get("wallet_address")
     if not agent_wallet_address:

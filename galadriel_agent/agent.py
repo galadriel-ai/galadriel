@@ -6,7 +6,6 @@ from typing import Optional
 from dotenv import load_dotenv
 
 from galadriel_agent.domain import add_conversation_history
-from galadriel_agent.domain import extract_transaction_signature
 from galadriel_agent.domain import generate_proof
 from galadriel_agent.domain import publish_proof
 from galadriel_agent.domain import validate_solana_payment
@@ -78,8 +77,10 @@ class AgentRuntime:
 
         if self.pricing:
             try:
-                task = self._validate_payment(request)
-                request.content = task
+                task_and_payment = validate_solana_payment.execute(
+                    self.pricing, self.spent_payments, request
+                )
+                request.content = task_and_payment.task
             except PaymentValidationError as e:
                 return Message(content=str(e))
 
@@ -100,25 +101,3 @@ class AgentRuntime:
 
     async def _publish_proof(self, request: Message, response: Message, proof: str):
         publish_proof.execute(request, response, proof)
-
-    def _validate_payment(self, request: Message) -> str:
-        """Validate the payment for the request.
-
-        Args:
-            request: The message containing the transaction signature
-
-        Returns:
-            Message if validation failed with error message, None if validation succeeded
-        """
-        task_and_payment = extract_transaction_signature.execute(request.content)
-        if not task_and_payment:
-            raise PaymentValidationError("No transaction signature found in the message. Please include your payment transaction signature.")
-
-        if task_and_payment.signature in self.spent_payments:
-            raise PaymentValidationError(f"Transaction {task_and_payment.signature} has already been used. Please submit a new payment.")
-
-        if not validate_solana_payment.execute(self.pricing, task_and_payment.signature):
-            raise PaymentValidationError(f"Payment validation failed for transaction {task_and_payment.signature}. Please ensure you've sent {self.pricing.cost} SOL to {self.pricing.wallet_address}")
-
-        self.spent_payments.add(task_and_payment.signature)
-        return task_and_payment.task
