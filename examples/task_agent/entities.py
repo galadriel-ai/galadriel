@@ -7,7 +7,6 @@ class Memory(BaseModel):
 
 
 class ShortTermMemory(Memory):
-
     task: str
     result: str
 

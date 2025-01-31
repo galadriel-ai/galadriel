@@ -6,11 +6,15 @@ from typing import Optional
 from dotenv import load_dotenv
 
 from galadriel_agent.domain import add_conversation_history
+from galadriel_agent.domain import extract_transaction_signature
 from galadriel_agent.domain import generate_proof
 from galadriel_agent.domain import publish_proof
+from galadriel_agent.domain import validate_solana_payment
 from galadriel_agent.entities import Message
 from galadriel_agent.entities import PushOnlyQueue
+from galadriel_agent.entities import Pricing
 from galadriel_agent.entities import ShortTermMemory
+from galadriel_agent.errors import PaymentValidationError
 from galadriel_agent.logging_utils import init_logging
 
 
@@ -44,11 +48,14 @@ class AgentRuntime:
         outputs: List[AgentOutput],
         agent: Agent,
         short_term_memory: Optional[ShortTermMemory] = None,
+        pricing: Optional[Pricing] = None,
     ):
         self.inputs = inputs
         self.outputs = outputs
         self.agent = agent
+        self.pricing = pricing
         self.short_term_memory = short_term_memory
+        self.spent_payments = set()
 
         env_path = Path(".") / ".env"
         load_dotenv(dotenv_path=env_path)
@@ -68,6 +75,14 @@ class AgentRuntime:
 
     async def run_request(self, request: Message):
         request = await self._add_conversation_history(request)
+
+        if self.pricing:
+            try:
+                task = self._validate_payment(request)
+                request.content = task
+            except PaymentValidationError as e:
+                return Message(content=str(e))
+
         response = await self.agent.run(request)
         if response:
             proof = await self._generate_proof(request, response)
@@ -85,3 +100,25 @@ class AgentRuntime:
 
     async def _publish_proof(self, request: Message, response: Message, proof: str):
         publish_proof.execute(request, response, proof)
+
+    def _validate_payment(self, request: Message) -> str:
+        """Validate the payment for the request.
+
+        Args:
+            request: The message containing the transaction signature
+
+        Returns:
+            Message if validation failed with error message, None if validation succeeded
+        """
+        task_and_payment = extract_transaction_signature.execute(request.content)
+        if not task_and_payment:
+            raise PaymentValidationError("No transaction signature found in the message. Please include your payment transaction signature.")
+
+        if task_and_payment.signature in self.spent_payments:
+            raise PaymentValidationError(f"Transaction {task_and_payment.signature} has already been used. Please submit a new payment.")
+
+        if not validate_solana_payment.execute(self.pricing, task_and_payment.signature):
+            raise PaymentValidationError(f"Payment validation failed for transaction {task_and_payment.signature}. Please ensure you've sent {self.pricing.cost} SOL to {self.pricing.wallet_address}")
+
+        self.spent_payments.add(task_and_payment.signature)
+        return task_and_payment.task
