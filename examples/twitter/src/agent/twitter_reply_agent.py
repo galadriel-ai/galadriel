@@ -109,7 +109,6 @@ class TwitterReplyAgent(Agent):
     async def _handle_reply(
         self, reply_to_id: str, reply: SearchResult
     ) -> Optional[Message]:
-
         tweets = await self.database_client.get_tweets()
         filtered_tweets = [t for t in tweets if t.id == reply_to_id]
         if not len(filtered_tweets):
