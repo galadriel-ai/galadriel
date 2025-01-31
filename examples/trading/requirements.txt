@@ -2,3 +2,6 @@
 
 litellm
 smolagents
+jupiter-python-sdk
+solana
+solders

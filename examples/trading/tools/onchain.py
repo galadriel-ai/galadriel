@@ -1,3 +1,4 @@
+import asyncio
 import json
 from typing import Dict
 
@@ -5,10 +6,14 @@ from smolagents import tool
 
 from examples.trading.tools.price_feed import get_token_price
 
+from repositories.solana_repository import SolanaRepository
+
 Portfolio = Dict[str, float]
 
 # Dictionary to store user balances
 user_portfolios: Dict[str, Portfolio] = {}
+
+solana_repository = SolanaRepository()
 
 
 # This isn't a tool, but a helper function to update user balances
@@ -61,9 +66,9 @@ def swap_token(user_address: str, token1: str, token2: str, amount: float) -> st
     Swaps one token for another in the user's portfolio.
 
     Args:
-        user_address: The address of the user.
-        token1: The token to sell.
-        token2: The token to buy.
+        user_address: The solana address of the user.
+        token1: The address of the token to sell.
+        token2: The address of the token to buy.
         amount: The amount of token1 to swap.
 
     Returns:
@@ -78,24 +83,19 @@ def swap_token(user_address: str, token1: str, token2: str, amount: float) -> st
     if user_portfolios[user_address][token1] < amount:
         return f"User does not have enough {token1} to swap."
 
-    if token2 not in user_portfolios[user_address]:
-        user_portfolios[user_address][
-            token2
-        ] = 0.0  # Initialize token2 balance if needed
+    result = asyncio.run(solana_repository.swap(user_address, token1, token2, amount))
 
-    user_portfolios[user_address][token1] -= amount
-    user_portfolios[user_address][token2] += amount
-    return f"Successfully swapped {amount} {token1} for {token2}."
+    return f"Successfully swapped {amount} {token1} for {token2}, tx sig: {result}."
 
 
-def update_user_balance(user_address: str, token: str, amount: float) -> str:
+@tool
+def update_user_balance(user_address: str, token: str) -> str:
     """
-    Updates the user's token balance in the system.
+    Updates the user's token balance storage from the blockchain.
 
     Args:
         user_address: The address of the user.
-        token: The token symbol (e.g., "SOL", "BTC").
-        amount: The amount to add (or subtract if negative) to the user's balance.
+        token: The token address in solana.
 
     Returns:
         A message indicating success or failure.
@@ -106,7 +106,8 @@ def update_user_balance(user_address: str, token: str, amount: float) -> str:
     if token not in user_portfolios[user_address]:
         user_portfolios[user_address][token] = 0.0  # Initialize token balance if needed
 
-    user_portfolios[user_address][token] += amount
+    balance = asyncio.run(solana_repository.get_user_token_balance(user_address, token))
+    user_portfolios[user_address][token] = balance
     return "User balance updated successfully."
 
 
@@ -138,13 +139,13 @@ def get_all_portfolios(dummy: dict) -> str:
 
 
 @tool
-def get_user_balance(user_address: str, token: str) -> float:
+async def get_user_balance(user_address: str, token: str) -> float:
     """
-    Retrieves the user's balance for a specific token.
+    Retrieves the user's balance for a specific token from the local portfolio storage.
 
     Args:
         user_address: The address of the user.
-        token: The token symbol.
+        token: The token address in solana.
 
     Returns:
         The user's balance for the specified token.
@@ -155,47 +156,3 @@ def get_user_balance(user_address: str, token: str) -> float:
         )  # Return 0 if token not found
     else:
         return 0.0
-
-
-@tool
-def place_buy_order(user_address: str, asset: str, quantity: float) -> str:
-    """
-    Places a buy order for the specified asset.
-
-    Args:
-        user_address: The address of the user placing the order.
-        asset: The asset to buy (e.g., "BTC", "SOL").
-        quantity: The quantity of the asset to buy.
-
-    Returns:
-        A message indicating the result of the order placement.
-    """
-    # In a real implementation, this would interact with an exchange API to place the order.
-    # Here, we just check if the user has enough balance and simulate the order.
-
-    order_cost = quantity * get_token_price(asset)
-    available = get_user_balance(user_address, "USDC")
-
-    if available < quantity * order_cost:
-        return "Insufficient USDC balance to place buy order."
-
-    update_user_balance(user_address, "USDC", -quantity * order_cost)
-    update_user_balance(user_address, asset, quantity)
-    return "Buy order placed successfully."
-
-
-@tool
-def calculate_slippage(asset: str, quantity: float) -> float:
-    """
-    Calculates the slippage for a given asset and quantity.
-
-    Args:
-        asset: The asset symbol (e.g., "BTC", "SOL").
-        quantity: The quantity of the asset.
-
-    Returns:
-        The slippage percentage.
-    """
-    current_price = get_token_price(asset)
-    # Assume a 1% slippage for demonstration purposes
-    return current_price * 0.01 * quantity

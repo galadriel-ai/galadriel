@@ -37,6 +37,8 @@ class TradingAgent(Agent):
             tools=[
                 markets.fetch_market_data,
                 onchain.get_all_portfolios,
+                onchain.get_user_balance,
+                onchain.update_user_balance,
                 onchain.swap_token,
             ],
             add_base_tools=True,
