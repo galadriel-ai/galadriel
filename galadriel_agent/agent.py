@@ -2,6 +2,7 @@ import asyncio
 from pathlib import Path
 from typing import List
 from typing import Optional
+from typing import Set
 
 from dotenv import load_dotenv
 
@@ -54,7 +55,7 @@ class AgentRuntime:
         self.agent = agent
         self.pricing = pricing
         self.short_term_memory = short_term_memory
-        self.spent_payments = set()
+        self.spent_payments: Set[str] = set()
 
         env_path = Path(".") / ".env"
         load_dotenv(dotenv_path=env_path)
@@ -75,6 +76,8 @@ class AgentRuntime:
     async def run_request(self, request: Message):
         request = await self._add_conversation_history(request)
 
+        response = None
+        # Handle payment validation
         if self.pricing:
             try:
                 task_and_payment = validate_solana_payment.execute(
@@ -82,9 +85,10 @@ class AgentRuntime:
                 )
                 request.content = task_and_payment.task
             except PaymentValidationError as e:
-                return Message(content=str(e))
-
-        response = await self.agent.run(request)
+                response = Message(content=str(e))
+        if not response:
+            # Run the agent if no errors occurred so far
+            response = await self.agent.run(request)
         if response:
             proof = await self._generate_proof(request, response)
             await self._publish_proof(request, response, proof)

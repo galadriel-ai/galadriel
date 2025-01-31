@@ -40,7 +40,8 @@ def execute(
         )
     if not _validate_solana_payment(pricing, task_and_payment.signature):
         raise PaymentValidationError(
-            f"Payment validation failed for transaction {task_and_payment.signature}. Please ensure you've sent {pricing.cost} SOL to {pricing.wallet_address}"
+            f"Payment validation failed for transaction {task_and_payment.signature}. "
+            f"Please ensure you've sent {pricing.cost} SOL to {pricing.wallet_address}"
         )
     existing_payments.add(task_and_payment.signature)
     return task_and_payment
@@ -119,6 +120,6 @@ def _find_signature(message: str) -> Optional[str]:
         try:
             signature = Signature.from_string(word.strip())
             return str(signature)
-        except:
+        except Exception:
             pass
     return None
