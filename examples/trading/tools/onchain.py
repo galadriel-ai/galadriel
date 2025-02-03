@@ -2,11 +2,8 @@ import asyncio
 import json
 from typing import Dict
 
-from smolagents import tool
-
-from examples.trading.tools.price_feed import get_token_price
-
 from repositories.solana_repository import SolanaRepository
+from smolagents import tool
 
 Portfolio = Dict[str, float]
 
