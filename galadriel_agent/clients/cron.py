@@ -1,7 +1,8 @@
 import asyncio
 
-from galadriel_agent.agent import AgentInput, AgentOutput
-from galadriel_agent.entities import Message, PushOnlyQueue
+from galadriel_agent.agent import AgentInput
+from galadriel_agent.entities import Message
+from galadriel_agent.entities import PushOnlyQueue
 
 
 class Cron(AgentInput):
