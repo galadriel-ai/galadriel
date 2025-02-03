@@ -60,7 +60,7 @@ class AgentRuntime:
         env_path = Path(".") / ".env"
         load_dotenv(dotenv_path=env_path)
         # AgentConfig should have some settings for debug?
-        init_logging(False)
+        init_logging(True)
 
     async def run(self):
         input_queue = asyncio.Queue()
