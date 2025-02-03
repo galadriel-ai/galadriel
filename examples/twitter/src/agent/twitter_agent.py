@@ -1,4 +1,5 @@
 import os
+from typing import Literal
 from typing import Optional
 
 from galadriel_agent.agent import Agent
@@ -24,6 +25,7 @@ class TwitterAgent(Agent):
         agent_config: TwitterAgentConfig,
         llm_client: LlmClient,
         database_client: DatabaseClient,
+        original_tweet_type: Optional[Literal["perplexity", "search"]] = None
     ):
         self.reply_agent = TwitterReplyAgent(
             agent_config=agent_config,
@@ -38,6 +40,7 @@ class TwitterAgent(Agent):
                 database_client=database_client,
                 perplexity_client=PerplexityClient(perplexity_api_key),
                 twitter_search_tool=TwitterSearchTool(),
+                tweet_type=original_tweet_type,
             )
         else:
             logger.warning(

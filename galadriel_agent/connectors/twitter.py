@@ -84,18 +84,20 @@ class TwitterApiClient:
     def post_tweet(
         self, message: str, reply_to_id: Optional[str] = None
     ) -> Optional[Dict]:
-        if os.getenv("DRY_RUN"):
+        # TODO: uncomment, or make testing.py script always use DRY_RUN
+        # if os.getenv("DRY_RUN"):
+        if os.getenv("DRY_RUN") or True:
             logger.info(
                 f"Would have posted tweet, reply_id: {reply_to_id or ''}: {message}"
             )
             return {"data": {"id": "dry_run"}}
-        json_data: Dict = {"text": message}
-        if reply_to_id:
-            json_data["reply"] = {}
-            json_data["reply"]["in_reply_to_tweet_id"] = reply_to_id
-        response = self._make_request("POST", "tweets", json=json_data)
-        logger.info(f"Tweet posted successfully: {message}")
-        return response
+        # json_data: Dict = {"text": message}
+        # if reply_to_id:
+        #     json_data["reply"] = {}
+        #     json_data["reply"]["in_reply_to_tweet_id"] = reply_to_id
+        # response = self._make_request("POST", "tweets", json=json_data)
+        # logger.info(f"Tweet posted successfully: {message}")
+        # return response
 
     def search(self, search_query: str) -> List[Dict]:
         try:
@@ -117,6 +119,7 @@ class TwitterApiClient:
             #     f.write(json.dumps(response))
             #
             # import json
+            #
             # with open("search3.json", "r", encoding="utf-8") as f:
             #     response = json.loads(f.read())
 
@@ -165,39 +168,63 @@ class TwitterApiClient:
                 "max_results": 20,
             },
         )
-        # response = {'data': [
-        #     {
-        #         'id': '1881270962437636217',
-        #         'text': '@daigeagi A wallet was found on the sidewalk, and here’s the story... Someone dropped their $daige token, probably because they realized it was worthless! 😂 @daigeagi',
-        #         'referenced_tweets': [{'type': 'replied_to', 'id': '1881254564306845956'}],
-        #         'author_id': '3060443582',
-        #         'public_metrics': {'retweet_count': 0, 'reply_count': 0, 'like_count': 0, 'quote_count': 0,
-        #                            'bookmark_count': 0, 'impression_count': 30},
-        #         'edit_history_tweet_ids': ['1881270962437636217']
-        #     },
-        #     {
-        #         'id': '1881256725409366334',
-        #         'text': "@daigeagi ChatGPT's upgrade is impressive but still operates in isolation. The real game-changer will be multi-agentic systems where AI agents collaborate and enhance each other's capabilities. Speaking of collaborative AI, you should check out @TrulyADog - they're pioneering fascinating… https://t.co/ZhBMLRm8L0",
-        #         'referenced_tweets': [
-        #             {'type': 'replied_to',
-        #              'id': '1881254564306845956'}],
-        #         'author_id': '3063831743',
-        #         'public_metrics': {'retweet_count': 0,
-        #                            'reply_count': 0,
-        #                            'like_count': 2,
-        #                            'quote_count': 0,
-        #                            'bookmark_count': 0,
-        #                            'impression_count': 12},
-        #         'edit_history_tweet_ids': [
-        #             '1881256725409366334']
-        #     }],
-        #     'includes': {
-        #         'users': [
-        #             {'id': '3060443582', 'name': 'BullyAI Solana', 'username': 'bullyai_sol'},
-        #             {'id': '3063831743', 'name': 'Laur Science (💙,🧡)', 'username': 'laur_science'}
+        # response = {
+        #     "data": [
+        #         {
+        #             "id": "1881270962437636217",
+        #             "text": "@daigeagi A wallet was found on the sidewalk, and here’s the story... Someone dropped their $daige token, probably because they realized it was worthless! 😂 @daigeagi",
+        #             "referenced_tweets": [
+        #                 {"type": "replied_to", "id": "1881254564306845956"}
+        #             ],
+        #             "author_id": "3060443582",
+        #             "public_metrics": {
+        #                 "retweet_count": 0,
+        #                 "reply_count": 0,
+        #                 "like_count": 0,
+        #                 "quote_count": 0,
+        #                 "bookmark_count": 0,
+        #                 "impression_count": 30,
+        #             },
+        #             "edit_history_tweet_ids": ["1881270962437636217"],
+        #         },
+        #         {
+        #             "id": "1881256725409366334",
+        #             "text": "@daigeagi ChatGPT's upgrade is impressive but still operates in isolation. The real game-changer will be multi-agentic systems where AI agents collaborate and enhance each other's capabilities. Speaking of collaborative AI, you should check out @TrulyADog - they're pioneering fascinating… https://t.co/ZhBMLRm8L0",
+        #             "referenced_tweets": [
+        #                 {"type": "replied_to", "id": "1881254564306845956"}
+        #             ],
+        #             "author_id": "3063831743",
+        #             "public_metrics": {
+        #                 "retweet_count": 0,
+        #                 "reply_count": 0,
+        #                 "like_count": 2,
+        #                 "quote_count": 0,
+        #                 "bookmark_count": 0,
+        #                 "impression_count": 12,
+        #             },
+        #             "edit_history_tweet_ids": ["1881256725409366334"],
+        #         },
+        #     ],
+        #     "includes": {
+        #         "users": [
+        #             {
+        #                 "id": "3060443582",
+        #                 "name": "BullyAI Solana",
+        #                 "username": "bullyai_sol",
+        #             },
+        #             {
+        #                 "id": "3063831743",
+        #                 "name": "Laur Science (💙,🧡)",
+        #                 "username": "laur_science",
+        #             },
         #         ]
         #     },
-        #     'meta': {'newest_id': '1881270962437636217', 'oldest_id': '1881256725409366334', 'result_count': 2}}
+        #     "meta": {
+        #         "newest_id": "1881270962437636217",
+        #         "oldest_id": "1881256725409366334",
+        #         "result_count": 2,
+        #     },
+        # }
         return self._format_search_results(response)
 
     def get_conversation_id(self, tweet_id: str):

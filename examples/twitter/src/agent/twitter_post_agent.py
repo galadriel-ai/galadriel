@@ -3,6 +3,7 @@ import json
 import random
 from typing import Dict
 from typing import List
+from typing import Literal
 from typing import Optional
 
 from galadriel_agent.agent import Agent
@@ -78,6 +79,8 @@ class TwitterPostAgent(Agent):
     post_interval_minutes_min: int
     post_interval_minutes_max: int
 
+    tweet_type: Optional[Literal["perplexity", "search"]]
+
     def __init__(
         self,
         agent_config: TwitterAgentConfig,
@@ -85,6 +88,7 @@ class TwitterPostAgent(Agent):
         database_client: DatabaseClient,
         perplexity_client: PerplexityClient,
         twitter_search_tool: Optional[TwitterSearchTool] = None,
+        tweet_type: Optional[Literal["perplexity", "search"]] = None
     ):
         self.agent = agent_config
 
@@ -94,6 +98,8 @@ class TwitterPostAgent(Agent):
         self.perplexity_client = perplexity_client
 
         self.twitter_search_tool = twitter_search_tool
+
+        self.tweet_type = tweet_type
 
     async def run(self, request: Message) -> Message:
         request_type = request.type
@@ -109,6 +115,15 @@ class TwitterPostAgent(Agent):
         )
 
     async def _generate_original_tweet(self) -> Message:
+        if self.tweet_type:
+            if self.tweet_type == "perplexity":
+                response = await self._post_perplexity_tweet_with_retries()
+            else:
+                response = await self._post_quote()
+            if not response:
+                raise Exception("Error generating tweet")
+            return response
+
         if random.random() < 0.4 and self.twitter_search_tool:
             response = await self._post_quote()
             if response:
