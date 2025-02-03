@@ -1,0 +1,3 @@
+[submodule "core-agent"]
+	path = core-agent
+	url = git@github.com:galadriel-ai/core-agent.git
