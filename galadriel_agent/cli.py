@@ -16,7 +16,7 @@ from dotenv import load_dotenv
 from solders.keypair import Keypair
 
 API_BASE_URL = "https://api.galadriel.com/v1"
-DEFAULT_SOLANA_KEY_PATH = "secret/.private_key.json"
+DEFAULT_SOLANA_KEY_PATH = "~/secret/.private_key.json"
 
 
 @click.group(
