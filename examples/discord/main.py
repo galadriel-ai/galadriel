@@ -1,4 +1,4 @@
-from smolagents.models import LiteLLMModel
+from core_agent.models import LiteLLMModel
 from dotenv import load_dotenv
 from pathlib import Path
 

@@ -1,4 +1,4 @@
-from smolagents import Tool
+from core_agent import Tool
 from composio_langchain import ComposioToolSet, App
 
 

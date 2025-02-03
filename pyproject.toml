@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "galadriel"
-version = "0.0.3"
+version = "0.0.4"
 description = ""
 authors = [
     "Kaspar Peterson <kaspar@galadriel.com>",
@@ -16,6 +16,7 @@ packages = [{ include = "galadriel_agent" }]
 
 [tool.poetry.dependencies]
 python = "^3.10"
+core_agent = { path = "core-agent" }
 openai = "^1.55.3"
 pynacl = "^1.5.0"
 requests = "2.32.3"
@@ -27,7 +28,6 @@ aiofiles = "^22.0.0"
 rich = "^13.9.4"
 boto3 = "^1.35.0"
 python-json-logger = "^2.0.7"
-smolagents = "^1.6.0"
 composio-langchain = "^0.6.19"
 langchain-community = "^0.3.16"
 types-aiofiles = "^24.1.0.20241221"

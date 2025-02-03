@@ -1,7 +1,7 @@
 from typing import Optional
 import requests
 import json
-from smolagents import tool
+from core_agent import tool
 
 # Predefined list of tokens with their addresses
 # TOKENS = [

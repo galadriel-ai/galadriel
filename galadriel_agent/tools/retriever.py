@@ -1,6 +1,6 @@
 from typing import List
 
-from smolagents import Tool
+from core_agent import Tool
 from langchain.docstore.document import Document
 from langchain_community.retrievers import BM25Retriever
 

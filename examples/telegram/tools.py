@@ -1,4 +1,4 @@
-from smolagents import tool
+from core_agent import tool
 from datetime import datetime
 from typing import Optional
 

@@ -1,4 +1,3 @@
 litellm
-smolagents==1.3.0
 solana
 solders

@@ -3,7 +3,7 @@ import os
 from typing import Dict
 from typing import Optional
 
-from smolagents import Tool
+from core_agent import Tool
 
 from galadriel_agent.connectors.twitter import TwitterApiClient
 from galadriel_agent.connectors.twitter import TwitterCredentials

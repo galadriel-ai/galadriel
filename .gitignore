@@ -6,7 +6,7 @@ venv/
 .venv/
 .DS_Store
 .mypy_cache/
-
+.vscode/
 logs/
 data/
 __pycache__/

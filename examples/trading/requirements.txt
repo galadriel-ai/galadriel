@@ -1,7 +1,6 @@
 -e ../../. # Install dependencies from pyproject.toml in galadriel-agent
 
 litellm
-smolagents
 jupiter-python-sdk
 solana
 solders

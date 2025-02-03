@@ -1,4 +1,4 @@
-from smolagents import tool
+from core_agent import tool
 
 
 @tool

@@ -3,8 +3,8 @@ import os
 from typing import List
 from typing import Optional
 
-from smolagents import CodeAgent
-from smolagents import LiteLLMModel
+from core_agent import CodeAgent
+from core_agent import LiteLLMModel
 
 from entities import Memory
 from entities import ShortTermMemory

@@ -7,12 +7,11 @@ from typing import List
 from typing import Optional
 
 from rich.text import Text
-from smolagents import Tool
-from smolagents import ToolCallingAgent
-from smolagents.agents import LogLevel
+from core_agent import Tool
+from core_agent import ToolCallingAgent
+from core_agent.agents import LogLevel
 
 from examples.telegram.prompts import TELEGRAM_SYSTEM_PROMPT
-from galadriel_agent.agent import Agent
 from galadriel_agent.domain.prompts.format_prompt import load_agent_template
 from galadriel_agent.entities import AgentMessage
 from galadriel_agent.entities import Message
@@ -20,7 +19,7 @@ from galadriel_agent.memory.memory_repository import EmbeddingClient
 from galadriel_agent.memory.memory_repository import MemoryRepository
 
 
-class ElonMuskAgent(ToolCallingAgent, Agent):
+class ElonMuskAgent(ToolCallingAgent):
     def __init__(
         self,
         character_json_path: str,

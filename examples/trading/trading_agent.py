@@ -1,8 +1,8 @@
 import os
 from typing import Dict
 
-from smolagents import CodeAgent
-from smolagents import LiteLLMModel
+from core_agent import CodeAgent
+from core_agent import LiteLLMModel
 
 from galadriel_agent.agent import Agent
 from tools import markets
