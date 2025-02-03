@@ -16,11 +16,6 @@ from galadriel_agent.entities import Pricing
 from galadriel_agent.entities import ShortTermMemory
 from galadriel_agent.errors import PaymentValidationError
 from galadriel_agent.logging_utils import init_logging
-from core_agent import CodeAgent
-
-class Agent:
-    async def run(self, request: Message) -> Message:
-        raise RuntimeError("Function not implemented")
 
 
 class AgentInput:

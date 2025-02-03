@@ -1,19 +1,12 @@
 import asyncio
-from typing import Dict
 from typing import List
-from typing import Optional
 
 from pydantic import BaseModel
 from pydantic import Field
 
+from core_agent.models import Message
+
 GALADRIEL_API_BASE_URL = "https://api.galadriel.com/v1"
-
-
-class Message(BaseModel):
-    content: str
-    conversation_id: Optional[str] = None
-    type: Optional[str] = None
-    additional_kwargs: Optional[Dict] = None
 
 
 class HumanMessage(Message):
