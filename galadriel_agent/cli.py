@@ -16,7 +16,7 @@ from dotenv import load_dotenv
 from solders.keypair import Keypair
 
 API_BASE_URL = "https://api.galadriel.com/v1"
-DEFAULT_SOLANA_KEY_PATH = "~/secret/.private_key.json"
+DEFAULT_SOLANA_KEY_PATH = os.path.expanduser("~/secret/.private_key.json")
 
 
 @click.group(
@@ -243,7 +243,6 @@ def create(path: str):
         click.echo(f"Successfully created Solana wallet {pub_key} at {path}")
     except Exception as e:
         click.echo(f"Failed to create Solana wallet: {str(e)}")
-        raise click.ClickException(str(e))
 
 
 @wallet.command(name="import")
@@ -408,7 +407,7 @@ build-backend = "poetry.core.masonry.api"
     # GALADRIEL_API_KEY={galadriel_api_key}"""
     #     with open(os.path.join(agent_name, ".env"), "w", encoding="utf-8") as f:
     #         f.write(env_content)
-    agent_env_content = f"""AGENT_NAME={agent_name}"""
+    agent_env_content = f'AGENT_NAME="{agent_name}"'
     with open(os.path.join(agent_name, ".agents.env"), "w", encoding="utf-8") as f:
         f.write(agent_env_content)
 
@@ -596,11 +595,19 @@ def _sanitize_agent_name(user_input: str) -> str:
 
 def _update_agent_env_file(env_vars: dict) -> None:
     """Update the .agents.env file with the new environment variables."""
-    agent_name = _get_agent_name()
+    existing_env_vars = dotenv_values(".agents.env")
+
+    # Update existing values or add new ones
+    existing_env_vars.update(env_vars)
+
     agent_env_content = ""
-    for key, value in env_vars.items():
+    for key, value in existing_env_vars.items():
+        # Wrap the string value in quotes
+        if isinstance(value, str):
+            value = f'"{value}"'
         agent_env_content += f"\n{key}={value}"
-    with open(os.path.join(agent_name, ".agents.env"), "a", encoding="utf-8") as f:
+
+    with open(".agents.env", "w", encoding="utf-8") as f:
         f.write(agent_env_content)
 
 
@@ -610,12 +617,13 @@ def _create_solana_wallet(path: str) -> str:
     if os.path.exists(path):
         raise click.ClickException(f"File {path} already exists")
 
+    # Update the .agents.env file with the new wallet path
+    _update_agent_env_file({"SOLANA_PRIVATE_KEY_PATH": path})
+
     keypair = Keypair()
-    private_key_json = json.dumps(keypair.to_bytes_array()).encode("utf-8")
+    private_key_json = json.dumps(keypair.to_json()).encode("utf-8")
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "wb") as file:
         file.write(private_key_json)
 
-    # Update the .agents.env file with the new wallet path
-    _update_agent_env_file({"SOLANA_PRIVATE_KEY_PATH": path})
     return str(keypair.pubkey())
