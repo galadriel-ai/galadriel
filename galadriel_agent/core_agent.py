@@ -8,7 +8,7 @@ from galadriel_agent.agent import Agent
 
 class CodeAgent(Agent, SmolAgentCodeAgent):
     async def execute(self, request: Message) -> Message:
-        answer = super().run(request.content)
+        answer = SmolAgentCodeAgent.run(self, request.content)
         return Message(
             content=answer,
             conversation_id=request.conversation_id,
@@ -18,7 +18,7 @@ class CodeAgent(Agent, SmolAgentCodeAgent):
 
 class ToolCallingAgent(Agent, SmolAgentToolCallingAgent):
     async def execute(self, request: Message) -> Message:
-        answer = super().run(request.content)
+        answer = SmolAgentToolCallingAgent.run(self, request.content)
         return Message(
             content=answer,
             conversation_id=request.conversation_id,
