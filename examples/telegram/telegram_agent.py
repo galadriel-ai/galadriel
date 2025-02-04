@@ -75,7 +75,7 @@ class ElonMuskAgent(ToolCallingAgent, Agent):
                 Text(f"Error loading memory repository: {e}"), level=LogLevel.ERROR
             )
 
-    async def run(self, message: Message) -> Message:
+    async def execute(self, message: Message) -> Message:
         try:
             message_embedding = await self.embedding_client.embed_text(message.content)
             # todo: retrieve long term memory with similarity above threshold instead of only top_k

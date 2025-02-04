@@ -91,7 +91,7 @@ class TwitterReplyAgent(Agent):
         self.llm_client = llm_client
         self.database_client = database_client
 
-    async def run(self, request: Message) -> Message:
+    async def execute(self, request: Message) -> Message:
         request_type = request.type
         if request_type and request_type == "tweet_reply":
             conversation_id = request.conversation_id

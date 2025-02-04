@@ -45,6 +45,6 @@ class TradingAgent(Agent):
             additional_authorized_imports=["json"],
         )
 
-    async def run(self, _: Dict) -> Dict:
-        response = self.internal.run(TRADING_PROMPT)
+    async def execute(self, _: Dict) -> Dict:
+        response = self.internal.execute(TRADING_PROMPT)
         return {"response": response}
