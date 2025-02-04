@@ -16,7 +16,11 @@ from galadriel_agent.entities import Pricing
 from galadriel_agent.entities import ShortTermMemory
 from galadriel_agent.errors import PaymentValidationError
 from galadriel_agent.logging_utils import init_logging
-from galadriel_agent.core_agent import Agent
+
+
+class Agent:
+    async def execute(self, request: Message) -> Message:
+        raise RuntimeError("Function not implemented")
 
 
 class AgentInput:
@@ -84,7 +88,7 @@ class AgentRuntime:
                 response = Message(content=str(e))
         if not response:
             # Run the agent if no errors occurred so far
-            response = await self.agent.run(request)
+            response = await self.agent.execute(request)
         if response:
             proof = await self._generate_proof(request, response)
             await self._publish_proof(request, response, proof)

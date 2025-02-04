@@ -3,10 +3,11 @@ from smolagents.agents import LogLevel
 from smolagents import CodeAgent as SmolAgentCodeAgent
 from smolagents import ToolCallingAgent as SmolAgentToolCallingAgent
 from galadriel_agent.entities import Message
+from galadriel_agent.agent import Agent
 
 
-class Agent(MultiStepAgent):
-    async def run(self, request: Message) -> Message:
+class CodeAgent(Agent, SmolAgentCodeAgent):
+    async def execute(self, request: Message) -> Message:
         answer = super().run(request.content)
         return Message(
             content=answer,
@@ -14,11 +15,11 @@ class Agent(MultiStepAgent):
             additional_kwargs=request.additional_kwargs
         )
 
-
-class CodeAgent(Agent, SmolAgentCodeAgent):
-    pass
-
-
 class ToolCallingAgent(Agent, SmolAgentToolCallingAgent):
-    pass
-
+    async def execute(self, request: Message) -> Message:
+        answer = super().run(request.content)
+        return Message(
+            content=answer,
+            conversation_id=request.conversation_id,
+            additional_kwargs=request.additional_kwargs
+        )

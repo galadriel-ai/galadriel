@@ -11,7 +11,6 @@ from galadriel_agent.core_agent import Tool
 from galadriel_agent.core_agent import ToolCallingAgent
 from galadriel_agent.core_agent import LogLevel
 
-from galadriel_agent.agent import Agent
 from galadriel_agent.domain.prompts.format_prompt import load_agent_template
 from galadriel_agent.entities import AgentMessage
 from galadriel_agent.entities import Message
@@ -20,7 +19,7 @@ from galadriel_agent.memory.memory_repository import MemoryRepository
 from prompts import DISCORD_SYSTEM_PROMPT
 
 
-class ElonMuskAgent(ToolCallingAgent, Agent):
+class ElonMuskAgent(ToolCallingAgent):
     def __init__(
         self,
         character_json_path: str,
