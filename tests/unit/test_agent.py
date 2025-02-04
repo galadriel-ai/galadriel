@@ -19,7 +19,7 @@ class MockAgent(Agent):
     def __init__(self):
         self.called_messages: List[Message] = []
 
-    async def run(self, request: Message) -> Message:
+    async def execute(self, request: Message) -> Message:
         self.called_messages.append(request)
         return RESPONSE_MESSAGE
 

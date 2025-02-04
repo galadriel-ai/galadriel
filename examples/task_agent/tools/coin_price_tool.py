@@ -1,6 +1,6 @@
 import os
 
-from smolagents import tool
+from galadriel_agent.core_agent import tool
 
 
 @tool

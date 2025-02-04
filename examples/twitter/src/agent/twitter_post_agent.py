@@ -101,7 +101,7 @@ class TwitterPostAgent(Agent):
 
         self.tweet_type = tweet_type
 
-    async def run(self, request: Message) -> Message:
+    async def execute(self, request: Message) -> Message:
         request_type = request.type
         if request_type and request_type == "tweet_original":
             response = await self._generate_original_tweet()

@@ -16,7 +16,7 @@ pip install -e ".[dev]"
 cd examples/{example}
 pip install -r requirements.txt  # if relevant for the example
 cp template.env .env  # If relevant for the example
-python main.py
+python agent.py
 ```
 
 ## Linting, code formatting, type-checking ❗❗❗

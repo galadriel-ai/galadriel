@@ -8,7 +8,7 @@ cp template.env .env
 
 ### Run
 ```shell
-python main.py
+python agent.py
 ```
 
 ### Tests
