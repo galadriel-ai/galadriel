@@ -6,7 +6,7 @@ from typing import Optional
 
 from pythonjsonlogger import jsonlogger
 
-from galadriel_agent.domain.logs_exporter import LogsExportHandler
+from galadriel.domain.logs_exporter import LogsExportHandler
 
 GALADRIEL_NODE_LOGGER = "galadriel_agent"
 

@@ -2,8 +2,8 @@ from smolagents import *
 from smolagents.agents import LogLevel
 from smolagents import CodeAgent as SmolAgentCodeAgent
 from smolagents import ToolCallingAgent as SmolAgentToolCallingAgent
-from galadriel_agent.entities import Message
-from galadriel_agent.agent import Agent
+from galadriel.entities import Message
+from galadriel.agent import Agent
 
 
 class CodeAgent(Agent, SmolAgentCodeAgent):

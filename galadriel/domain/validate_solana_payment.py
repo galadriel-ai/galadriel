@@ -7,9 +7,9 @@ from solana.rpc.api import Client
 from solders.pubkey import Pubkey
 from solders.signature import Signature
 
-from galadriel_agent.entities import Message
-from galadriel_agent.entities import Pricing
-from galadriel_agent.errors import PaymentValidationError
+from galadriel.entities import Message
+from galadriel.entities import Pricing
+from galadriel.errors import PaymentValidationError
 
 
 @dataclass

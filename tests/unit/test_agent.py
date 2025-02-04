@@ -2,14 +2,14 @@ from typing import Dict
 from typing import List
 from unittest.mock import MagicMock
 
-from galadriel_agent import agent
-from galadriel_agent.agent import AgentRuntime
-from galadriel_agent.agent import Agent
-from galadriel_agent.agent import AgentInput, AgentOutput
-from galadriel_agent.domain import validate_solana_payment
-from galadriel_agent.entities import Message, PushOnlyQueue, Pricing
-from galadriel_agent.errors import PaymentValidationError
-from galadriel_agent.memory.in_memory import InMemoryShortTermMemory
+from galadriel import agent
+from galadriel.agent import AgentRuntime
+from galadriel.agent import Agent
+from galadriel.agent import AgentInput, AgentOutput
+from galadriel.domain import validate_solana_payment
+from galadriel.entities import Message, PushOnlyQueue, Pricing
+from galadriel.errors import PaymentValidationError
+from galadriel.memory.in_memory import InMemoryShortTermMemory
 
 CONVERSATION_ID = "ci1"
 RESPONSE_MESSAGE = Message(content="goodbye")
@@ -138,7 +138,7 @@ async def test_payment_validation_failure(monkeypatch):
 
     # Mock failed payment validation
     monkeypatch.setattr(
-        "galadriel_agent.domain.validate_solana_payment.execute",
+        "galadriel.domain.validate_solana_payment.execute",
         MagicMock(side_effect=PaymentValidationError("Invalid payment")),
     )
 

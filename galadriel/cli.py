@@ -411,7 +411,7 @@ build-backend = "poetry.core.masonry.api"
     with open(os.path.join(agent_name, ".agents.env"), "w", encoding="utf-8") as f:
         f.write(agent_env_content)
 
-    # copy docker files from sentience/galadriel_agent/docker to user current directory
+    # copy docker files from sentience/galadriel/docker to user current directory
     # docker_files_dir = os.path.join(os.path.dirname(__file__), "docker")
     # shutil.copy(
     #     os.path.join(os.path.join(os.path.dirname(__file__)), "docker-compose.yml"),

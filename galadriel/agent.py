@@ -6,16 +6,16 @@ from typing import Set
 
 from dotenv import load_dotenv
 
-from galadriel_agent.domain import add_conversation_history
-from galadriel_agent.domain import generate_proof
-from galadriel_agent.domain import publish_proof
-from galadriel_agent.domain import validate_solana_payment
-from galadriel_agent.entities import Message
-from galadriel_agent.entities import PushOnlyQueue
-from galadriel_agent.entities import Pricing
-from galadriel_agent.entities import ShortTermMemory
-from galadriel_agent.errors import PaymentValidationError
-from galadriel_agent.logging_utils import init_logging
+from galadriel.domain import add_conversation_history
+from galadriel.domain import generate_proof
+from galadriel.domain import publish_proof
+from galadriel.domain import validate_solana_payment
+from galadriel.entities import Message
+from galadriel.entities import PushOnlyQueue
+from galadriel.entities import Pricing
+from galadriel.entities import ShortTermMemory
+from galadriel.errors import PaymentValidationError
+from galadriel.logging_utils import init_logging
 
 
 class Agent:

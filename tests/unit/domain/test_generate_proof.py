@@ -1,5 +1,5 @@
-from galadriel_agent.domain import generate_proof
-from galadriel_agent.entities import Message
+from galadriel.domain import generate_proof
+from galadriel.entities import Message
 
 
 def test_none():

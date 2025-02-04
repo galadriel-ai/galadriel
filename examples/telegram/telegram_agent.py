@@ -7,16 +7,16 @@ from typing import List
 from typing import Optional
 
 from rich.text import Text
-from galadriel_agent.core_agent import Tool
-from galadriel_agent.core_agent import ToolCallingAgent
-from galadriel_agent.core_agent import LogLevel
+from galadriel.core_agent import Tool
+from galadriel.core_agent import ToolCallingAgent
+from galadriel.core_agent import LogLevel
 
-from galadriel_agent.agent import Agent
-from galadriel_agent.domain.prompts.format_prompt import load_agent_template
-from galadriel_agent.entities import AgentMessage
-from galadriel_agent.entities import Message
-from galadriel_agent.memory.memory_repository import EmbeddingClient
-from galadriel_agent.memory.memory_repository import MemoryRepository
+from galadriel.agent import Agent
+from galadriel.domain.prompts.format_prompt import load_agent_template
+from galadriel.entities import AgentMessage
+from galadriel.entities import Message
+from galadriel.memory.memory_repository import EmbeddingClient
+from galadriel.memory.memory_repository import MemoryRepository
 
 TELEGRAM_SYSTEM_PROMPT = """
 {{system}}

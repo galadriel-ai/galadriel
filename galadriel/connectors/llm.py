@@ -7,7 +7,7 @@ from openai import AsyncOpenAI
 from openai.types.chat.chat_completion import ChatCompletion
 from openai.types.chat.chat_completion_message_param import ChatCompletionMessageParam
 
-from galadriel_agent.logging_utils import get_agent_logger
+from galadriel.logging_utils import get_agent_logger
 
 logger = get_agent_logger()
 

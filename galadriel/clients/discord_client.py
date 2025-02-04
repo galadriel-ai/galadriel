@@ -5,8 +5,8 @@ import os
 import discord
 from discord.ext import commands
 
-from galadriel_agent.agent import AgentInput, AgentOutput
-from galadriel_agent.entities import HumanMessage, Message, PushOnlyQueue
+from galadriel.agent import AgentInput, AgentOutput
+from galadriel.entities import HumanMessage, Message, PushOnlyQueue
 
 
 class CommandsCog(commands.Cog):
