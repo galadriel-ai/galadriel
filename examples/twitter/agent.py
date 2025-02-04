@@ -5,7 +5,7 @@ from typing import List
 
 from dotenv import load_dotenv
 
-from galadriel.agent import AgentRuntime
+from galadriel import AgentRuntime
 from galadriel.connectors.llm import LlmClient
 from galadriel.storage.s3 import S3Client
 from src.agent.twitter_agent import TwitterAgent

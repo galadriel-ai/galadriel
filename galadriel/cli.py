@@ -324,7 +324,7 @@ def _create_agent_template(
 
     # Generate <agent_name>.py
     class_name = "".join(word.capitalize() for word in agent_name.split("_"))
-    agent_code = f"""from galadriel.agent import Agent
+    agent_code = f"""from galadriel import Agent
 from galadriel.entities import Message
 
 
@@ -356,9 +356,9 @@ class {class_name}(Agent):
     # generate agent.py
     main_code = f"""import asyncio
 
-from galadriel.agent import AgentOutput
-from galadriel.agent import AgentRuntime
-from galadriel.clients.cron import Cron
+from galadriel import AgentOutput
+from galadriel import AgentRuntime
+from galadriel.clients import Cron
 from galadriel.entities import Message
 
 from agent.{agent_name} import {class_name}

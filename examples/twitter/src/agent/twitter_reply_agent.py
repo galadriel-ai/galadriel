@@ -1,7 +1,7 @@
 from typing import Dict
 from typing import Optional
 
-from galadriel.agent import Agent
+from galadriel import Agent
 from galadriel.connectors.llm import LlmClient
 from galadriel.connectors.twitter import SearchResult
 from galadriel.domain.prompts import format_prompt

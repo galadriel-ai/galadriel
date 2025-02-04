@@ -6,7 +6,7 @@ from typing import List
 from typing import Literal
 from typing import Optional
 
-from galadriel.agent import Agent
+from galadriel import Agent
 from galadriel.connectors.llm import LlmClient
 from galadriel.connectors.perplexity import PerplexityClient
 from galadriel.connectors.twitter import SearchResult

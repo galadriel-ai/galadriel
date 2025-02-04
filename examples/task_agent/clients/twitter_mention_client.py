@@ -2,8 +2,7 @@ from typing import Dict
 from typing import List
 from typing import Optional
 
-from galadriel.agent import AgentInput
-from galadriel.agent import AgentOutput
+from galadriel import AgentInput, AgentOutput
 from galadriel.connectors.twitter import TwitterApiClient
 from galadriel.connectors.twitter import TwitterCredentials
 from galadriel.entities import Message

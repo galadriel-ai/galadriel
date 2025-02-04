@@ -7,11 +7,10 @@ from typing import List
 from typing import Optional
 
 from rich.text import Text
-from galadriel.core_agent import Tool
-from galadriel.core_agent import ToolCallingAgent
-from galadriel.core_agent import LogLevel
 
-from galadriel.agent import Agent
+from galadriel import Agent, ToolCallingAgent
+from galadriel.core_agent import LogLevel
+from galadriel.core_agent import Tool
 from galadriel.domain.prompts.format_prompt import load_agent_template
 from galadriel.entities import AgentMessage
 from galadriel.entities import Message
@@ -44,21 +43,21 @@ Be very brief, and concise, add a statement in your voice.
 
 class ElonMuskAgent(ToolCallingAgent, Agent):
     def __init__(
-        self,
-        character_json_path: str,
-        memory_repository: MemoryRepository,
-        tools: List[Tool],
-        model: Callable[[List[Dict[str, str]]], str],
-        system_prompt: Optional[str] = None,
-        tool_description_template: Optional[str] = None,
-        max_steps: int = 6,
-        tool_parser: Optional[Callable] = None,
-        add_base_tools: bool = False,
-        verbosity_level: int = 1,
-        grammar: Optional[Dict[str, str]] = None,
-        managed_agents: Optional[List] = None,
-        step_callbacks: Optional[List[Callable]] = None,
-        planning_interval: Optional[int] = None,
+            self,
+            character_json_path: str,
+            memory_repository: MemoryRepository,
+            tools: List[Tool],
+            model: Callable[[List[Dict[str, str]]], str],
+            system_prompt: Optional[str] = None,
+            tool_description_template: Optional[str] = None,
+            max_steps: int = 6,
+            tool_parser: Optional[Callable] = None,
+            add_base_tools: bool = False,
+            verbosity_level: int = 1,
+            grammar: Optional[Dict[str, str]] = None,
+            managed_agents: Optional[List] = None,
+            step_callbacks: Optional[List[Callable]] = None,
+            planning_interval: Optional[int] = None,
     ):
         super().__init__(
             tools=tools,

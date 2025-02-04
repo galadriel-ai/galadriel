@@ -6,8 +6,8 @@ from galadriel.tools.composio_converter import convert_action
 from telegram_agent import ElonMuskAgent
 from tools import get_time
 from galadriel.memory.memory_repository import memory_repository
-from galadriel.agent import AgentRuntime
-from galadriel.clients.telegram_client import TelegramClient
+from galadriel import AgentRuntime
+from galadriel.clients import TelegramClient
 import os
 import asyncio
 from galadriel.logging_utils import get_agent_logger

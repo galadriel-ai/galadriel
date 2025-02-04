@@ -5,18 +5,21 @@ from typing import Optional
 from typing import Set
 
 from dotenv import load_dotenv
-
+from smolagents import *
+from smolagents.agents import LogLevel
 from galadriel.domain import add_conversation_history
 from galadriel.domain import generate_proof
 from galadriel.domain import publish_proof
 from galadriel.domain import validate_solana_payment
-from galadriel.entities import Message
 from galadriel.entities import PushOnlyQueue
 from galadriel.entities import Pricing
 from galadriel.entities import ShortTermMemory
 from galadriel.errors import PaymentValidationError
 from galadriel.logging_utils import init_logging
 
+from smolagents import CodeAgent as InternalCodeAgent
+from smolagents import ToolCallingAgent as InternalToolCallingAgent
+from galadriel.entities import Message
 
 class Agent:
     async def execute(self, request: Message) -> Message:
@@ -37,6 +40,24 @@ class AgentState:
     # TODO: knowledge_base: KnowledgeBase
     pass
 
+class CodeAgent(Agent, InternalCodeAgent):
+    async def execute(self, request: Message) -> Message:
+        answer = InternalCodeAgent.run(self, request.content)
+        return Message(
+            content=answer,
+            conversation_id=request.conversation_id,
+            additional_kwargs=request.additional_kwargs,
+        )
+
+
+class ToolCallingAgent(Agent, InternalToolCallingAgent):
+    async def execute(self, request: Message) -> Message:
+        answer = InternalToolCallingAgent.run(self, request.content)
+        return Message(
+            content=answer,
+            conversation_id=request.conversation_id,
+            additional_kwargs=request.additional_kwargs,
+        )
 
 # This is just a rough sketch on how the GaladrielAgent itself will be implemented
 # This is not meant to be read or modified by the end developer

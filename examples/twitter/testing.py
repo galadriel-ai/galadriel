@@ -10,9 +10,7 @@ from typing import Literal
 from dotenv import load_dotenv
 from typing_extensions import runtime
 
-from galadriel.agent import AgentInput
-from galadriel.agent import AgentOutput
-from galadriel.agent import AgentRuntime
+from galadriel import AgentRuntime, AgentInput, AgentOutput
 from galadriel.connectors.llm import LlmClient
 from galadriel.entities import Message
 from galadriel.entities import PushOnlyQueue
