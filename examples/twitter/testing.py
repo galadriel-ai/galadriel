@@ -9,12 +9,12 @@ from typing import Literal
 
 from dotenv import load_dotenv
 
-from galadriel_agent.agent import AgentInput
-from galadriel_agent.agent import AgentOutput
-from galadriel_agent.agent import AgentRuntime
-from galadriel_agent.connectors.llm import LlmClient
-from galadriel_agent.entities import Message
-from galadriel_agent.entities import PushOnlyQueue
+from galadriel.agent import AgentInput
+from galadriel.agent import AgentOutput
+from galadriel.agent import AgentRuntime
+from galadriel.connectors.llm import LlmClient
+from galadriel.entities import Message
+from galadriel.entities import PushOnlyQueue
 from src.agent.twitter_agent import TwitterAgent
 from src.models import TwitterAgentConfig
 from src.models import TwitterPost

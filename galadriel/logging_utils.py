@@ -8,7 +8,7 @@ from pythonjsonlogger import jsonlogger
 
 from galadriel.domain.logs_exporter import LogsExportHandler
 
-GALADRIEL_NODE_LOGGER = "galadriel_agent"
+GALADRIEL_NODE_LOGGER = "galadriel"
 
 LOG_FILE_PATH = "logs/logs.log"
 LOGGING_MESSAGE_FORMAT = "%(asctime)s %(name)-12s %(levelname)s %(message)s"
