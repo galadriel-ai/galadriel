@@ -3,8 +3,8 @@ import os
 from typing import List
 from typing import Optional
 
-from smolagents import CodeAgent
-from smolagents import LiteLLMModel
+from galadriel_agent.core_agent import CodeAgent
+from galadriel_agent.core_agent import LiteLLMModel
 
 from entities import Memory
 from entities import ShortTermMemory
@@ -20,7 +20,7 @@ memory_repository = MemoryRepository()
 
 class ResearchAgent(Agent):
 
-    async def run(self, request: Message) -> Message:
+    async def execute(self, request: Message) -> Message:
         conversation_id = request.conversation_id
         request_id = request.additional_kwargs["id"]
         author_id = request.additional_kwargs["author_id"]
@@ -32,7 +32,7 @@ class ResearchAgent(Agent):
             )
         task = await self._add_memories_to_task(task, author_id, conversation_id)
         agent = self._get_agent()
-        answer = agent.run(task)
+        answer = agent.execute(task)
         memory = ShortTermMemory(task=(task), result=str(answer))
         memory_repository.add_short_term_memory(author_id, conversation_id, memory)
         update_long_term_memory(memory_repository, author_id, memory)

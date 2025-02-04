@@ -2,7 +2,7 @@ import asyncio
 import json
 from typing import Dict
 
-from smolagents import tool
+from galadriel_agent.core_agent import tool
 
 from examples.trading.tools.price_feed import get_token_price
 

@@ -1,4 +1,4 @@
-from smolagents.models import LiteLLMModel
+from galadriel_agent.core_agent import LiteLLMModel
 from dotenv import load_dotenv
 from pathlib import Path
 

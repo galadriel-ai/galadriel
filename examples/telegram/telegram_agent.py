@@ -7,9 +7,9 @@ from typing import List
 from typing import Optional
 
 from rich.text import Text
-from smolagents import Tool
-from smolagents import ToolCallingAgent
-from smolagents.agents import LogLevel
+from galadriel_agent.core_agent import Tool
+from galadriel_agent.core_agent import ToolCallingAgent
+from galadriel_agent.core_agent import LogLevel
 
 from galadriel_agent.agent import Agent
 from galadriel_agent.domain.prompts.format_prompt import load_agent_template
@@ -40,6 +40,7 @@ bellow are the relevant long term memories, if any:
 
 Be very brief, and concise, add a statement in your voice.
 """
+
 
 class ElonMuskAgent(ToolCallingAgent, Agent):
     def __init__(
@@ -96,7 +97,7 @@ class ElonMuskAgent(ToolCallingAgent, Agent):
                 Text(f"Error loading memory repository: {e}"), level=LogLevel.ERROR
             )
 
-    async def run(self, message: Message) -> Message:
+    async def execute(self, message: Message) -> Message:
         try:
             message_embedding = await self.embedding_client.embed_text(message.content)
             # todo: retrieve long term memory with similarity above threshold instead of only top_k

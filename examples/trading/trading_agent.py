@@ -1,8 +1,8 @@
 import os
 from typing import Dict
 
-from smolagents import CodeAgent
-from smolagents import LiteLLMModel
+from galadriel_agent.core_agent import CodeAgent
+from galadriel_agent.core_agent import LiteLLMModel
 
 from galadriel_agent.agent import Agent
 from tools import markets
@@ -45,6 +45,6 @@ class TradingAgent(Agent):
             additional_authorized_imports=["json"],
         )
 
-    async def run(self, _: Dict) -> Dict:
-        response = self.internal.run(TRADING_PROMPT)
+    async def execute(self, _: Dict) -> Dict:
+        response = self.internal.execute(TRADING_PROMPT)
         return {"response": response}

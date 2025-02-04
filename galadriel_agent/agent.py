@@ -19,7 +19,7 @@ from galadriel_agent.logging_utils import init_logging
 
 
 class Agent:
-    async def run(self, request: Message) -> Message:
+    async def execute(self, request: Message) -> Message:
         raise RuntimeError("Function not implemented")
 
 
@@ -88,7 +88,7 @@ class AgentRuntime:
                 response = Message(content=str(e))
         if not response:
             # Run the agent if no errors occurred so far
-            response = await self.agent.run(request)
+            response = await self.agent.execute(request)
         if response:
             proof = await self._generate_proof(request, response)
             await self._publish_proof(request, response, proof)
