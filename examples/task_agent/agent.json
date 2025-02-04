@@ -2,8 +2,7 @@
     "name": "Task Agent",
     "description": "Conducts research on a single or list of tokens provided by the user",
     "pricing": {
-      "cost": "0.001",
-      "token": "SOL",
+      "cost": 0.001,
       "wallet_address": "5RYHzQuknP2viQjYzP27wXVWKeaxonZgMBPQA86GV92t"
     }
   }

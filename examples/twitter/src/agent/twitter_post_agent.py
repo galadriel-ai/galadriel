@@ -224,7 +224,24 @@ class TwitterPostAgent(Agent):
             and response.choices[0].message
             and response.choices[0].message.content
         ):
-            message = response.choices[0].message.content + " " + quote_url
+            message = response.choices[0].message.content
+            formatted_message = format_response.execute(message)
+            if not formatted_message:
+                return Message(
+                    content="",
+                    conversation_id=None,
+                    type="tweet_excluded",
+                    additional_kwargs=TwitterPost(
+                        type="tweet_excluded",
+                        conversation_id=None,
+                        text=message,
+                        topics=prompt_state.get("topics_data", []),
+                        search_topic=None,
+                        quoted_tweet_id=quoted_tweet_id,
+                        quoted_tweet_username=quoted_tweet_username,
+                    ).to_dict(),
+                )
+            formatted_message = formatted_message + " " + quote_url
             return Message(
                 content="",
                 conversation_id=None,
@@ -232,7 +249,7 @@ class TwitterPostAgent(Agent):
                 additional_kwargs=TwitterPost(
                     type="tweet",
                     conversation_id=None,
-                    text=message,
+                    text=formatted_message,
                     topics=prompt_state.get("topics_data", []),
                     search_topic=None,
                     quoted_tweet_id=quoted_tweet_id,

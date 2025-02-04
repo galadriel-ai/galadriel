@@ -11,6 +11,7 @@ from src.models import TwitterAgentConfig
 from src.models import TwitterPost
 from src.prompts import get_default_prompt_state_use_case
 from src.repository.database import DatabaseClient
+from src.responses import format_response
 
 logger = get_agent_logger()
 
@@ -109,7 +110,6 @@ class TwitterReplyAgent(Agent):
     async def _handle_reply(
         self, reply_to_id: str, reply: SearchResult
     ) -> Optional[Message]:
-
         tweets = await self.database_client.get_tweets()
         filtered_tweets = [t for t in tweets if t.id == reply_to_id]
         if not len(filtered_tweets):
@@ -128,7 +128,6 @@ class TwitterReplyAgent(Agent):
         prompt_state["formatted_conversation"] = ""
 
         prompt = format_prompt.execute(PROMPT_SHOULD_REPLY_TEMPLATE, prompt_state)
-        logger.debug(f"Got full formatted quote prompt: \n{prompt}")
 
         messages = [
             {"role": "system", "content": self.agent.system},
@@ -164,6 +163,8 @@ class TwitterReplyAgent(Agent):
         self, prompt_state: Dict, conversation_id: str, reply: SearchResult
     ) -> Optional[Message]:
         prompt = format_prompt.execute(PROMPT_REPLY_TEMPLATE, prompt_state)
+        logger.debug(f"Got full formatted reply prompt: \n{prompt}")
+
         messages = [
             {"role": "system", "content": self.agent.system},
             {"role": "user", "content": prompt},
@@ -180,6 +181,19 @@ class TwitterReplyAgent(Agent):
             and reply_response.choices[0].message.content
         ):
             reply_message = reply_response.choices[0].message.content
+            formatted_reply_message = format_response.execute(reply_message)
+            if not formatted_reply_message:
+                return Message(
+                    content="",
+                    conversation_id=None,
+                    type="tweet_excluded",
+                    additional_kwargs=TwitterPost(
+                        type="tweet_excluded",
+                        conversation_id=conversation_id,
+                        text=reply_message,
+                        reply_to_id=reply.id,
+                    ).to_dict(),
+                )
             return Message(
                 content="",
                 conversation_id=None,
