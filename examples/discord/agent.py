@@ -27,7 +27,7 @@ composio_weather_tool = convert_action(
 
 elon_musk_agent = ElonMuskAgent(
     memory_repository=memory_repository,
-    character_json_path="./agent_configuration/example_elon_musk.json",
+    character_json_path="agent.json",
     tools=[composio_weather_tool, get_time],
     model=model,
     max_steps=6,

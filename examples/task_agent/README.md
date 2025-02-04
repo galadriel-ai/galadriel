@@ -13,5 +13,5 @@ cp template.env .env
 ### Usage
 
 ```shell
-python main.py
+python agent.py
 ```

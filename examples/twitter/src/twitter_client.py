@@ -181,10 +181,14 @@ class TwitterClient(AgentInput, AgentOutput):
                     )
                 )
 
-    async def _post_tweet(self, twitter_post: TwitterPost):
-        twitter_response = self.twitter_post_tool(
-            twitter_post.text, twitter_post.reply_to_id or ""
-        )
+    async def _post_tweet(self, twitter_post: TwitterPost) -> bool:
+        try:
+            twitter_response = self.twitter_post_tool(
+                twitter_post.text, twitter_post.reply_to_id or ""
+            )
+        except Exception:
+            logger.error("Failed to post tweet", exc_info=True)
+            return False
         if tweet_id := (
             twitter_response and twitter_response.get("data", {}).get("id")
         ):
