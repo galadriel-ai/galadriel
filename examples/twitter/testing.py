@@ -35,9 +35,6 @@ async def main(
         agent_config=agent_config,
         llm_client=galadriel_client,
         database_client=database_client,
-        # CHANGE THIS TO EITHER "perplexity" OR "search"
-        # "perplexity" - uses perplexity to search and generates a tweet
-        # "search" - uses twitter search API to do a search and generate a tweet based on that
         original_tweet_type=request_type,
     )
 
