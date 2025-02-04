@@ -23,6 +23,7 @@ def _initialize_test_client():
     )
     return TestClient(messages=[message1, message2])
 
+
 # Load environment variables
 load_dotenv(dotenv_path=Path(".") / ".env", override=True)
 
@@ -30,7 +31,9 @@ load_dotenv(dotenv_path=Path(".") / ".env", override=True)
 test_client = _initialize_test_client()
 
 # Initialize agent
-composio_weather_tool = convert_action(os.getenv("COMPOSIO_API_KEY"), "WEATHERMAP_WEATHER")
+composio_weather_tool = convert_action(
+    os.getenv("COMPOSIO_API_KEY"), "WEATHERMAP_WEATHER"
+)
 model = LiteLLMModel(model_id="gpt-4o", api_key=os.getenv("OPENAI_API_KEY"))
 weather_agent = ToolCallingAgent(tools=[composio_weather_tool], model=model)
 

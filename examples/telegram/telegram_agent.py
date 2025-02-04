@@ -41,6 +41,7 @@ bellow are the relevant long term memories, if any:
 Be very brief, and concise, add a statement in your voice.
 """
 
+
 class ElonMuskAgent(ToolCallingAgent, Agent):
     def __init__(
         self,

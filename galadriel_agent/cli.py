@@ -61,9 +61,7 @@ def init() -> None:
 
     click.echo(f"Creating a new agent template in {os.getcwd()}...")
     try:
-        _create_agent_template(
-            agent_name, "", "", ""
-        )
+        _create_agent_template(agent_name, "", "", "")
         click.echo("Successfully created agent template!")
     except Exception as e:
         click.echo(f"Error creating agent template: {str(e)}", err=True)
@@ -340,6 +338,8 @@ build-backend = "poetry.core.masonry.api"
         f.write(pyproject_toml)
 
     # Create .env and .agents.env file in the agent directory
+
+
 #     env_content = f"""DOCKER_USERNAME={docker_username}
 # DOCKER_PASSWORD={docker_password}
 # GALADRIEL_API_KEY={galadriel_api_key}"""
@@ -347,24 +347,24 @@ build-backend = "poetry.core.masonry.api"
 #         f.write(env_content)
 #     open(os.path.join(agent_name, ".agents.env"), "w", encoding="utf-8").close()
 
-    # copy docker files from sentience/galadriel_agent/docker to user current directory
-    # docker_files_dir = os.path.join(os.path.dirname(__file__), "docker")
-    # shutil.copy(
-    #     os.path.join(os.path.join(os.path.dirname(__file__)), "docker-compose.yml"),
-    #     os.path.join(agent_name, "docker-compose.yml"),
-    # )
-    # shutil.copy(
-    #     os.path.join(docker_files_dir, "Dockerfile"),
-    #     os.path.join(docker_dir, "Dockerfile"),
-    # )
-    # shutil.copy(
-    #     os.path.join(docker_files_dir, ".dockerignore"),
-    #     os.path.join(agent_name, ".dockerignore"),
-    # )
-    # shutil.copy(
-    #     os.path.join(docker_files_dir, "logrotate_logs"),
-    #     os.path.join(docker_dir, "logrotate_logs"),
-    # )
+# copy docker files from sentience/galadriel_agent/docker to user current directory
+# docker_files_dir = os.path.join(os.path.dirname(__file__), "docker")
+# shutil.copy(
+#     os.path.join(os.path.join(os.path.dirname(__file__)), "docker-compose.yml"),
+#     os.path.join(agent_name, "docker-compose.yml"),
+# )
+# shutil.copy(
+#     os.path.join(docker_files_dir, "Dockerfile"),
+#     os.path.join(docker_dir, "Dockerfile"),
+# )
+# shutil.copy(
+#     os.path.join(docker_files_dir, ".dockerignore"),
+#     os.path.join(agent_name, ".dockerignore"),
+# )
+# shutil.copy(
+#     os.path.join(docker_files_dir, "logrotate_logs"),
+#     os.path.join(docker_dir, "logrotate_logs"),
+# )
 
 
 def _build_image(docker_username: str) -> None:

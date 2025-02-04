@@ -12,8 +12,9 @@ class CodeAgent(Agent, SmolAgentCodeAgent):
         return Message(
             content=answer,
             conversation_id=request.conversation_id,
-            additional_kwargs=request.additional_kwargs
+            additional_kwargs=request.additional_kwargs,
         )
+
 
 class ToolCallingAgent(Agent, SmolAgentToolCallingAgent):
     async def execute(self, request: Message) -> Message:
@@ -21,5 +22,5 @@ class ToolCallingAgent(Agent, SmolAgentToolCallingAgent):
         return Message(
             content=answer,
             conversation_id=request.conversation_id,
-            additional_kwargs=request.additional_kwargs
+            additional_kwargs=request.additional_kwargs,
         )
