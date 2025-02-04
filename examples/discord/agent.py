@@ -6,8 +6,8 @@ from discord_agent import ElonMuskAgent
 from galadriel.tools.composio_converter import convert_action
 from tools import get_time
 from galadriel.memory.memory_repository import memory_repository
-from galadriel.agent import AgentRuntime
-from galadriel.clients.discord_client import DiscordClient
+from galadriel import AgentRuntime
+from galadriel.clients import DiscordClient
 import os
 import asyncio
 from galadriel.logging_utils import get_agent_logger

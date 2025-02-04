@@ -5,7 +5,7 @@ import os
 import discord
 from discord.ext import commands
 
-from galadriel.agent import AgentInput, AgentOutput
+from galadriel import AgentInput, AgentOutput
 from galadriel.entities import HumanMessage, Message, PushOnlyQueue
 
 

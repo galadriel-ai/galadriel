@@ -3,8 +3,8 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-from galadriel.agent import AgentRuntime
-from galadriel.clients.cron import Cron
+from galadriel import AgentRuntime
+from galadriel.clients import Cron
 from tools import onchain
 from trading_agent import TradingAgent
 

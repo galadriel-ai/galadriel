@@ -1,10 +1,9 @@
 import os
 from typing import Dict
 
-from galadriel.core_agent import CodeAgent
+from galadriel import Agent, CodeAgent
 from galadriel.core_agent import LiteLLMModel
 
-from galadriel.agent import Agent
 from tools import markets
 from tools import onchain
 

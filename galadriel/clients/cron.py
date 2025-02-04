@@ -1,6 +1,6 @@
 import asyncio
 
-from galadriel.agent import AgentInput
+from galadriel import AgentInput
 from galadriel.entities import Message
 from galadriel.entities import PushOnlyQueue
 

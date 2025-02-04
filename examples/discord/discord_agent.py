@@ -7,10 +7,10 @@ from typing import List
 from typing import Optional
 
 from rich.text import Text
-from galadriel.core_agent import Tool
-from galadriel.core_agent import ToolCallingAgent
-from galadriel.core_agent import LogLevel
 
+from galadriel import ToolCallingAgent
+from galadriel.core_agent import LogLevel
+from galadriel.core_agent import Tool
 from galadriel.domain.prompts.format_prompt import load_agent_template
 from galadriel.entities import AgentMessage
 from galadriel.entities import Message

@@ -3,7 +3,7 @@ import json
 import random
 from typing import Optional
 
-from galadriel.agent import AgentInput, AgentOutput
+from galadriel import AgentInput, AgentOutput
 from galadriel.connectors.twitter import SearchResult
 from galadriel.entities import Message, PushOnlyQueue
 from galadriel.logging_utils import get_agent_logger

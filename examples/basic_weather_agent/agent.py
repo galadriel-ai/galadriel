@@ -1,8 +1,7 @@
 import asyncio
 import os
-from galadriel.agent import AgentRuntime
-from galadriel.clients.test_client import TestClient
-from galadriel.core_agent import Agent, ToolCallingAgent
+from galadriel import AgentRuntime, Agent, ToolCallingAgent
+from galadriel.clients import TestClient
 from galadriel.core_agent import LiteLLMModel
 from galadriel.entities import Message
 from galadriel.tools.composio_converter import convert_action

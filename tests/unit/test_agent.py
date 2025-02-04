@@ -3,9 +3,7 @@ from typing import List
 from unittest.mock import MagicMock
 
 from galadriel import agent
-from galadriel.agent import AgentRuntime
-from galadriel.agent import Agent
-from galadriel.agent import AgentInput, AgentOutput
+from galadriel import AgentRuntime, Agent, AgentInput, AgentOutput
 from galadriel.domain import validate_solana_payment
 from galadriel.entities import Message, PushOnlyQueue, Pricing
 from galadriel.errors import PaymentValidationError
