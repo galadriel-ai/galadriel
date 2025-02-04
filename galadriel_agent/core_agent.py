@@ -5,15 +5,20 @@ from smolagents import ToolCallingAgent as SmolAgentToolCallingAgent
 from galadriel_agent.entities import Message
 
 
-class Agent:
+class Agent(MultiStepAgent):
     async def run(self, request: Message) -> Message:
-        raise RuntimeError("Function not implemented")
+        answer = super().run(request.content)
+        return Message(
+            content=answer,
+            conversation_id=request.conversation_id,
+            additional_kwargs=request.additional_kwargs
+        )
 
 
-class CodeAgent(SmolAgentCodeAgent, Agent):
+class CodeAgent(Agent, SmolAgentCodeAgent):
     pass
 
 
-class ToolCallingAgent(SmolAgentToolCallingAgent, Agent):
+class ToolCallingAgent(Agent, SmolAgentToolCallingAgent):
     pass
 
