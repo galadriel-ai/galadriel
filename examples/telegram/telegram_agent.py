@@ -7,9 +7,9 @@ from typing import List
 from typing import Optional
 
 from rich.text import Text
-from smolagents import Tool
-from smolagents import ToolCallingAgent
-from smolagents.agents import LogLevel
+from galadriel_agent.core_agent import Tool
+from galadriel_agent.core_agent import ToolCallingAgent
+from galadriel_agent.core_agent import LogLevel
 
 from examples.telegram.prompts import TELEGRAM_SYSTEM_PROMPT
 from galadriel_agent.agent import Agent
