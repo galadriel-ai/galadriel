@@ -291,7 +291,7 @@ class {class_name}(Agent):
     # ) as f:
     #     json.dump(initial_data, f, indent=2)
 
-    # generate main.py
+    # generate agent.py
     main_code = f"""import asyncio
 
 from galadriel_agent.agent import AgentOutput
@@ -317,7 +317,7 @@ if __name__ == "__main__":
     )
     asyncio.run(agent.run())
 """
-    with open(os.path.join(agent_name, "main.py"), "w", encoding="utf-8") as f:
+    with open(os.path.join(agent_name, "agent.py"), "w", encoding="utf-8") as f:
         f.write(main_code)
 
     # Generate pyproject.toml

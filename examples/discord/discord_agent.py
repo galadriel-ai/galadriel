@@ -17,7 +17,29 @@ from galadriel_agent.entities import AgentMessage
 from galadriel_agent.entities import Message
 from galadriel_agent.memory.memory_repository import EmbeddingClient
 from galadriel_agent.memory.memory_repository import MemoryRepository
-from prompts import DISCORD_SYSTEM_PROMPT
+
+DISCORD_SYSTEM_PROMPT = """
+{{system}}
+
+# Areas of Expertise
+{{knowledge}}
+
+# About {{agent_name}}:
+{{bio}}
+{{lore}}
+{{topics}}
+
+you are chatting with {{user_name}} on discord. bellow are the past messages you have had with him which might be relevant to the current conversation:
+{{memories}}
+
+bellow are the relevant long term memories, if any:
+{{long_term_memory}}
+
+# Task: you must reply to the incoming message in the voice and style of {{agent_name}}:
+{{message}}
+
+Be very brief, and concise, add a statement in your voice.
+"""
 
 
 class ElonMuskAgent(ToolCallingAgent, Agent):

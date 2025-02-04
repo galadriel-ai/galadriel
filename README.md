@@ -9,7 +9,7 @@ galadriel agent init
 ## Run your agent
 ```shell
 cd {your_agent_name}
-python main.py
+python agent.py
 ```
 
 # Galadriel Agent CLI

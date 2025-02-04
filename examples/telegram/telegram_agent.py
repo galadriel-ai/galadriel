@@ -11,7 +11,6 @@ from smolagents import Tool
 from smolagents import ToolCallingAgent
 from smolagents.agents import LogLevel
 
-from examples.telegram.prompts import TELEGRAM_SYSTEM_PROMPT
 from galadriel_agent.agent import Agent
 from galadriel_agent.domain.prompts.format_prompt import load_agent_template
 from galadriel_agent.entities import AgentMessage
@@ -19,6 +18,28 @@ from galadriel_agent.entities import Message
 from galadriel_agent.memory.memory_repository import EmbeddingClient
 from galadriel_agent.memory.memory_repository import MemoryRepository
 
+TELEGRAM_SYSTEM_PROMPT = """
+{{system}}
+
+# Areas of Expertise
+{{knowledge}}
+
+# About {{agent_name}}:
+{{bio}}
+{{lore}}
+{{topics}}
+
+you are chatting with {{user_name}} on discord. bellow are the past messages you have had with him which might be relevant to the current conversation:
+{{memories}}
+
+bellow are the relevant long term memories, if any:
+{{long_term_memory}}
+
+# Task: you must reply to the incoming message in the voice and style of {{agent_name}}:
+{{message}}
+
+Be very brief, and concise, add a statement in your voice.
+"""
 
 class ElonMuskAgent(ToolCallingAgent, Agent):
     def __init__(
