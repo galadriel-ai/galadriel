@@ -108,8 +108,6 @@ class TwitterPostAgent(Agent):
             if response:
                 return response
             raise Exception("Error running agent")
-        elif request_type == "tweet_original":
-            pass
         logger.debug(
             f"TwitterClient got unexpected request_type: {request_type}, skipping"
         )

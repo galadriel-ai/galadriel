@@ -84,20 +84,18 @@ class TwitterApiClient:
     def post_tweet(
         self, message: str, reply_to_id: Optional[str] = None
     ) -> Optional[Dict]:
-        # TODO: uncomment, or make testing.py script always use DRY_RUN
-        # if os.getenv("DRY_RUN"):
-        if os.getenv("DRY_RUN") or True:
+        if os.getenv("DRY_RUN"):
             logger.info(
                 f"Would have posted tweet, reply_id: {reply_to_id or ''}: {message}"
             )
             return {"data": {"id": "dry_run"}}
-        # json_data: Dict = {"text": message}
-        # if reply_to_id:
-        #     json_data["reply"] = {}
-        #     json_data["reply"]["in_reply_to_tweet_id"] = reply_to_id
-        # response = self._make_request("POST", "tweets", json=json_data)
-        # logger.info(f"Tweet posted successfully: {message}")
-        # return response
+        json_data: Dict = {"text": message}
+        if reply_to_id:
+            json_data["reply"] = {}
+            json_data["reply"]["in_reply_to_tweet_id"] = reply_to_id
+        response = self._make_request("POST", "tweets", json=json_data)
+        logger.info(f"Tweet posted successfully: {message}")
+        return response
 
     def search(self, search_query: str) -> List[Dict]:
         try:
@@ -227,7 +225,7 @@ class TwitterApiClient:
         # }
         return self._format_search_results(response)
 
-    def get_conversation_id(self, tweet_id: str):
+    def get_tweet(self, tweet_id: str):
         response = self._make_request(
             "GET",
             f"tweets/{tweet_id}",
