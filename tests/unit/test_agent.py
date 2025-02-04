@@ -52,7 +52,7 @@ async def test_adds_history():
     message = Message(content="hello", conversation_id=CONVERSATION_ID)
     short_term_memory.add(message)
     user_agent = MockAgent()
-    galadriel_agent = AgentRuntime(
+    runtime = AgentRuntime(
         inputs=[],
         outputs=[],
         agent=user_agent,
@@ -62,14 +62,14 @@ async def test_adds_history():
         content="world",
         conversation_id=CONVERSATION_ID,
     )
-    await galadriel_agent.run_request(request)
+    await runtime.run_request(request)
     expected = Message(content="hello\n\nworld", conversation_id=CONVERSATION_ID)
     assert user_agent.called_messages[0] == expected
 
 
 async def test_publishes_proof():
     user_agent = MockAgent()
-    galadriel_agent = AgentRuntime(
+    runtime = AgentRuntime(
         inputs=[],
         outputs=[],
         agent=user_agent,
@@ -78,7 +78,7 @@ async def test_publishes_proof():
         content="hello",
         conversation_id=CONVERSATION_ID,
     )
-    await galadriel_agent.run_request(request)
+    await runtime.run_request(request)
     agent.publish_proof.execute.assert_called_with(
         request, RESPONSE_MESSAGE, "mock_proof"
     )
@@ -88,7 +88,7 @@ async def test_post_output_to_client():
     user_agent = MockAgent()
     input_client = MockAgentInput()
     output_client = MockAgentOutput()
-    galadriel_agent = AgentRuntime(
+    runtime = AgentRuntime(
         inputs=[input_client],
         outputs=[output_client],
         agent=user_agent,
@@ -97,7 +97,7 @@ async def test_post_output_to_client():
         content="hello",
         conversation_id=CONVERSATION_ID,
     )
-    await galadriel_agent.run_request(request)
+    await runtime.run_request(request)
     assert output_client.output_requests[0] == request
     assert output_client.output_responses[0] == RESPONSE_MESSAGE
     assert output_client.output_proofs[0] == "mock_proof"

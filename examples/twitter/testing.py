@@ -8,6 +8,7 @@ from typing import List
 from typing import Literal
 
 from dotenv import load_dotenv
+from typing_extensions import runtime
 
 from galadriel.agent import AgentInput
 from galadriel.agent import AgentOutput
@@ -41,12 +42,12 @@ async def main(
     os.makedirs("data", exist_ok=True)
     results_file = f"data/{int(time.time())}_results.json"
     output_client = OutputClient(results_file)
-    galadriel_agent = AgentRuntime(
+    runtime = AgentRuntime(
         inputs=[TestingTwitterClient(count)],
         outputs=[output_client],
         agent=twitter_agent,
     )
-    task = asyncio.create_task(galadriel_agent.run())
+    task = asyncio.create_task(runtime.run())
 
     while True:
         await asyncio.sleep(5)

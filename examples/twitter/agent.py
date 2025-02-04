@@ -36,12 +36,12 @@ async def main():
         database_client=database_client,
     )
 
-    galadriel_agent = AgentRuntime(
+    runtime = AgentRuntime(
         inputs=[twitter_client],
         outputs=[twitter_client],
         agent=twitter_agent,
     )
-    await galadriel_agent.run()
+    await runtime.run()
 
 
 def _load_agent_config() -> TwitterAgentConfig:
