@@ -25,7 +25,7 @@ class TwitterAgent(Agent):
         agent_config: TwitterAgentConfig,
         llm_client: LlmClient,
         database_client: DatabaseClient,
-        original_tweet_type: Optional[Literal["perplexity", "search"]] = None
+        original_tweet_type: Optional[Literal["perplexity", "search"]] = None,
     ):
         self.reply_agent = TwitterReplyAgent(
             agent_config=agent_config,

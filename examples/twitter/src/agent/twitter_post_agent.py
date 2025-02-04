@@ -88,7 +88,7 @@ class TwitterPostAgent(Agent):
         database_client: DatabaseClient,
         perplexity_client: PerplexityClient,
         twitter_search_tool: Optional[TwitterSearchTool] = None,
-        tweet_type: Optional[Literal["perplexity", "search"]] = None
+        tweet_type: Optional[Literal["perplexity", "search"]] = None,
     ):
         self.agent = agent_config
 
