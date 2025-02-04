@@ -5,8 +5,8 @@ from typing import Optional
 
 import requests
 
-from galadriel_agent.entities import Message
-from galadriel_agent.logging_utils import get_agent_logger
+from galadriel.entities import Message
+from galadriel.logging_utils import get_agent_logger
 
 logger = get_agent_logger()
 

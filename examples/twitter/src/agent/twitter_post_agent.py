@@ -6,14 +6,14 @@ from typing import List
 from typing import Literal
 from typing import Optional
 
-from galadriel_agent.agent import Agent
-from galadriel_agent.connectors.llm import LlmClient
-from galadriel_agent.connectors.perplexity import PerplexityClient
-from galadriel_agent.connectors.twitter import SearchResult
-from galadriel_agent.domain.prompts import format_prompt
-from galadriel_agent.entities import Message
-from galadriel_agent.logging_utils import get_agent_logger
-from galadriel_agent.tools.twitter import TwitterSearchTool
+from galadriel.agent import Agent
+from galadriel.connectors.llm import LlmClient
+from galadriel.connectors.perplexity import PerplexityClient
+from galadriel.connectors.twitter import SearchResult
+from galadriel.domain.prompts import format_prompt
+from galadriel.entities import Message
+from galadriel.logging_utils import get_agent_logger
+from galadriel.tools.twitter import TwitterSearchTool
 from src.models import TwitterAgentConfig
 from src.models import TwitterPost
 from src.prompts import get_default_prompt_state_use_case

@@ -1,11 +1,11 @@
 import asyncio
 import os
-from galadriel_agent.agent import AgentRuntime
-from galadriel_agent.clients.test_client import TestClient
-from galadriel_agent.core_agent import Agent, ToolCallingAgent
-from galadriel_agent.core_agent import LiteLLMModel
-from galadriel_agent.entities import Message
-from galadriel_agent.tools.composio_converter import convert_action
+from galadriel.agent import AgentRuntime
+from galadriel.clients.test_client import TestClient
+from galadriel.core_agent import Agent, ToolCallingAgent
+from galadriel.core_agent import LiteLLMModel
+from galadriel.entities import Message
+from galadriel.tools.composio_converter import convert_action
 from dotenv import load_dotenv
 from pathlib import Path
 

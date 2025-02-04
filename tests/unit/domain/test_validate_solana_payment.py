@@ -1,12 +1,12 @@
 import pytest
 from unittest.mock import MagicMock
 
-from galadriel_agent.domain import validate_solana_payment
-from galadriel_agent.domain.validate_solana_payment import (
+from galadriel.domain import validate_solana_payment
+from galadriel.domain.validate_solana_payment import (
     TaskAndPaymentSignature,
     PaymentValidationError,
 )
-from galadriel_agent.entities import Message, Pricing
+from galadriel.entities import Message, Pricing
 
 
 @pytest.fixture

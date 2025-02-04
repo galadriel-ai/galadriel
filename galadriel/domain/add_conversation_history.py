@@ -1,5 +1,5 @@
-from galadriel_agent.entities import Message
-from galadriel_agent.entities import ShortTermMemory
+from galadriel.entities import Message
+from galadriel.entities import ShortTermMemory
 
 
 def execute(request: Message, short_term_memory: ShortTermMemory) -> Message:

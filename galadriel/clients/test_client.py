@@ -1,8 +1,8 @@
 import asyncio
 from typing import List
 
-from galadriel_agent.agent import AgentInput, AgentOutput
-from galadriel_agent.entities import Message, PushOnlyQueue
+from galadriel.agent import AgentInput, AgentOutput
+from galadriel.entities import Message, PushOnlyQueue
 
 
 class TestClient(AgentInput, AgentOutput):

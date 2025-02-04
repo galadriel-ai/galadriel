@@ -1,6 +1,6 @@
 import requests
 import json
-from galadriel_agent.core_agent import tool
+from galadriel.core_agent import tool
 
 # Predefined list of tokens with their addresses
 # TOKENS = [

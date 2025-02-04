@@ -8,13 +8,14 @@ from typing import List
 from typing import Literal
 
 from dotenv import load_dotenv
+from typing_extensions import runtime
 
-from galadriel_agent.agent import AgentInput
-from galadriel_agent.agent import AgentOutput
-from galadriel_agent.agent import AgentRuntime
-from galadriel_agent.connectors.llm import LlmClient
-from galadriel_agent.entities import Message
-from galadriel_agent.entities import PushOnlyQueue
+from galadriel.agent import AgentInput
+from galadriel.agent import AgentOutput
+from galadriel.agent import AgentRuntime
+from galadriel.connectors.llm import LlmClient
+from galadriel.entities import Message
+from galadriel.entities import PushOnlyQueue
 from src.agent.twitter_agent import TwitterAgent
 from src.models import TwitterAgentConfig
 from src.models import TwitterPost
@@ -41,12 +42,12 @@ async def main(
     os.makedirs("data", exist_ok=True)
     results_file = f"data/{int(time.time())}_results.json"
     output_client = OutputClient(results_file)
-    galadriel_agent = AgentRuntime(
+    runtime = AgentRuntime(
         inputs=[TestingTwitterClient(count)],
         outputs=[output_client],
         agent=twitter_agent,
     )
-    task = asyncio.create_task(galadriel_agent.run())
+    task = asyncio.create_task(runtime.run())
 
     while True:
         await asyncio.sleep(5)

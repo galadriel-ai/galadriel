@@ -4,7 +4,7 @@ import uuid
 import chromadb
 from openai import AsyncOpenAI
 
-from galadriel_agent.entities import Message
+from galadriel.entities import Message
 
 
 class EmbeddingClient:

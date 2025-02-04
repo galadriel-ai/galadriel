@@ -1,4 +1,4 @@
-from galadriel_agent.core_agent import tool
+from galadriel.core_agent import tool
 
 
 @tool
