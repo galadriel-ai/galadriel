@@ -1,5 +1,8 @@
 import asyncio
 from dataclasses import dataclass
+from datetime import datetime
+from datetime import timezone
+from typing import Literal
 from typing import Optional
 
 import aiohttp
@@ -21,7 +24,11 @@ class PerplexityClient:
     def __init__(self, api_key: str):
         self.api_key = api_key
 
-    async def search_topic(self, topic: str) -> Optional[PerplexitySources]:
+    async def search_topic(
+        self,
+        topic: str,
+        relevancy_filter: Literal["month", "week", "day", "hour"] = "hour"
+    ) -> Optional[PerplexitySources]:
         logger.info(f"Using perplexity API with search query: {topic}")
         url = "https://api.perplexity.ai/chat/completions"
         headers = {
@@ -29,18 +36,18 @@ class PerplexityClient:
             "Authorization": f"Bearer {self.api_key}",
         }
         payload = {
-            "model": "llama-3.1-sonar-small-128k-online",
+            "model": "sonar-pro",
             "messages": [
                 {"role": "system", "content": "Be precise and concise."},
-                {"role": "user", "content": topic},
+                {"role": "user", "content": topic + _get_date_reminder()},
             ],
-            "max_tokens": 10000,
+            "max_tokens": 8192,
             "temperature": 0.2,
             "top_p": 0.9,
             "search_domain_filter": ["perplexity.ai"],
             "return_images": False,
             "return_related_questions": False,
-            "search_recency_filter": "month",
+            "search_recency_filter": relevancy_filter,
             "top_k": 0,
             "stream": False,
             "presence_penalty": 0,
@@ -61,8 +68,8 @@ class PerplexityClient:
                         [
                             f"[{index + 1}] {url}"
                             for index, url in enumerate(
-                                response_json.get("citations", [])
-                            )
+                            response_json.get("citations", [])
+                        )
                         ]
                     )
 
@@ -77,3 +84,7 @@ class PerplexityClient:
         except aiohttp.ClientError as e:
             logger.error(f"An error occurred: {e}")
         return None
+
+
+def _get_date_reminder():
+    return datetime.now(timezone.utc).strftime(" Current date is %-d %B %Y")
