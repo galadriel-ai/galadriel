@@ -16,6 +16,15 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/pip
+            !~/.cache/pip/log
+          key: ${{ runner.os }}-pip-${{ hashFiles('pyproject.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-${{ hashFiles('pyproject.toml') }}
       - name: Install Python Dependencies
         run: |
           pip install -e ".[dev]"
