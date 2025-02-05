@@ -64,7 +64,10 @@ python testing.py --type search --count 1
 ### Generate a quote for a given tweet ID
 
 ```shell
+# Quote a specific tweet
 python manual_tweet.py --name <agent_name> --tweet_id <tweet_id>
+# Give it context from a .txt file
+python manual_tweet.py --name <agent_name> --context_file <file_path>
 ```
 
 It will show the generated tweet and ask if it should post it.

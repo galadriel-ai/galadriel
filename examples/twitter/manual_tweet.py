@@ -24,7 +24,11 @@ from src.repository.database import DatabaseClient
 from src.twitter_client import TwitterClient
 
 
-async def main(agent_name: str, tweet_id: Optional[str]):
+async def main(
+    agent_name: str,
+    tweet_id: Optional[str],
+    context_file: Optional[str],
+):
     agent_config = _load_agent_config(agent_name)
     llm_client = LlmClient()
     database_client = DatabaseClient()
@@ -37,9 +41,13 @@ async def main(agent_name: str, tweet_id: Optional[str]):
         twitter_get_post_tool=TwitterGetPostTool(),
     )
 
+    input_client = TestingTwitterClient(
+        tweet_id,
+        context_file,
+    )
     output_client = OutputClient()
     galadriel_agent = AgentRuntime(
-        inputs=[TestingTwitterClient(tweet_id)],
+        inputs=[input_client],
         outputs=[output_client],
         agent=post_agent,
     )
@@ -75,21 +83,42 @@ async def main(agent_name: str, tweet_id: Optional[str]):
 
 
 class TestingTwitterClient(AgentInput):
-    tweet_id: str
+    tweet_id: Optional[str]
+    context: Optional[str]
 
-    def __init__(self, tweet_id: str):
+    def __init__(
+        self,
+        tweet_id: Optional[str],
+        context_file: Optional[str],
+    ):
         self.tweet_id = tweet_id
+        if context_file:
+            with open(context_file, "r", encoding="utf-8") as f:
+                self.context = f.read()
+        if not self.tweet_id and not self.context:
+            raise Exception("Either `tweet_id` or `context_file` file is needed")
 
     async def start(self, queue: PushOnlyQueue) -> None:
-        await queue.put(
-            Message(
-                content="",
-                type="tweet_original",
-                additional_kwargs={
-                    "quote_tweet_id": self.tweet_id,
-                }
-            ),
-        )
+        if self.tweet_id:
+            await queue.put(
+                Message(
+                    content="",
+                    type="tweet_original",
+                    additional_kwargs={
+                        "quote_tweet_id": self.tweet_id,
+                    }
+                ),
+            )
+        if self.context:
+            await queue.put(
+                Message(
+                    content="",
+                    type="tweet_original",
+                    additional_kwargs={
+                        "tweet_context": self.context,
+                    }
+                ),
+            )
 
 
 class OutputClient(AgentOutput):
@@ -141,8 +170,19 @@ if __name__ == "__main__":
         required=False,
         help="Specify the tweet ID to generate a quote for."
     )
+    parser.add_argument(
+        "--context_file",
+        default=None,
+        required=False,
+        help="Specify the file path for the context to generate a tweet about."
+    )
     args = parser.parse_args()
 
+    tweet_id = args.tweet_id
+    context_file = args.context_file
+    if not tweet_id and not context_file:
+        raise Exception("Either --tweet_id or --context_file is necessary.")
+
     asyncio.run(
-        main(args.name, args.tweet_id)
+        main(args.name, tweet_id, context_file)
     )

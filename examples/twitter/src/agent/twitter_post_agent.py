@@ -39,7 +39,6 @@ Write a 1-3 sentence post that is tech-savvy based on the latest trending news y
 
 "{{perplexity_content}}"
 
-Here are the citations, where you read about this:
 {{perplexity_sources}}
 
 You have to address what you read directly. Be brief, and concise, add a statement in your voice. The total character count MUST be less than 280. No emojis. Use \n\n (double spaces) between statements.
@@ -119,7 +118,7 @@ class TwitterPostAgent(Agent):
     async def _generate_original_tweet(self, request: Message) -> Message:
         if self.tweet_type:
             if self.tweet_type == "perplexity":
-                response = await self._generate_perplexity_tweet_with_retries()
+                response = await self._generate_perplexity_tweet_with_retries(None)
             else:
                 response = await self._generate_quote(None)
             if not response:
@@ -127,20 +126,27 @@ class TwitterPostAgent(Agent):
             return response
 
         quote_tweet_id = (request.additional_kwargs or {}).get("quote_tweet_id")
-        if random.random() < 0.4 or quote_tweet_id:
+        tweet_context = (request.additional_kwargs or {}).get("tweet_context")
+        is_generate_quote = False
+        if quote_tweet_id:
+            is_generate_quote = True
+        elif random.random() < 0.4:
+            is_generate_quote = True
+
+        if is_generate_quote:
             response = await self._generate_quote(quote_tweet_id)
             if response:
                 return response
-            response = await self._generate_perplexity_tweet_with_retries()
+            response = await self._generate_perplexity_tweet_with_retries(tweet_context)
         else:
-            response = await self._generate_perplexity_tweet_with_retries()
+            response = await self._generate_perplexity_tweet_with_retries(tweet_context)
         if response:
             return response
         raise Exception("Error running agent")
 
-    async def _generate_perplexity_tweet_with_retries(self) -> Optional[Message]:
+    async def _generate_perplexity_tweet_with_retries(self, tweet_context: Optional[str]) -> Optional[Message]:
         for i in range(TWEET_RETRY_COUNT):
-            response = await self._post_perplexity_tweet()
+            response = await self._post_perplexity_tweet(tweet_context)
             if response:
                 return response
             if i < TWEET_RETRY_COUNT:
@@ -149,9 +155,9 @@ class TwitterPostAgent(Agent):
                 )
                 await asyncio.sleep(i * 5)
 
-    async def _post_perplexity_tweet(self) -> Optional[Message]:
+    async def _post_perplexity_tweet(self, tweet_context: Optional[str]) -> Optional[Message]:
         logger.info("Generating tweet with perplexity")
-        prompt_state = await self._get_post_prompt_state()
+        prompt_state = await self._get_post_prompt_state(tweet_context)
 
         prompt = format_prompt.execute(PROMPT_TEMPLATE, prompt_state)
         logger.debug(f"Got full formatted prompt: \n{prompt}")
@@ -290,24 +296,31 @@ class TwitterPostAgent(Agent):
             )
         return None
 
-    async def _get_post_prompt_state(self) -> Dict:
+    async def _get_post_prompt_state(self, tweet_context: Optional[str]) -> Dict:
         data = await get_default_prompt_state_use_case.execute(
             self.agent,
             self.database_client,
         )
 
-        search_query = await get_search_query.execute(self.agent, self.database_client)
-        data["search_topic"] = search_query.topic
-        perplexity_result = await self.perplexity_client.search_topic(
-            search_query.query
-        )
-        if perplexity_result:
-            data["perplexity_content"] = perplexity_result.content
-            data["perplexity_sources"] = perplexity_result.sources
-        else:
-            # What to do if perplexity call fails?
-            data["perplexity_content"] = ""
+        if tweet_context:
+            data["search_topic"] = ""
+            data["perplexity_content"] = tweet_context
             data["perplexity_sources"] = ""
+        else:
+            search_query = await get_search_query.execute(self.agent, self.database_client)
+            data["search_topic"] = search_query.topic
+            perplexity_result = await self.perplexity_client.search_topic(
+                search_query.query
+            )
+            if perplexity_result:
+                data["perplexity_content"] = perplexity_result.content
+                data["perplexity_sources"] = \
+                    "Here are the citations, where you read about this:\n" \
+                    + perplexity_result.sources
+            else:
+                # What to do if perplexity call fails?
+                data["perplexity_content"] = ""
+                data["perplexity_sources"] = ""
 
         return data
 
