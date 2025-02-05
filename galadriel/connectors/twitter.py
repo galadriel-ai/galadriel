@@ -206,11 +206,13 @@ class TwitterApiClient:
                 "user.fields": "name,username",
             },
         )
-        result = self._format_search_results({
-            "data": [response.get("data", [])],
-            "includes": response.get("includes", {})
-        })
-        if result and len(result):
+        result = self._format_search_results(
+            {
+                "data": [response.get("data", [])],
+                "includes": response.get("includes", {}),
+            }
+        )
+        if result:
             return result[0]
         return None
 

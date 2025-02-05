@@ -8,7 +8,7 @@ from galadriel.connectors.perplexity import PerplexityClient
 from galadriel.entities import Message
 from galadriel.logging_utils import get_agent_logger
 from galadriel.tools.twitter import TwitterGetPostTool
-from galadriel_agent.tools.twitter import TwitterSearchTool
+from galadriel.tools.twitter import TwitterSearchTool
 from src.agent.twitter_post_agent import TwitterPostAgent
 from src.agent.twitter_reply_agent import TwitterReplyAgent
 from src.models import TwitterAgentConfig

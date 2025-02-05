@@ -27,7 +27,7 @@ class PerplexityClient:
     async def search_topic(
         self,
         topic: str,
-        relevancy_filter: Literal["month", "week", "day", "hour"] = "hour"
+        relevancy_filter: Literal["month", "week", "day", "hour"] = "hour",
     ) -> Optional[PerplexitySources]:
         logger.info(f"Using perplexity API with search query: {topic}")
         url = "https://api.perplexity.ai/chat/completions"
@@ -68,8 +68,8 @@ class PerplexityClient:
                         [
                             f"[{index + 1}] {url}"
                             for index, url in enumerate(
-                            response_json.get("citations", [])
-                        )
+                                response_json.get("citations", [])
+                            )
                         ]
                     )
 
