@@ -129,7 +129,7 @@ def _load_agent_config(agent_name: str) -> TwitterAgentConfig:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Generate a tweet manually with a tweet ID.")
+        description="Generate a tweet manually with a tweet to quote.")
     parser.add_argument(
         "--name",
         default="agent",
