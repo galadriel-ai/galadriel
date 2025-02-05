@@ -13,6 +13,7 @@ from galadriel.connectors.twitter import SearchResult
 from galadriel.domain.prompts import format_prompt
 from galadriel.entities import Message
 from galadriel.logging_utils import get_agent_logger
+from galadriel.tools.twitter import TwitterGetPostTool
 from galadriel.tools.twitter import TwitterSearchTool
 from src.models import TwitterAgentConfig
 from src.models import TwitterPost
@@ -72,7 +73,8 @@ class TwitterPostAgent(Agent):
     database_client: DatabaseClient
     llm_client: LlmClient
 
-    twitter_search_tool: Optional[TwitterSearchTool]
+    twitter_search_tool: TwitterSearchTool
+    twitter_get_post_tool: TwitterGetPostTool
 
     perplexity_client: PerplexityClient
 
@@ -87,7 +89,8 @@ class TwitterPostAgent(Agent):
         llm_client: LlmClient,
         database_client: DatabaseClient,
         perplexity_client: PerplexityClient,
-        twitter_search_tool: Optional[TwitterSearchTool] = None,
+        twitter_search_tool: TwitterSearchTool,
+        twitter_get_post_tool: TwitterGetPostTool,
         tweet_type: Optional[Literal["perplexity", "search"]] = None,
     ):
         self.agent = agent_config
@@ -98,13 +101,14 @@ class TwitterPostAgent(Agent):
         self.perplexity_client = perplexity_client
 
         self.twitter_search_tool = twitter_search_tool
+        self.twitter_get_post_tool = twitter_get_post_tool
 
         self.tweet_type = tweet_type
 
     async def execute(self, request: Message) -> Message:
         request_type = request.type
         if request_type and request_type == "tweet_original":
-            response = await self._generate_original_tweet()
+            response = await self._generate_original_tweet(request)
             if response:
                 return response
             raise Exception("Error running agent")
@@ -112,28 +116,29 @@ class TwitterPostAgent(Agent):
             f"TwitterClient got unexpected request_type: {request_type}, skipping"
         )
 
-    async def _generate_original_tweet(self) -> Message:
+    async def _generate_original_tweet(self, request: Message) -> Message:
         if self.tweet_type:
             if self.tweet_type == "perplexity":
-                response = await self._post_perplexity_tweet_with_retries()
+                response = await self._generate_perplexity_tweet_with_retries()
             else:
-                response = await self._post_quote()
+                response = await self._generate_quote(None)
             if not response:
                 raise Exception("Error generating tweet")
             return response
 
-        if random.random() < 0.4 and self.twitter_search_tool:
-            response = await self._post_quote()
+        quote_tweet_id = (request.additional_kwargs or {}).get("quote_tweet_id")
+        if random.random() < 0.4 or quote_tweet_id:
+            response = await self._generate_quote(quote_tweet_id)
             if response:
                 return response
-            response = await self._post_perplexity_tweet_with_retries()
+            response = await self._generate_perplexity_tweet_with_retries()
         else:
-            response = await self._post_perplexity_tweet_with_retries()
+            response = await self._generate_perplexity_tweet_with_retries()
         if response:
             return response
         raise Exception("Error running agent")
 
-    async def _post_perplexity_tweet_with_retries(self) -> Optional[Message]:
+    async def _generate_perplexity_tweet_with_retries(self) -> Optional[Message]:
         for i in range(TWEET_RETRY_COUNT):
             response = await self._post_perplexity_tweet()
             if response:
@@ -200,25 +205,35 @@ class TwitterPostAgent(Agent):
             )
         return None
 
-    async def _post_quote(self) -> Optional[Message]:
-        logger.info("Generating tweet with quote")
-        results = self.twitter_search_tool(
-            self.agent.extra_fields["twitter_profile"].get("search_query", "")
-        )
-        if not results:
-            logger.info("Failed to get twitter search results")
-            return None
-        formatted_results = [SearchResult.from_dict(r) for r in json.loads(results)]
-        filtered_tweets = await self._filter_quote_candidates(formatted_results)
+    async def _generate_quote(self, quote_tweet_id: Optional[str]) -> Optional[Message]:
+        filtered_tweets = []
+        if quote_tweet_id:
+            logger.info(f"Generating quote for tweet id: {quote_tweet_id}")
+            result = self.twitter_get_post_tool(quote_tweet_id)
+            if result:
+                filtered_tweets = [SearchResult.from_dict(json.loads(result))]
+        else:
+            logger.info(f"Generating quote by searching for tweets.")
+            results = self.twitter_search_tool(
+                self.agent.extra_fields["twitter_profile"].get("search_query", "")
+            )
+            if not results:
+                logger.info("Failed to get twitter search results")
+                return None
+            formatted_results: List[SearchResult] = [SearchResult.from_dict(r) for r in json.loads(results)]
+            filtered_tweets = await self._filter_quote_candidates(formatted_results)
         if not filtered_tweets:
             logger.info("No relevant tweets found, skipping")
             return None
 
-        quoted_tweet_id = filtered_tweets[0].id
-        quoted_tweet_username = filtered_tweets[0].username
+        return await self._generate_quote_for_tweet(filtered_tweets[0])
+
+    async def _generate_quote_for_tweet(self, tweet_to_quote: SearchResult) -> Optional[Message]:
+        quoted_tweet_id = tweet_to_quote.id
+        quoted_tweet_username = tweet_to_quote.username
         quote_url = f"https://x.com/{quoted_tweet_username}/status/{quoted_tweet_id}"
 
-        prompt_state = await self._get_quote_prompt_state(filtered_tweets[0].text)
+        prompt_state = await self._get_quote_prompt_state(tweet_to_quote.text)
         prompt = format_prompt.execute(PROMPT_QUOTE_TEMPLATE, prompt_state)
         logger.debug(f"Got full formatted quote prompt: \n{prompt}")
 

@@ -8,9 +8,10 @@ from typing import List
 from typing import Literal
 
 from dotenv import load_dotenv
-from typing_extensions import runtime
 
-from galadriel import AgentRuntime, AgentInput, AgentOutput
+from galadriel import AgentInput
+from galadriel import AgentOutput
+from galadriel import AgentRuntime
 from galadriel.connectors.llm import LlmClient
 from galadriel.entities import Message
 from galadriel.entities import PushOnlyQueue
@@ -114,7 +115,7 @@ def _load_agent_config() -> TwitterAgentConfig:
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Parse command line arguments.")
+    parser = argparse.ArgumentParser(description="Generate tweets without posting them.")
     parser.add_argument(
         "--type",
         choices=["perplexity", "search"],

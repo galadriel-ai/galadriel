@@ -1,3 +1,4 @@
+import argparse
 import asyncio
 import json
 from pathlib import Path
@@ -7,7 +8,6 @@ from dotenv import load_dotenv
 
 from galadriel import AgentRuntime
 from galadriel.connectors.llm import LlmClient
-from galadriel.storage.s3 import S3Client
 from src.agent.twitter_agent import TwitterAgent
 from src.models import TwitterAgentConfig
 from src.repository.database import DatabaseClient
@@ -19,8 +19,10 @@ def _load_dotenv():
     load_dotenv(dotenv_path=env_path)
 
 
-async def main():
-    agent_config = _load_agent_config()
+async def main(
+    agent_name: str
+):
+    agent_config = _load_agent_config(agent_name)
 
     galadriel_client = LlmClient()
     database_client = DatabaseClient()
@@ -44,9 +46,10 @@ async def main():
     await runtime.run()
 
 
-def _load_agent_config() -> TwitterAgentConfig:
+def _load_agent_config(
+    agent_name: str
+) -> TwitterAgentConfig:
     _load_dotenv()
-    agent_name = "daige"
     agent_path = Path("agent_configurator") / f"{agent_name}.json"
     with open(agent_path, "r", encoding="utf-8") as f:
         agent_dict = json.loads(f.read())
@@ -63,4 +66,13 @@ def _load_agent_config() -> TwitterAgentConfig:
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    parser = argparse.ArgumentParser(
+        description="Run an agent with a specified configuration file.")
+    parser.add_argument(
+        "--name",
+        default="agent",
+        help="Specify the agent name. The agent configuration file needs to exist in `agent_configurator/{name}.json`."
+    )
+    args = parser.parse_args()
+
+    asyncio.run(main(args.name))
