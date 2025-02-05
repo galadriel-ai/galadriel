@@ -67,7 +67,7 @@ def _load_agent_config(
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Parse command line arguments.")
+        description="Run an agent with a specified configuration file.")
     parser.add_argument(
         "--name",
         default="agent",

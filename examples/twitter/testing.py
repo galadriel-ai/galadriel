@@ -115,7 +115,7 @@ def _load_agent_config() -> TwitterAgentConfig:
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Parse command line arguments.")
+    parser = argparse.ArgumentParser(description="Generate tweets without posting them.")
     parser.add_argument(
         "--type",
         choices=["perplexity", "search"],
