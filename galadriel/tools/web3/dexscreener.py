@@ -57,7 +57,6 @@ def get_token_profile(task: str) -> str:
     Args:
          task: empty
     """
-    import requests
 
     response = requests.get(
         "https://api.dexscreener.com/token-profiles/latest/v1",

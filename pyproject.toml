@@ -39,17 +39,19 @@ jupiter-python-sdk =  "^0.0.2.0"
 litellm = {version = "^1.58.2", optional = true}
 black = { version = "^24.8.0", optional = true }
 mypy = { version = "^1.11.2", optional = true }
+py = { version = "^1.11.0", optional = true }
 pylint = { version = "^3.2.7", optional = true }
 pytest = { version = "^8.3.2", optional = true }
 pytest-asyncio = { version = "0.24.0", optional = true }
 pytest-mock = { version = "^3.14.0", optional = true }
 pytest-cov = { version = "^5.0.0", optional = true }
+pytest-xprocess = { version = "^0.18.0", optional = true }
 twine = { version = "^5.1.1", optional = true }
 build = { version = "^1.2.2", optional = true }
 types-requests = { version = "^2.32.0.20241016", optional = true }
 
 [tool.poetry.extras]
-dev = ["black", "mypy", "pylint", "pytest", "pytest-asyncio", "pytest-mock", "twine", "build", "litellm", "types-requests"]
+dev = ["black", "mypy", "pylint", "pytest", "pytest-asyncio", "pytest-mock", "pytest-xprocess", "twine", "build", "litellm", "types-requests"]
 
 [build-system]
 requires = ["poetry-core"]
