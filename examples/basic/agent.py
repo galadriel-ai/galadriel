@@ -12,18 +12,16 @@ load_dotenv(dotenv_path=Path(".") / ".env", override=True)
 model = LiteLLMModel(model_id="gpt-4o", api_key=os.getenv("OPENAI_API_KEY"))
 
 agent = CodeAgent(
-    prompt_template= "Answer the question: {{request}}",
+    prompt_template="Answer the question: {{request}}",
     model=model,
-    tools=[
-        DuckDuckGoSearchTool()
-    ]
+    tools=[DuckDuckGoSearchTool()],
 )
 
 client = SimpleMessageClient(
     "What is the capital of Estonia?",
     "What's the price of Solana today?",
     "Should I buy ETH?",
-    interval_seconds=20 # Optional parameter to specify the interval between messages. The default is 60 sec.
+    interval_seconds=20,  # Optional parameter to specify the interval between messages. The default is 60 sec.
 )
 
 runtime = AgentRuntime(

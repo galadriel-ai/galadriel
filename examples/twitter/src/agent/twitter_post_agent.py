@@ -144,7 +144,9 @@ class TwitterPostAgent(Agent):
             return response
         raise Exception("Error running agent")
 
-    async def _generate_perplexity_tweet_with_retries(self, tweet_context: Optional[str]) -> Optional[Message]:
+    async def _generate_perplexity_tweet_with_retries(
+        self, tweet_context: Optional[str]
+    ) -> Optional[Message]:
         for i in range(TWEET_RETRY_COUNT):
             response = await self._post_perplexity_tweet(tweet_context)
             if response:
@@ -155,7 +157,9 @@ class TwitterPostAgent(Agent):
                 )
                 await asyncio.sleep(i * 5)
 
-    async def _post_perplexity_tweet(self, tweet_context: Optional[str]) -> Optional[Message]:
+    async def _post_perplexity_tweet(
+        self, tweet_context: Optional[str]
+    ) -> Optional[Message]:
         logger.info("Generating tweet with perplexity")
         prompt_state = await self._get_post_prompt_state(tweet_context)
 
@@ -226,7 +230,9 @@ class TwitterPostAgent(Agent):
             if not results:
                 logger.info("Failed to get twitter search results")
                 return None
-            formatted_results: List[SearchResult] = [SearchResult.from_dict(r) for r in json.loads(results)]
+            formatted_results: List[SearchResult] = [
+                SearchResult.from_dict(r) for r in json.loads(results)
+            ]
             filtered_tweets = await self._filter_quote_candidates(formatted_results)
         if not filtered_tweets:
             logger.info("No relevant tweets found, skipping")
@@ -234,7 +240,9 @@ class TwitterPostAgent(Agent):
 
         return await self._generate_quote_for_tweet(filtered_tweets[0])
 
-    async def _generate_quote_for_tweet(self, tweet_to_quote: SearchResult) -> Optional[Message]:
+    async def _generate_quote_for_tweet(
+        self, tweet_to_quote: SearchResult
+    ) -> Optional[Message]:
         quoted_tweet_id = tweet_to_quote.id
         quoted_tweet_username = tweet_to_quote.username
         quote_url = f"https://x.com/{quoted_tweet_username}/status/{quoted_tweet_id}"
@@ -307,16 +315,19 @@ class TwitterPostAgent(Agent):
             data["perplexity_content"] = tweet_context
             data["perplexity_sources"] = ""
         else:
-            search_query = await get_search_query.execute(self.agent, self.database_client)
+            search_query = await get_search_query.execute(
+                self.agent, self.database_client
+            )
             data["search_topic"] = search_query.topic
             perplexity_result = await self.perplexity_client.search_topic(
                 search_query.query
             )
             if perplexity_result:
                 data["perplexity_content"] = perplexity_result.content
-                data["perplexity_sources"] = \
-                    "Here are the citations, where you read about this:\n" \
+                data["perplexity_sources"] = (
+                    "Here are the citations, where you read about this:\n"
                     + perplexity_result.sources
+                )
             else:
                 # What to do if perplexity call fails?
                 data["perplexity_content"] = ""
