@@ -1,13 +1,11 @@
-import json
 import os
 from typing import List
-from typing import Optional
-
-from galadriel import CodeAgent, LiteLLMModel
 
 from entities import Memory
 from entities import ShortTermMemory
 from galadriel import Agent
+from galadriel import CodeAgent
+from galadriel.agent import LiteLLMModel
 from galadriel.entities import Message
 from repositories.memory_repository import MemoryRepository
 from tools.coin_price_tool import coin_price_api
@@ -31,7 +29,7 @@ class ResearchAgent(Agent):
             )
         task = await self._add_memories_to_task(task, author_id, conversation_id)
         agent = self._get_agent()
-        answer = agent.execute(task)
+        answer = agent.execute(Message(content=task))
         memory = ShortTermMemory(task=(task), result=str(answer))
         memory_repository.add_short_term_memory(author_id, conversation_id, memory)
         update_long_term_memory(memory_repository, author_id, memory)
