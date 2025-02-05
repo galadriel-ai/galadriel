@@ -35,9 +35,7 @@ def fetch_market_data(dummy: dict) -> str:
     token_list = get_token_list()
     market_data = []
     for token in token_list:
-        response = requests.get(
-            f"https://api.dexscreener.com/tokens/v1/solana/{token['address']}"
-        )
+        response = requests.get(f"https://api.dexscreener.com/tokens/v1/solana/{token['address']}")
         if response.status_code == 200:
             data = response.json()
             # Remove unrelated data to fit the context limit

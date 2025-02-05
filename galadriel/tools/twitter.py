@@ -100,7 +100,9 @@ class TwitterRepliesTool(TwitterApiClient, Tool):
 
 class TwitterGetPostTool(TwitterApiClient, Tool):
     name = TWITTER_GET_POST_TOOL_NAME
-    description = "This is a tool that gets a specific twitter post by its' ID. If the ID is wrong it will return an empty string."
+    description = (
+        "This is a tool that gets a specific twitter post by its' ID. If the ID is wrong it will return an empty string."
+    )
     inputs = {
         "tweet_id": {
             "type": "string",

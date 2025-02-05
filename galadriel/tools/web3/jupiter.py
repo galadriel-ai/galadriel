@@ -33,7 +33,6 @@ JUPITER_QUERY_OPEN_ORDERS_API_URL = "https://jup.ag/api/limit/v1/openOrders?wall
 JUPITER_QUERY_ORDER_HISTORY_API_URL = "https://jup.ag/api/limit/v1/orderHistory"
 JUPITER_QUERY_TRADE_HISTORY_API_URL = "https://jup.ag/api/limit/v1/tradeHistory"
 
-
 @tool
 def swap_token(user_address: str, token1: str, token2: str, amount: float) -> str:
     """
@@ -51,9 +50,7 @@ def swap_token(user_address: str, token1: str, token2: str, amount: float) -> st
 
     wallet_repository = WalletRepository(os.getenv("SOLANA_KEY_PATH"))
 
-    result = asyncio.run(
-        swap(wallet_repository.get_wallet(), user_address, token1, token2, amount)
-    )
+    result = asyncio.run(swap(wallet_repository.get_wallet(), user_address, token1, token2, amount))
 
     return f"Successfully swapped {amount} {token1} for {token2}, tx sig: {result}."
 
@@ -95,9 +92,7 @@ async def swap(
     )
     input_mint = str(input_mint)
     output_mint = str(output_mint)
-    spl_client = AsyncToken(
-        async_client, Pubkey.from_string(input_mint), TOKEN_PROGRAM_ID, wallet
-    )
+    spl_client = AsyncToken(async_client, Pubkey.from_string(input_mint), TOKEN_PROGRAM_ID, wallet)
     mint = await spl_client.get_mint_info()
     decimals = mint.decimals
     input_amount = int(input_amount * 10**decimals)
@@ -110,17 +105,11 @@ async def swap(
             only_direct_routes=False,
             slippage_bps=slippage_bps,
         )
-        raw_transaction = VersionedTransaction.from_bytes(
-            base64.b64decode(transaction_data)
-        )
-        signature = wallet.sign_message(
-            message.to_bytes_versioned(raw_transaction.message)
-        )
+        raw_transaction = VersionedTransaction.from_bytes(base64.b64decode(transaction_data))
+        signature = wallet.sign_message(message.to_bytes_versioned(raw_transaction.message))
         signed_txn = VersionedTransaction.populate(raw_transaction.message, [signature])
         opts = TxOpts(skip_preflight=False, preflight_commitment=Processed)
-        result = await async_client.send_raw_transaction(
-            txn=bytes(signed_txn), opts=opts
-        )
+        result = await async_client.send_raw_transaction(txn=bytes(signed_txn), opts=opts)
         print(f"Transaction sent: {json.loads(result.to_json())}")
         transaction_id = json.loads(result.to_json())["result"]
         print(f"Transaction sent: https://explorer.solana.com/tx/{transaction_id}")
