@@ -3,13 +3,12 @@ import os
 from typing import List
 from typing import Optional
 
-from galadriel_agent.core_agent import CodeAgent
-from galadriel_agent.core_agent import LiteLLMModel
+from galadriel import CodeAgent, LiteLLMModel
 
 from entities import Memory
 from entities import ShortTermMemory
-from galadriel_agent.agent import Agent
-from galadriel_agent.entities import Message
+from galadriel import Agent
+from galadriel.entities import Message
 from repositories.memory_repository import MemoryRepository
 from tools.coin_price_tool import coin_price_api
 from tools.dex_screener_tool import dex_screener_api

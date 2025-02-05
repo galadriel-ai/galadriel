@@ -1,4 +1,4 @@
-from galadriel_agent.domain.prompts import format_prompt
+from galadriel.domain.prompts import format_prompt
 
 
 async def test_basic():

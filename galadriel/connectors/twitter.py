@@ -8,7 +8,7 @@ from typing import Optional
 
 from requests_oauthlib import OAuth1Session
 
-from galadriel_agent.logging_utils import get_agent_logger
+from galadriel.logging_utils import get_agent_logger
 
 logger = get_agent_logger()
 

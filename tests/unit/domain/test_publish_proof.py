@@ -2,8 +2,8 @@ import json
 import os
 from unittest.mock import MagicMock
 
-from galadriel_agent.domain import publish_proof
-from galadriel_agent.entities import Message
+from galadriel.domain import publish_proof
+from galadriel.entities import Message
 
 
 class MockResponse:

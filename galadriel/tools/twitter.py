@@ -3,11 +3,11 @@ import os
 from typing import Dict
 from typing import Optional
 
-from galadriel_agent.core_agent import Tool
+from galadriel.core_agent import Tool
 
-from galadriel_agent.connectors.twitter import TwitterApiClient
-from galadriel_agent.connectors.twitter import TwitterCredentials
-from galadriel_agent.logging_utils import get_agent_logger
+from galadriel.connectors.twitter import TwitterApiClient
+from galadriel.connectors.twitter import TwitterCredentials
+from galadriel.logging_utils import get_agent_logger
 
 logger = get_agent_logger()
 

@@ -7,7 +7,7 @@ from typing import Union
 
 import aiofiles
 
-from galadriel_agent.logging_utils import get_agent_logger
+from galadriel.logging_utils import get_agent_logger
 from src.models import Memory
 
 logger = get_agent_logger()

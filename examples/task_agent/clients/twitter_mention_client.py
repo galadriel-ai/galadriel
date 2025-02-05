@@ -2,12 +2,11 @@ from typing import Dict
 from typing import List
 from typing import Optional
 
-from galadriel_agent.agent import AgentInput
-from galadriel_agent.agent import AgentOutput
-from galadriel_agent.connectors.twitter import TwitterApiClient
-from galadriel_agent.connectors.twitter import TwitterCredentials
-from galadriel_agent.entities import Message
-from galadriel_agent.entities import PushOnlyQueue
+from galadriel import AgentInput, AgentOutput
+from galadriel.connectors.twitter import TwitterApiClient
+from galadriel.connectors.twitter import TwitterCredentials
+from galadriel.entities import Message
+from galadriel.entities import PushOnlyQueue
 
 
 class TwitterMentionClient(TwitterApiClient, AgentInput, AgentOutput):

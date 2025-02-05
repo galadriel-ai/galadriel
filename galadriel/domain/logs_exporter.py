@@ -12,7 +12,7 @@ from urllib.parse import urljoin
 
 import requests
 
-from galadriel_agent.entities import GALADRIEL_API_BASE_URL
+from galadriel.entities import GALADRIEL_API_BASE_URL
 
 LOG_EXPORT_INTERVAL_SECONDS = 30
 LOG_EXPORT_BATCH_SIZE = 20

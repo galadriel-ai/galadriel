@@ -1,6 +1,6 @@
-from galadriel_agent.domain import add_conversation_history
-from galadriel_agent.entities import Message
-from galadriel_agent.memory.in_memory import InMemoryShortTermMemory
+from galadriel.domain import add_conversation_history
+from galadriel.entities import Message
+from galadriel.memory.in_memory import InMemoryShortTermMemory
 
 CONVERSATION_ID = "ci123"
 

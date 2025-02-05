@@ -3,12 +3,12 @@ import json
 import random
 from typing import Optional
 
-from galadriel_agent.agent import AgentInput, AgentOutput
-from galadriel_agent.connectors.twitter import SearchResult
-from galadriel_agent.entities import Message, PushOnlyQueue
-from galadriel_agent.logging_utils import get_agent_logger
-from galadriel_agent.tools.twitter import TwitterPostTool
-from galadriel_agent.tools.twitter import TwitterRepliesTool
+from galadriel import AgentInput, AgentOutput
+from galadriel.connectors.twitter import SearchResult
+from galadriel.entities import Message, PushOnlyQueue
+from galadriel.logging_utils import get_agent_logger
+from galadriel.tools.twitter import TwitterPostTool
+from galadriel.tools.twitter import TwitterRepliesTool
 from src import utils
 from src.models import Memory
 from src.models import TwitterAgentConfig

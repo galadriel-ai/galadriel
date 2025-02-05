@@ -1,7 +1,7 @@
 from unittest.mock import MagicMock
 
-from galadriel_agent.domain.logs_exporter import LogsExportHandler
-from galadriel_agent.domain import logs_exporter
+from galadriel.domain.logs_exporter import LogsExportHandler
+from galadriel.domain import logs_exporter
 
 
 def get_exporter() -> LogsExportHandler:

@@ -1,7 +1,7 @@
 import hashlib
 import json
 
-from galadriel_agent.entities import Message
+from galadriel.entities import Message
 
 
 def execute(request: Message, response: Message) -> str:

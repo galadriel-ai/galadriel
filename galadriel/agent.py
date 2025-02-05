@@ -5,18 +5,24 @@ from typing import Optional
 from typing import Set
 
 from dotenv import load_dotenv
+from smolagents import *
+from smolagents.agents import LogLevel
+from galadriel.domain import add_conversation_history
+from galadriel.domain import generate_proof
+from galadriel.domain import publish_proof
+from galadriel.domain import validate_solana_payment
+from galadriel.domain.prompts import format_prompt
+from galadriel.entities import Message
+from galadriel.entities import PushOnlyQueue
+from galadriel.entities import Pricing
+from galadriel.entities import ShortTermMemory
+from galadriel.errors import PaymentValidationError
+from galadriel.logging_utils import init_logging
 
-from galadriel_agent.domain import add_conversation_history
-from galadriel_agent.domain import generate_proof
-from galadriel_agent.domain import publish_proof
-from galadriel_agent.domain import validate_solana_payment
-from galadriel_agent.entities import Message
-from galadriel_agent.entities import PushOnlyQueue
-from galadriel_agent.entities import Pricing
-from galadriel_agent.entities import ShortTermMemory
-from galadriel_agent.errors import PaymentValidationError
-from galadriel_agent.logging_utils import init_logging
+from smolagents import CodeAgent as InternalCodeAgent
+from smolagents import ToolCallingAgent as InternalToolCallingAgent
 
+DEFAULT_PROMPT_TEMPLATE = "{{request}}"
 
 class Agent:
     async def execute(self, request: Message) -> Message:
@@ -36,6 +42,42 @@ class AgentOutput:
 class AgentState:
     # TODO: knowledge_base: KnowledgeBase
     pass
+
+
+class CodeAgent(Agent, InternalCodeAgent):
+
+    def __init__(self, prompt_template: Optional[str], **kwargs):
+        InternalCodeAgent.__init__(self, **kwargs)
+        self.prompt_template = prompt_template or DEFAULT_PROMPT_TEMPLATE
+
+    async def execute(self, request: Message) -> Message:
+        request_dict = {"request": request.content}
+        answer = InternalCodeAgent.run(
+            self, format_prompt.execute(self.prompt_template, request_dict)
+        )
+        return Message(
+            content=str(answer),
+            conversation_id=request.conversation_id,
+            additional_kwargs=request.additional_kwargs,
+        )
+
+
+class ToolCallingAgent(Agent, InternalToolCallingAgent):
+
+    def __init__(self, prompt_template: Optional[str], **kwargs):
+        InternalToolCallingAgent.__init__(self, **kwargs)
+        self.prompt_template = prompt_template or DEFAULT_PROMPT_TEMPLATE
+
+    async def execute(self, request: Message) -> Message:
+        request_dict = {"request": request.content}
+        answer = InternalToolCallingAgent.run(
+            self, format_prompt.execute(self.prompt_template, request_dict)
+        )
+        return Message(
+            content=str(answer),
+            conversation_id=request.conversation_id,
+            additional_kwargs=request.additional_kwargs,
+        )
 
 
 # This is just a rough sketch on how the GaladrielAgent itself will be implemented

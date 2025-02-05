@@ -2,14 +2,12 @@ from typing import Dict
 from typing import List
 from unittest.mock import MagicMock
 
-from galadriel_agent import agent
-from galadriel_agent.agent import AgentRuntime
-from galadriel_agent.agent import Agent
-from galadriel_agent.agent import AgentInput, AgentOutput
-from galadriel_agent.domain import validate_solana_payment
-from galadriel_agent.entities import Message, PushOnlyQueue, Pricing
-from galadriel_agent.errors import PaymentValidationError
-from galadriel_agent.memory.in_memory import InMemoryShortTermMemory
+from galadriel import agent
+from galadriel import AgentRuntime, Agent, AgentInput, AgentOutput
+from galadriel.domain import validate_solana_payment
+from galadriel.entities import Message, PushOnlyQueue, Pricing
+from galadriel.errors import PaymentValidationError
+from galadriel.memory.in_memory import InMemoryShortTermMemory
 
 CONVERSATION_ID = "ci1"
 RESPONSE_MESSAGE = Message(content="goodbye")
@@ -52,7 +50,7 @@ async def test_adds_history():
     message = Message(content="hello", conversation_id=CONVERSATION_ID)
     short_term_memory.add(message)
     user_agent = MockAgent()
-    galadriel_agent = AgentRuntime(
+    runtime = AgentRuntime(
         inputs=[],
         outputs=[],
         agent=user_agent,
@@ -62,14 +60,14 @@ async def test_adds_history():
         content="world",
         conversation_id=CONVERSATION_ID,
     )
-    await galadriel_agent.run_request(request)
+    await runtime.run_request(request)
     expected = Message(content="hello\n\nworld", conversation_id=CONVERSATION_ID)
     assert user_agent.called_messages[0] == expected
 
 
 async def test_publishes_proof():
     user_agent = MockAgent()
-    galadriel_agent = AgentRuntime(
+    runtime = AgentRuntime(
         inputs=[],
         outputs=[],
         agent=user_agent,
@@ -78,7 +76,7 @@ async def test_publishes_proof():
         content="hello",
         conversation_id=CONVERSATION_ID,
     )
-    await galadriel_agent.run_request(request)
+    await runtime.run_request(request)
     agent.publish_proof.execute.assert_called_with(
         request, RESPONSE_MESSAGE, "mock_proof"
     )
@@ -88,7 +86,7 @@ async def test_post_output_to_client():
     user_agent = MockAgent()
     input_client = MockAgentInput()
     output_client = MockAgentOutput()
-    galadriel_agent = AgentRuntime(
+    runtime = AgentRuntime(
         inputs=[input_client],
         outputs=[output_client],
         agent=user_agent,
@@ -97,7 +95,7 @@ async def test_post_output_to_client():
         content="hello",
         conversation_id=CONVERSATION_ID,
     )
-    await galadriel_agent.run_request(request)
+    await runtime.run_request(request)
     assert output_client.output_requests[0] == request
     assert output_client.output_responses[0] == RESPONSE_MESSAGE
     assert output_client.output_proofs[0] == "mock_proof"
@@ -138,7 +136,7 @@ async def test_payment_validation_failure(monkeypatch):
 
     # Mock failed payment validation
     monkeypatch.setattr(
-        "galadriel_agent.domain.validate_solana_payment.execute",
+        "galadriel.domain.validate_solana_payment.execute",
         MagicMock(side_effect=PaymentValidationError("Invalid payment")),
     )
 

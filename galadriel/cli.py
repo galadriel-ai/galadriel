@@ -328,8 +328,8 @@ def _create_agent_template(
 
     # Generate <agent_name>.py
     class_name = "".join(word.capitalize() for word in agent_name.split("_"))
-    agent_code = f"""from galadriel_agent.agent import Agent
-from galadriel_agent.entities import Message
+    agent_code = f"""from galadriel import Agent
+from galadriel.entities import Message
 
 
 class {class_name}(Agent):
@@ -360,10 +360,10 @@ class {class_name}(Agent):
     # generate agent.py
     main_code = f"""import asyncio
 
-from galadriel_agent.agent import AgentOutput
-from galadriel_agent.agent import AgentRuntime
-from galadriel_agent.clients.cron import Cron
-from galadriel_agent.entities import Message
+from galadriel import AgentOutput
+from galadriel import AgentRuntime
+from galadriel.clients import Cron
+from galadriel.entities import Message
 
 from agent.{agent_name} import {class_name}
 
@@ -415,7 +415,7 @@ build-backend = "poetry.core.masonry.api"
     with open(os.path.join(agent_name, ".agents.env"), "w", encoding="utf-8") as f:
         f.write(agent_env_content)
 
-    # copy docker files from sentience/galadriel_agent/docker to user current directory
+    # copy docker files from sentience/galadriel/docker to user current directory
     # docker_files_dir = os.path.join(os.path.dirname(__file__), "docker")
     # shutil.copy(
     #     os.path.join(os.path.join(os.path.dirname(__file__)), "docker-compose.yml"),

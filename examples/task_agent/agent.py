@@ -1,14 +1,14 @@
 import json
 import asyncio
 
-from galadriel_agent.agent import AgentRuntime
+from galadriel import AgentRuntime
 
 # from clients.twitter_mention_client import TwitterCredentials
 # from clients.twitter_mention_client import TwitterMentionClient
-from galadriel_agent.clients.test_client import TestClient
-from galadriel_agent.entities import Message
-from galadriel_agent.entities import Pricing
-from galadriel_agent.memory.in_memory import InMemoryShortTermMemory
+from galadriel.clients import TestClient
+from galadriel.entities import Message
+from galadriel.entities import Pricing
+from galadriel.memory.in_memory import InMemoryShortTermMemory
 from research_agent import ResearchAgent
 
 

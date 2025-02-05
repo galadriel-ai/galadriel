@@ -1,16 +1,16 @@
-from galadriel_agent.core_agent import LiteLLMModel
+from galadriel.core_agent import LiteLLMModel
 from dotenv import load_dotenv
 from pathlib import Path
 
 from discord_agent import ElonMuskAgent
-from galadriel_agent.tools.composio_converter import convert_action
+from galadriel.tools.composio_converter import convert_action
 from tools import get_time
-from galadriel_agent.memory.memory_repository import memory_repository
-from galadriel_agent.agent import AgentRuntime
-from galadriel_agent.clients.discord_client import DiscordClient
+from galadriel.memory.memory_repository import memory_repository
+from galadriel import AgentRuntime
+from galadriel.clients import DiscordClient
 import os
 import asyncio
-from galadriel_agent.logging_utils import get_agent_logger
+from galadriel.logging_utils import get_agent_logger
 
 
 load_dotenv(dotenv_path=Path(".") / ".env", override=True)

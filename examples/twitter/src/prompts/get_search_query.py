@@ -1,7 +1,7 @@
 import random
 from dataclasses import dataclass
 
-from galadriel_agent.logging_utils import get_agent_logger
+from galadriel.logging_utils import get_agent_logger
 from src.models import TwitterAgentConfig
 from src.repository.database import DatabaseClient
 
