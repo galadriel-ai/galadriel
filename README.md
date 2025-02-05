@@ -19,18 +19,15 @@ It uses `TestClient` which sends 2 messages sequentially to the agent and prints
 
 ```python
 import asyncio
-from galadriel_agent.agent import AgentRuntime
-from galadriel_agent.clients.test_client import TestClient
-from galadriel_agent.core_agent import HfApiModel, CodeAgent, DuckDuckGoSearchTool
-from galadriel_agent.entities import Message
+from galadriel import AgentRuntime, CodeAgent
+from galadriel.clients import SimpleMessageClient
+from galadriel.core_agent import LiteLLMModel, DuckDuckGoSearchTool
 
 model = LiteLLMModel(model_id="gpt-4o", api_key="<ADD YOUR OPENAI KEY HERE>")
 
 agent = CodeAgent(
     model=model,
-    tools=[
-        DuckDuckGoSearchTool()
-    ]
+    tools=[DuckDuckGoSearchTool()]
 )
 
 client = SimpleMessageClient("Explain the concept of blockchain")
@@ -40,6 +37,5 @@ runtime = AgentRuntime(
     inputs=[client],
     outputs=[client],
 )
-
 asyncio.run(runtime.run())
 ```
