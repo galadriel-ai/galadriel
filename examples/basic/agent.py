@@ -18,7 +18,12 @@ agent = CodeAgent(
     ]
 )
 
-client = SimpleMessageClient("Explain A", "Explain B")
+client = SimpleMessageClient(
+    "What is the capital of Estonia?",
+    "What's the price of Solana today?",
+    "Should I buy ETH?",
+    interval_seconds=5 # Optional parameter to specify the interval between messages. The default is 60 sec.
+)
 
 runtime = AgentRuntime(
     agent=agent,
