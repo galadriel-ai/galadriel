@@ -84,7 +84,9 @@ async def get_user_balance(user_address: str, token: str) -> float:
         The user's balance for the specified token.
     """
     if user_address in user_portfolios:
-        return user_portfolios[user_address].get(token, 0.0)  # Return 0 if token not found
+        return user_portfolios[user_address].get(
+            token, 0.0
+        )  # Return 0 if token not found
     else:
         return 0.0
 
@@ -105,10 +107,14 @@ async def get_user_token_balance(
     try:
         user_pubkey = Pubkey.from_string(user_address)
         if not token_address:
-            response = await self.async_client.get_balance(user_pubkey, commitment=Confirmed)
+            response = await self.async_client.get_balance(
+                user_pubkey, commitment=Confirmed
+            )
             return response.value / LAMPORTS_PER_SOL
         token_address = Pubkey.from_string(token_address)
-        spl_client = AsyncToken(self.async_client, token_address, TOKEN_PROGRAM_ID, user_pubkey)
+        spl_client = AsyncToken(
+            self.async_client, token_address, TOKEN_PROGRAM_ID, user_pubkey
+        )
 
         mint = await spl_client.get_mint_info()
         if not mint.is_initialized:
