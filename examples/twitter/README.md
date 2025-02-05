@@ -4,8 +4,9 @@
 
 It's recommended to use a virtual env
 
+In the root of the repo:
 ```shell
-pip install -r requirements.txt
+pip install -e ".[dev]"
 ```
 
 ### Modify the .env
