@@ -6,23 +6,25 @@ from typing import List
 from typing import Optional
 from typing import Set
 
-from dotenv import load_dotenv
+from dotenv import load_dotenv as _load_dotenv
+# pylint:disable=W0401,W0614
 from smolagents import *
+# pylint:disable=W0614
 from smolagents.agents import LogLevel
+from smolagents import CodeAgent as InternalCodeAgent
+from smolagents import ToolCallingAgent as InternalToolCallingAgent
+
 from galadriel.domain import add_conversation_history
 from galadriel.domain import generate_proof
 from galadriel.domain import publish_proof
 from galadriel.domain import validate_solana_payment
 from galadriel.domain.prompts import format_prompt
 from galadriel.entities import Message
-from galadriel.entities import PushOnlyQueue
 from galadriel.entities import Pricing
+from galadriel.entities import PushOnlyQueue
 from galadriel.entities import ShortTermMemory
 from galadriel.errors import PaymentValidationError
 from galadriel.logging_utils import init_logging
-
-from smolagents import CodeAgent as InternalCodeAgent
-from smolagents import ToolCallingAgent as InternalToolCallingAgent
 
 DEFAULT_PROMPT_TEMPLATE = "{{request}}"
 
@@ -48,6 +50,7 @@ class AgentState:
     pass
 
 
+# pylint:disable=E0102
 class CodeAgent(Agent, InternalCodeAgent):
 
     def __init__(self, prompt_template: Optional[str] = None, **kwargs):
@@ -66,6 +69,7 @@ class CodeAgent(Agent, InternalCodeAgent):
         )
 
 
+# pylint:disable=E0102
 class ToolCallingAgent(Agent, InternalToolCallingAgent):
 
     def __init__(self, prompt_template: Optional[str] = None, **kwargs):
@@ -104,7 +108,7 @@ class AgentRuntime:
         self.spent_payments: Set[str] = set()
 
         env_path = Path(".") / ".env"
-        load_dotenv(dotenv_path=env_path)
+        _load_dotenv(dotenv_path=env_path)
         # AgentConfig should have some settings for debug?
         init_logging(False)
 

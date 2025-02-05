@@ -19,9 +19,7 @@ def _load_dotenv():
     load_dotenv(dotenv_path=env_path)
 
 
-async def main(
-    agent_name: str
-):
+async def main(agent_name: str):
     agent_config = _load_agent_config(agent_name)
 
     galadriel_client = LlmClient()
@@ -46,9 +44,7 @@ async def main(
     await runtime.run()
 
 
-def _load_agent_config(
-    agent_name: str
-) -> TwitterAgentConfig:
+def _load_agent_config(agent_name: str) -> TwitterAgentConfig:
     _load_dotenv()
     agent_path = Path("agent_configurator") / f"{agent_name}.json"
     with open(agent_path, "r", encoding="utf-8") as f:
@@ -67,11 +63,12 @@ def _load_agent_config(
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Run an agent with a specified configuration file.")
+        description="Run an agent with a specified configuration file."
+    )
     parser.add_argument(
         "--name",
         default="agent",
-        help="Specify the agent name. The agent configuration file needs to exist in `agent_configurator/{name}.json`."
+        help="Specify the agent name. The agent configuration file needs to exist in `agent_configurator/{name}.json`.",
     )
     args = parser.parse_args()
 
