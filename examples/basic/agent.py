@@ -1,11 +1,14 @@
 import asyncio
+import os
+from pathlib import Path
+
+from dotenv import load_dotenv
+
 from galadriel import AgentRuntime, CodeAgent
+from galadriel.clients import SimpleMessageClient
 from galadriel.core_agent import LiteLLMModel, DuckDuckGoSearchTool
-from galadriel.clients import SimpleMessageClient
-from galadriel.entities import Message
 
-from galadriel.clients import SimpleMessageClient
-
+load_dotenv(dotenv_path=Path(".") / ".env", override=True)
 model = LiteLLMModel(model_id="gpt-4o", api_key=os.getenv("OPENAI_API_KEY"))
 
 agent = CodeAgent(
@@ -15,7 +18,7 @@ agent = CodeAgent(
     ]
 )
 
-client = SimpleMessageClient("Explain the concept of blockchain")
+client = SimpleMessageClient("Explain A", "Explain B")
 
 runtime = AgentRuntime(
     agent=agent,
