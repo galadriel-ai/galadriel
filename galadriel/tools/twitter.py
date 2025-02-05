@@ -14,6 +14,7 @@ logger = get_agent_logger()
 TWITTER_POST_TOOL_NAME = "twitter_post_tool"
 TWITTER_SEARCH_TOOL_NAME = "twitter_search_tool"
 TWITTER_REPLIES_TOOL_NAME = "twitter_replies_tool"
+TWITTER_GET_POST_TOOL_NAME = "twitter_get_post_tool"
 
 
 class CredentialsException(Exception):
@@ -67,7 +68,8 @@ class TwitterSearchTool(TwitterApiClient, Tool):
 
     def forward(self, search_query: str) -> str:  # pylint:disable=W0221
         results = self.search(search_query)
-        return json.dumps(results)
+        formatted_results = [r.to_dict() for r in results]
+        return json.dumps(formatted_results)
 
 
 class TwitterRepliesTool(TwitterApiClient, Tool):
@@ -90,10 +92,38 @@ class TwitterRepliesTool(TwitterApiClient, Tool):
             credentials = _credentials
         super().__init__(credentials)
 
-    # Hacky solution..
     def forward(self, conversation_id: str) -> str:  # pylint:disable=W0221
         results = self.get_replies(conversation_id)
-        return json.dumps(results)
+        formatted_results = [r.to_dict() for r in results]
+        return json.dumps(formatted_results)
+
+
+class TwitterGetPostTool(TwitterApiClient, Tool):
+    name = TWITTER_GET_POST_TOOL_NAME
+    description = (
+        "This is a tool that gets a specific twitter post by its' ID. If the ID is wrong it will return an empty string."
+    )
+    inputs = {
+        "tweet_id": {
+            "type": "string",
+            "description": "The tweet ID.",
+        },
+    }
+    output_type = "string"
+
+    def __init__(self, _credentials: Optional[TwitterCredentials] = None):
+        if not _credentials:
+            credentials = _get_credentials_from_env()
+        else:
+            credentials = _credentials
+        super().__init__(credentials)
+
+    def forward(self, tweet_id: str) -> str:  # pylint:disable=W0221
+        result = self.get_tweet(tweet_id)
+        if not result:
+            return ""
+        formatted_result = result.to_dict()
+        return json.dumps(formatted_result)
 
 
 def _get_credentials_from_env() -> TwitterCredentials:

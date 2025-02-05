@@ -40,5 +40,5 @@ def _get_authorization() -> Optional[str]:
     api_key = os.getenv("GALADRIEL_API_KEY")
     if api_key:
         return "Bearer " + api_key
-    logger.info("GALADRIEL_API_KEY missing, set this as export GALADRIEL_API_KEY=<key>")
+    logger.debug("GALADRIEL_API_KEY env variable missing skipping proof publishing.")
     return None

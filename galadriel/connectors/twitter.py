@@ -72,8 +72,6 @@ class TwitterApiClient:
 
     def __init__(self, _credentials: TwitterCredentials):
         super().__init__()
-        # Might want to look into Oauth2Session, has higher limits, but can we POST tweets with it?
-        # https://developer.x.com/en/docs/x-api/rate-limits
         self.oauth_session = OAuth1Session(
             _credentials.consumer_api_key,
             client_secret=_credentials.consumer_api_secret,
@@ -97,7 +95,7 @@ class TwitterApiClient:
         logger.info(f"Tweet posted successfully: {message}")
         return response
 
-    def search(self, search_query: str) -> List[Dict]:
+    def search(self, search_query: str) -> List[SearchResult]:
         try:
             response = self._make_request(
                 "GET",
@@ -126,34 +124,7 @@ class TwitterApiClient:
             logger.error("Error searching tweets", exc_info=True)
             return []
 
-    def _format_search_results(self, response):
-        formatted_results: List[Dict] = []
-        for result in response.get("data", []):
-            public_metrics = result.get("public_metrics", {})
-            matching_users = [
-                user
-                for user in response["includes"]["users"]
-                if user["id"] == result["author_id"]
-            ]
-            if matching_users:
-                formatted_results.append(
-                    SearchResult(
-                        id=result["id"],
-                        username=matching_users[0]["username"],
-                        text=result["text"],
-                        retweet_count=public_metrics.get("retweet_count", 0),
-                        reply_count=public_metrics.get("reply_count", 0),
-                        like_count=public_metrics.get("like_count", 0),
-                        quote_count=public_metrics.get("quote_count", 0),
-                        bookmark_count=public_metrics.get("bookmark_count", 0),
-                        impression_count=public_metrics.get("impression_count", 0),
-                        referenced_tweets=result.get("referenced_tweets", []),
-                        attachments=result.get("attachments"),
-                    ).to_dict()
-                )
-        return formatted_results
-
-    def get_replies(self, conversation_id: str):
+    def get_replies(self, conversation_id: str) -> List[SearchResult]:
         response = self._make_request(
             "GET",
             "tweets/search/recent",
@@ -225,7 +196,7 @@ class TwitterApiClient:
         # }
         return self._format_search_results(response)
 
-    def get_tweet(self, tweet_id: str):
+    def get_tweet(self, tweet_id: str) -> Optional[SearchResult]:
         response = self._make_request(
             "GET",
             f"tweets/{tweet_id}",
@@ -235,7 +206,13 @@ class TwitterApiClient:
                 "user.fields": "name,username",
             },
         )
-        return response
+        result = self._format_search_results({
+            "data": [response.get("data", [])],
+            "includes": response.get("includes", {})
+        })
+        if result and len(result):
+            return result[0]
+        return None
 
     def _make_request(
         self, method: Literal["GET", "POST"], endpoint: str, **kwargs
@@ -260,6 +237,33 @@ class TwitterApiClient:
 
         except Exception as e:
             raise TwitterAPIError(f"API request failed: {str(e)}")
+
+    def _format_search_results(self, response: Dict) -> List[SearchResult]:
+        formatted_results: List[SearchResult] = []
+        for result in response.get("data", []):
+            public_metrics = result.get("public_metrics", {})
+            matching_users = [
+                user
+                for user in response["includes"]["users"]
+                if user["id"] == result["author_id"]
+            ]
+            if matching_users:
+                formatted_results.append(
+                    SearchResult(
+                        id=result["id"],
+                        username=matching_users[0]["username"],
+                        text=result["text"],
+                        retweet_count=public_metrics.get("retweet_count", 0),
+                        reply_count=public_metrics.get("reply_count", 0),
+                        like_count=public_metrics.get("like_count", 0),
+                        quote_count=public_metrics.get("quote_count", 0),
+                        bookmark_count=public_metrics.get("bookmark_count", 0),
+                        impression_count=public_metrics.get("impression_count", 0),
+                        referenced_tweets=result.get("referenced_tweets", []),
+                        attachments=result.get("attachments"),
+                    )
+                )
+        return formatted_results
 
 
 def get_iso_datetime(hours_back: int = 0) -> str:

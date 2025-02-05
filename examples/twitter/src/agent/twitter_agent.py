@@ -7,7 +7,8 @@ from galadriel.connectors.llm import LlmClient
 from galadriel.connectors.perplexity import PerplexityClient
 from galadriel.entities import Message
 from galadriel.logging_utils import get_agent_logger
-from galadriel.tools.twitter import TwitterSearchTool
+from galadriel.tools.twitter import TwitterGetPostTool
+from galadriel_agent.tools.twitter import TwitterSearchTool
 from src.agent.twitter_post_agent import TwitterPostAgent
 from src.agent.twitter_reply_agent import TwitterReplyAgent
 from src.models import TwitterAgentConfig
@@ -40,6 +41,7 @@ class TwitterAgent(Agent):
                 database_client=database_client,
                 perplexity_client=PerplexityClient(perplexity_api_key),
                 twitter_search_tool=TwitterSearchTool(),
+                twitter_get_post_tool=TwitterGetPostTool(),
                 tweet_type=original_tweet_type,
             )
         else:
