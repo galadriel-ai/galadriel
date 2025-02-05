@@ -1,9 +1,9 @@
-import socket
 import json
+import socket
 
 
 def save_env_vars_to_file(env_vars: dict, filepath: str = "/tmp/env_vars.sh"):
-    with open(filepath, "w") as f:
+    with open(filepath, "w", encoding="utf-8") as f:
         for key, value in env_vars.items():
             f.write(f'export {key}="{value}"\n')
 

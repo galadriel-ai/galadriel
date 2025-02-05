@@ -106,7 +106,7 @@ class TestingTwitterClient(AgentInput):
                     type="tweet_original",
                     additional_kwargs={
                         "quote_tweet_id": self.tweet_id,
-                    }
+                    },
                 ),
             )
         if self.context:
@@ -116,7 +116,7 @@ class TestingTwitterClient(AgentInput):
                     type="tweet_original",
                     additional_kwargs={
                         "tweet_context": self.context,
-                    }
+                    },
                 ),
             )
 
@@ -158,23 +158,24 @@ def _load_agent_config(agent_name: str) -> TwitterAgentConfig:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Generate a tweet manually with a tweet to quote.")
+        description="Generate a tweet manually with a tweet to quote."
+    )
     parser.add_argument(
         "--name",
         default="agent",
-        help="Specify the agent name. The agent configuration file needs to exist in `agent_configurator/{name}.json`."
+        help="Specify the agent name. The agent configuration file needs to exist in `agent_configurator/{name}.json`.",
     )
     parser.add_argument(
         "--tweet_id",
         default=None,
         required=False,
-        help="Specify the tweet ID to generate a quote for."
+        help="Specify the tweet ID to generate a quote for.",
     )
     parser.add_argument(
         "--context_file",
         default=None,
         required=False,
-        help="Specify the file path for the context to generate a tweet about."
+        help="Specify the file path for the context to generate a tweet about.",
     )
     args = parser.parse_args()
 
@@ -183,6 +184,4 @@ if __name__ == "__main__":
     if not tweet_id and not context_file:
         raise Exception("Either --tweet_id or --context_file is necessary.")
 
-    asyncio.run(
-        main(args.name, tweet_id, context_file)
-    )
+    asyncio.run(main(args.name, tweet_id, context_file))
