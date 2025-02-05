@@ -33,12 +33,7 @@ agent = CodeAgent(
     ]
 )
 
-client = SimpleMessageClient(
-    messages=[
-        Message(content="Explain the concept of blockchain"),
-        Message(content="Explain AI to 5 year old"),
-    ]
-)
+client = SimpleMessageClient("Explain the concept of blockchain")
 
 runtime = AgentRuntime(
     agent=agent,

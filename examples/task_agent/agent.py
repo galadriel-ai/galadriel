@@ -5,7 +5,7 @@ from galadriel import AgentRuntime
 
 # from clients.twitter_mention_client import TwitterCredentials
 # from clients.twitter_mention_client import TwitterMentionClient
-from galadriel.clients import TestClient
+from galadriel.clients import SimpleMessageClient
 from galadriel.entities import Message
 from galadriel.entities import Pricing
 from galadriel.memory.in_memory import InMemoryShortTermMemory
@@ -32,7 +32,7 @@ async def main():
         conversation_id="conversationid123",
         additional_kwargs={"id": "id124", "author_id": "authorid123"},
     )
-    test_client = TestClient(messages=[message1, message2])
+    test_client = SimpleMessageClient(input=[message1, message2])
 
     short_term_memory = InMemoryShortTermMemory()
 

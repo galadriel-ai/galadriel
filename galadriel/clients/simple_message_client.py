@@ -4,11 +4,13 @@ from typing import List
 from galadriel import AgentInput, AgentOutput
 from galadriel.entities import Message, PushOnlyQueue
 
+# Implementation of agent input and output for pushing simple input for agent at specific interval
+class SimpleMessageClient(AgentInput, AgentOutput):
+    def __init__(self, *messages: str, interval_seconds: int = 60):
+        if not messages:
+            raise ValueError("At least one message must be provided.")
 
-class TestClient(AgentInput, AgentOutput):
-    def __init__(self, messages: List[Message], interval_seconds: int = 60):
-        self.messages = messages
-        self.interval_seconds = interval_seconds
+        self.messages: List[Message] = [Message(content=msg) for msg in messages]
 
     async def start(self, queue: PushOnlyQueue):
         while True:
@@ -20,7 +22,7 @@ class TestClient(AgentInput, AgentOutput):
                 break
 
     async def send(self, request: Message, response: Message, proof: str):
-        print("\n======== test.client.post_output ========")
+        print("\n======== simple_message_client.post_output ========")
         print("request:", request)
         print("response:", response)
         print("proof:", proof)
