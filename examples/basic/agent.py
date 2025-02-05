@@ -12,6 +12,7 @@ load_dotenv(dotenv_path=Path(".") / ".env", override=True)
 model = LiteLLMModel(model_id="gpt-4o", api_key=os.getenv("OPENAI_API_KEY"))
 
 agent = CodeAgent(
+    prompt_template= "Answer the question: {{request}}",
     model=model,
     tools=[
         DuckDuckGoSearchTool()
