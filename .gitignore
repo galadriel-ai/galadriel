@@ -2,6 +2,8 @@
 
 .env
 **/**/.env
+.agents.env
+**/**/.agents.env
 venv/
 .venv/
 .DS_Store
