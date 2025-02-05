@@ -8,15 +8,15 @@ from typing import Optional
 
 from dotenv import load_dotenv
 
-from galadriel_agent.agent import AgentInput
-from galadriel_agent.agent import AgentOutput
-from galadriel_agent.agent import AgentRuntime
-from galadriel_agent.connectors.llm import LlmClient
-from galadriel_agent.connectors.perplexity import PerplexityClient
-from galadriel_agent.entities import Message
-from galadriel_agent.entities import PushOnlyQueue
-from galadriel_agent.tools.twitter import TwitterGetPostTool
-from galadriel_agent.tools.twitter import TwitterSearchTool
+from galadriel.agent import AgentInput
+from galadriel.agent import AgentOutput
+from galadriel.agent import AgentRuntime
+from galadriel.connectors.llm import LlmClient
+from galadriel.connectors.perplexity import PerplexityClient
+from galadriel.entities import Message
+from galadriel.entities import PushOnlyQueue
+from galadriel.tools.twitter import TwitterGetPostTool
+from galadriel.tools.twitter import TwitterSearchTool
 from src.agent.twitter_post_agent import TwitterPostAgent
 from src.models import TwitterAgentConfig
 from src.models import TwitterPost
@@ -94,6 +94,9 @@ class TestingTwitterClient(AgentInput):
 
 class OutputClient(AgentOutput):
     result: Optional[Message]
+
+    def __init__(self):
+        self.result = None
 
     async def send(self, request: Message, response: Message, proof: str) -> None:
         print("GOT GENERATED TWEET ============================")
