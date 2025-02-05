@@ -1,4 +1,6 @@
 import asyncio
+from abc import ABC
+from abc import abstractmethod
 from pathlib import Path
 from typing import List
 from typing import Optional
@@ -24,7 +26,9 @@ from smolagents import ToolCallingAgent as InternalToolCallingAgent
 
 DEFAULT_PROMPT_TEMPLATE = "{{request}}"
 
-class Agent:
+
+class Agent(ABC):
+    @abstractmethod
     async def execute(self, request: Message) -> Message:
         raise RuntimeError("Function not implemented")
 
