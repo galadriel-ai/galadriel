@@ -5,8 +5,8 @@ from dotenv import load_dotenv
 
 from galadriel import AgentRuntime
 from galadriel.clients import Cron
+from trading_agent import trading_agent
 from tools import onchain
-from trading_agent import TradingAgent
 
 TRADING_INTERVAL_SECONDS = 300
 
@@ -19,10 +19,11 @@ onchain.deposit_token("Alice", "SOL", 10)
 onchain.deposit_usdc("Bob", 500)
 onchain.deposit_token("Bob", "ELON", 5)
 
+
 agent = AgentRuntime(
     inputs=[Cron(TRADING_INTERVAL_SECONDS)],
     outputs=[],
-    agent=TradingAgent(),
+    agent=trading_agent,
 )
 
 asyncio.run(agent.run())

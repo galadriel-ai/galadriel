@@ -8,7 +8,7 @@ from typing import Optional
 
 from rich.text import Text
 
-from galadriel import Agent, ToolCallingAgent
+from galadriel import ToolCallingAgent
 from galadriel.core_agent import LogLevel
 from galadriel.core_agent import Tool
 from galadriel.domain.prompts.format_prompt import load_agent_template
@@ -41,7 +41,7 @@ Be very brief, and concise, add a statement in your voice.
 """
 
 
-class ElonMuskAgent(ToolCallingAgent, Agent):
+class ElonMuskAgent(ToolCallingAgent):
     def __init__(
         self,
         character_json_path: str,

@@ -65,9 +65,7 @@ def init() -> None:
 
     click.echo(f"Creating a new agent template in {os.getcwd()}...")
     try:
-        _create_agent_template(
-            agent_name, "", "", ""
-        )
+        _create_agent_template(agent_name, "", "", "")
         click.echo("Successfully created agent template!")
     except Exception as e:
         click.echo(f"Error creating agent template: {str(e)}", err=True)
@@ -235,7 +233,9 @@ def wallet():
 
 
 @wallet.command()
-@click.option("--path", default=DEFAULT_SOLANA_KEY_PATH, help="Path to save the wallet key file")
+@click.option(
+    "--path", default=DEFAULT_SOLANA_KEY_PATH, help="Path to save the wallet key file"
+)
 def create(path: str):
     """Create a new admin wallet"""
     try:
@@ -246,7 +246,9 @@ def create(path: str):
 
 
 @wallet.command(name="import")
-@click.option("--private-key", help="Private key of the wallet to import in JSON format")
+@click.option(
+    "--private-key", help="Private key of the wallet to import in JSON format"
+)
 @click.option("--path", help="Path to the wallet key file to import")
 def import_wallet(private_key: str, path: str):
     """Import an existing wallet"""
@@ -261,7 +263,9 @@ def import_wallet(private_key: str, path: str):
         try:
             json.loads(private_key)
         except json.JSONDecodeError:
-            raise click.ClickException("Invalid private key! Please provide a valid JSON array")
+            raise click.ClickException(
+                "Invalid private key! Please provide a valid JSON array"
+            )
         # Save the private key to the default path
         os.makedirs(os.path.dirname(DEFAULT_SOLANA_KEY_PATH), exist_ok=True)
         with open(DEFAULT_SOLANA_KEY_PATH, "w") as file:

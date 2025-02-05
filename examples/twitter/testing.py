@@ -20,10 +20,7 @@ from src.models import TwitterPost
 from src.repository.database import DatabaseClient
 
 
-async def main(
-    request_type: Literal["perplexity", "search"],
-    count: int
-):
+async def main(request_type: Literal["perplexity", "search"], count: int):
     agent_config = _load_agent_config()
 
     galadriel_client = LlmClient()
@@ -117,19 +114,18 @@ def _load_agent_config() -> TwitterAgentConfig:
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description="Parse command line arguments.")
+    parser = argparse.ArgumentParser(description="Parse command line arguments.")
     parser.add_argument(
         "--type",
         choices=["perplexity", "search"],
         default="perplexity",
-        help="Specify the type (perplexity or search). Defaults to perplexity."
+        help="Specify the type (perplexity or search). Defaults to perplexity.",
     )
     parser.add_argument(
         "--count",
         type=int,
         default=5,
-        help="Specify the count as an integer. Defaults to 5."
+        help="Specify the count as an integer. Defaults to 5.",
     )
 
     args = parser.parse_args()

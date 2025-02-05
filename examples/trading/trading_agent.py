@@ -1,11 +1,10 @@
 import os
-from typing import Dict
 
-from galadriel import Agent, CodeAgent
-from galadriel.core_agent import LiteLLMModel
+from galadriel.agent import CodeAgent
+from galadriel.agent import LiteLLMModel
 
-from tools import markets
 from tools import onchain
+from tools import markets
 
 TRADING_PROMPT = """
         You are an expert crypto trading advisor. Based on the user's portfolio, current market data, and trading patterns, your task is to suggest one of three actions for each token: Buy, Sell, or Hold. Follow these steps to determine the decision and execute the trade:
@@ -23,27 +22,23 @@ TRADING_PROMPT = """
         5. Execute the trade: Use the 'swap_token' tool to perform the recommended action (Buy or Sell) for each token.
         """
 
+model = LiteLLMModel(
+    model_id="openai/gpt-4o",
+    api_key=os.getenv("OPENAI_API_KEY"),
+)
 
-class TradingAgent(Agent):
-    def __init__(self):
-        model = LiteLLMModel(
-            model_id="openai/gpt-4o",
-            api_key=os.getenv("OPENAI_API_KEY"),
-        )
+tools = [
+    markets.fetch_market_data,
+    onchain.get_all_portfolios,
+    onchain.get_user_balance,
+    onchain.update_user_balance,
+    onchain.swap_token,
+]
 
-        self.internal = CodeAgent(
-            model=model,
-            tools=[
-                markets.fetch_market_data,
-                onchain.get_all_portfolios,
-                onchain.get_user_balance,
-                onchain.update_user_balance,
-                onchain.swap_token,
-            ],
-            add_base_tools=True,
-            additional_authorized_imports=["json"],
-        )
-
-    async def execute(self, _: Dict) -> Dict:
-        response = self.internal.execute(TRADING_PROMPT)
-        return {"response": response}
+trading_agent = CodeAgent(
+    prompt_template=TRADING_PROMPT,
+    model=model,
+    tools=tools,
+    add_base_tools=True,
+    additional_authorized_imports=["json"],
+)
