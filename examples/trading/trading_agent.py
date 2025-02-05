@@ -1,7 +1,7 @@
 import os
 
-from galadriel.core_agent import CodeAgent
-from galadriel.core_agent import LiteLLMModel
+from galadriel.agent import CodeAgent
+from galadriel.agent import LiteLLMModel
 
 from tools import onchain
 from tools import markets
