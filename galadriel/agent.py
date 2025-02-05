@@ -46,7 +46,7 @@ class AgentState:
 
 class CodeAgent(Agent, InternalCodeAgent):
 
-    def __init__(self, prompt_template: Optional[str], **kwargs):
+    def __init__(self, prompt_template: Optional[str] = None, **kwargs):
         InternalCodeAgent.__init__(self, **kwargs)
         self.prompt_template = prompt_template or DEFAULT_PROMPT_TEMPLATE
 
@@ -64,7 +64,7 @@ class CodeAgent(Agent, InternalCodeAgent):
 
 class ToolCallingAgent(Agent, InternalToolCallingAgent):
 
-    def __init__(self, prompt_template: Optional[str], **kwargs):
+    def __init__(self, prompt_template: Optional[str] = None, **kwargs):
         InternalToolCallingAgent.__init__(self, **kwargs)
         self.prompt_template = prompt_template or DEFAULT_PROMPT_TEMPLATE
 
