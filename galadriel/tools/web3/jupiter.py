@@ -1,64 +1,37 @@
 import asyncio
+import base64
 import json
+import os
 from typing import Dict
 
 from galadriel.core_agent import tool
+from galadriel.repository.wallet_repository import WalletRepository
 
-from examples.trading.tools.price_feed import get_token_price
+from solana.rpc.async_api import AsyncClient
+from solana.rpc.commitment import Processed, Confirmed
+from solana.rpc.types import TxOpts
+from solders import message
+from solders.keypair import Keypair  # type: ignore
+from solders.pubkey import Pubkey  # type: ignore
+from solders.transaction import VersionedTransaction  # type: ignore
 
-from repositories.solana_repository import SolanaRepository
+from spl.token.async_client import AsyncToken
+from spl.token.constants import TOKEN_PROGRAM_ID
+from spl.token.instructions import get_associated_token_address
+from spl.token.constants import TOKEN_PROGRAM_ID
 
-Portfolio = Dict[str, float]
-
-# Dictionary to store user balances
-user_portfolios: Dict[str, Portfolio] = {}
-
-solana_repository = SolanaRepository()
-
-
-# This isn't a tool, but a helper function to update user balances
-def deposit_usdc(user_address: str, amount: float) -> str:
-    """
-    Deposits USDC into the user's portfolio.
-
-    Args:
-        user_address: The address of the user.
-        amount: The amount of USDC to deposit.
-
-    Returns:
-        A message indicating the result of the deposit.
-    """
-    if user_address not in user_portfolios:
-        user_portfolios[user_address] = {}  # Initialize portfolio if user is new
-
-    if "USDC" not in user_portfolios[user_address]:
-        user_portfolios[user_address]["USDC"] = 0.0  # Initialize USDC balance if needed
-
-    user_portfolios[user_address]["USDC"] += amount
-    return f"Successfully deposited {amount} USDC into {user_address}'s account."
+from jupiter_python_sdk.jupiter import Jupiter
 
 
-def deposit_token(user_address: str, token: str, amount: float) -> str:
-    """
-    Deposits tokens into the user's portfolio.
+SOLANA_API_URL = "https://api.mainnet-beta.solana.com"
 
-    Args:
-        user_address: The address of the user.
-        token: The token symbol (e.g., "SOL", "BTC").
-        amount: The amount of tokens to deposit.
-
-    Returns:
-        A message indicating the result of the deposit.
-    """
-    if user_address not in user_portfolios:
-        user_portfolios[user_address] = {}  # Initialize portfolio if user is new
-
-    if token not in user_portfolios[user_address]:
-        user_portfolios[user_address][token] = 0.0  # Initialize token balance if needed
-
-    user_portfolios[user_address][token] += amount
-    return f"Successfully deposited {amount} {token} into {user_address}'s account."
-
+JUPITER_QUOTE_API_URL = "https://quote-api.jup.ag/v6/quote?"
+JUPITER_SWAP_API_URL = "https://quote-api.jup.ag/v6/swap"
+JUPITER_OPEN_ORDER_API_URL = "https://jup.ag/api/limit/v1/createOrder"
+JUPITER_CANCEL_ORDERS_API_URL = "https://jup.ag/api/limit/v1/cancelOrders"
+JUPITER_QUERY_OPEN_ORDERS_API_URL = "https://jup.ag/api/limit/v1/openOrders?wallet="
+JUPITER_QUERY_ORDER_HISTORY_API_URL = "https://jup.ag/api/limit/v1/orderHistory"
+JUPITER_QUERY_TRADE_HISTORY_API_URL = "https://jup.ag/api/limit/v1/tradeHistory"
 
 @tool
 def swap_token(user_address: str, token1: str, token2: str, amount: float) -> str:
@@ -74,85 +47,75 @@ def swap_token(user_address: str, token1: str, token2: str, amount: float) -> st
     Returns:
         A message indicating the result of the swap.
     """
-    if user_address not in user_portfolios:
-        return "User does not have a portfolio."
 
-    if token1 not in user_portfolios[user_address]:
-        return f"User does not have any {token1} to swap."
+    wallet_repository = WalletRepository(os.getenv("SOLANA_KEY_PATH"))
 
-    if user_portfolios[user_address][token1] < amount:
-        return f"User does not have enough {token1} to swap."
-
-    result = asyncio.run(solana_repository.swap(user_address, token1, token2, amount))
+    result = asyncio.run(swap(wallet_repository.get_wallet(), user_address, token1, token2, amount))
 
     return f"Successfully swapped {amount} {token1} for {token2}, tx sig: {result}."
 
 
-@tool
-def update_user_balance(user_address: str, token: str) -> str:
+async def swap(
+    wallet: Keypair,
+    output_mint: str,
+    input_mint: str,
+    input_amount: float,
+    slippage_bps: int = 300,
+) -> str:
     """
-    Updates the user's token balance storage from the blockchain.
+    Swap tokens using Jupiter Exchange.
 
     Args:
-        user_address: The address of the user.
-        token: The token address in solana.
+        wallet(Keypair): The signer wallet.
+        output_mint (Pubkey): Target token mint address.
+        input_mint (Pubkey): Source token mint address (default: USDC).
+        input_amount (float): Amount to swap (in number of tokens).
+        slippage_bps (int): Slippage tolerance in basis points (default: 300 = 3%).
 
     Returns:
-        A message indicating success or failure.
+        str: Transaction signature.
+
+    Raises:
+        Exception: If the swap fails.
     """
-    if user_address not in user_portfolios:
-        user_portfolios[user_address] = {}  # Initialize portfolio if user is new
+    async_client = AsyncClient(SOLANA_API_URL)
+    jupiter = Jupiter(
+        async_client=async_client,
+        keypair=wallet,
+        quote_api_url=JUPITER_QUOTE_API_URL,
+        swap_api_url=JUPITER_SWAP_API_URL,
+        open_order_api_url=JUPITER_OPEN_ORDER_API_URL,
+        cancel_orders_api_url=JUPITER_CANCEL_ORDERS_API_URL,
+        query_open_orders_api_url=JUPITER_QUERY_OPEN_ORDERS_API_URL,
+        query_order_history_api_url=JUPITER_QUERY_ORDER_HISTORY_API_URL,
+        query_trade_history_api_url=JUPITER_QUERY_TRADE_HISTORY_API_URL,
+    )
+    input_mint = str(input_mint)
+    output_mint = str(output_mint)
+    spl_client = AsyncToken(async_client, Pubkey.from_string(input_mint), TOKEN_PROGRAM_ID, wallet)
+    mint = await spl_client.get_mint_info()
+    decimals = mint.decimals
+    input_amount = int(input_amount * 10**decimals)
 
-    if token not in user_portfolios[user_address]:
-        user_portfolios[user_address][token] = 0.0  # Initialize token balance if needed
+    try:
+        transaction_data = await jupiter.swap(
+            input_mint,
+            output_mint,
+            input_amount,
+            only_direct_routes=False,
+            slippage_bps=slippage_bps,
+        )
+        raw_transaction = VersionedTransaction.from_bytes(base64.b64decode(transaction_data))
+        signature = wallet.sign_message(message.to_bytes_versioned(raw_transaction.message))
+        signed_txn = VersionedTransaction.populate(raw_transaction.message, [signature])
+        opts = TxOpts(skip_preflight=False, preflight_commitment=Processed)
+        result = await async_client.send_raw_transaction(txn=bytes(signed_txn), opts=opts)
+        print(f"Transaction sent: {json.loads(result.to_json())}")
+        transaction_id = json.loads(result.to_json())["result"]
+        print(f"Transaction sent: https://explorer.solana.com/tx/{transaction_id}")
+        await async_client.confirm_transaction(signature, commitment=Confirmed)
+        print(f"Transaction confirmed: https://explorer.solana.com/tx/{transaction_id}")
+        return str(signature)
 
-    balance = asyncio.run(solana_repository.get_user_token_balance(user_address, token))
-    user_portfolios[user_address][token] = balance
-    return "User balance updated successfully."
-
-
-@tool
-def get_all_users() -> str:  # Return type is now str
-    """
-    Returns a JSON string containing a list of user addresses
-    who have deposited funds.
-
-    Returns:
-        A JSON string with user addresses.
-    """
-    users = list(user_portfolios.keys())
-    return json.dumps(users)
-
-
-@tool
-def get_all_portfolios(dummy: dict) -> str:
-    """
-    Returns a JSON string containing the portfolios of all users.
-
-    Args:
-        dummy: A dummy argument to match the required function signature.
-
-    Returns:
-        A JSON string with all user's portfolio.
-    """
-    return json.dumps(user_portfolios)
-
-
-@tool
-async def get_user_balance(user_address: str, token: str) -> float:
-    """
-    Retrieves the user's balance for a specific token from the local portfolio storage.
-
-    Args:
-        user_address: The address of the user.
-        token: The token address in solana.
-
-    Returns:
-        The user's balance for the specified token.
-    """
-    if user_address in user_portfolios:
-        return user_portfolios[user_address].get(
-            token, 0.0
-        )  # Return 0 if token not found
-    else:
-        return 0.0
+    except Exception as e:
+        raise Exception(f"Swap failed: {str(e)}")

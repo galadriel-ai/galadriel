@@ -2,9 +2,10 @@ import os
 
 from galadriel.agent import CodeAgent
 from galadriel.agent import LiteLLMModel
+from galadriel.tools.web3 import dexscreener
+from galadriel.tools.web3 import jupiter
+from galadriel.tools.web3 import solana
 
-from tools import onchain
-from tools import markets
 
 TRADING_PROMPT = """
         You are an expert crypto trading advisor. Based on the user's portfolio, current market data, and trading patterns, your task is to suggest one of three actions for each token: Buy, Sell, or Hold. Follow these steps to determine the decision and execute the trade:
@@ -28,11 +29,11 @@ model = LiteLLMModel(
 )
 
 tools = [
-    markets.fetch_market_data,
-    onchain.get_all_portfolios,
-    onchain.get_user_balance,
-    onchain.update_user_balance,
-    onchain.swap_token,
+    dexscreener.fetch_market_data,
+    solana.get_all_portfolios,
+    solana.get_user_balance,
+    solana.update_user_balance,
+    jupiter.swap_token,
 ]
 
 trading_agent = CodeAgent(
