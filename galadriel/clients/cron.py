@@ -16,6 +16,3 @@ class Cron(AgentInput):
                 await asyncio.sleep(self.interval_seconds)
             except asyncio.CancelledError:
                 break
-
-    async def send(self, request: Message, response: Message):
-        pass
