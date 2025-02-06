@@ -2,8 +2,10 @@ from typing import Dict
 from typing import List
 from unittest.mock import MagicMock
 
-from galadriel import agent
+import pytest
+
 from galadriel import AgentRuntime, Agent, AgentInput, AgentOutput
+from galadriel import agent
 from galadriel.domain import validate_solana_payment
 from galadriel.entities import Message, PushOnlyQueue, Pricing
 from galadriel.errors import PaymentValidationError
@@ -65,6 +67,7 @@ async def test_adds_history():
     assert user_agent.called_messages[0] == expected
 
 
+@pytest.mark.skip("Proofs out of scope for framework early release")
 async def test_publishes_proof():
     user_agent = MockAgent()
     runtime = AgentRuntime(

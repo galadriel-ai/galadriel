@@ -141,7 +141,7 @@ class AgentRuntime:
             # proof = await self._generate_proof(request, response)
             # await self._publish_proof(request, response, proof)
             for output in self.outputs:
-                await output.send(request, response, proof)
+                await output.send(request, response)
 
     async def _add_conversation_history(self, request: Message) -> Message:
         if self.short_term_memory:
