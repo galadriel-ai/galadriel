@@ -14,16 +14,12 @@ model = LiteLLMModel(model_id="gpt-4o", api_key=os.getenv("OPENAI_API_KEY"))
 
 agent = CodeAgent(
     model=model,
-    tools=[
-        DuckDuckGoSearchTool(),
-        dexscreener.fetch_market_data
-    ],
-    additional_authorized_imports=["json"]
+    tools=[DuckDuckGoSearchTool(), dexscreener.fetch_market_data],
+    additional_authorized_imports=["json"],
 )
 
 client = SimpleMessageClient(
-    "What are top tokens on the market today?",
-    "Should I buy ETH?"
+    "What are top tokens on the market today?", "Should I buy ETH?"
 )
 
 runtime = AgentRuntime(

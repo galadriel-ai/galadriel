@@ -1,5 +1,5 @@
-litellm
-smolagents
+-e ../../. # Install dependencies from pyproject.toml in galadriel
+
 jupiter-python-sdk
 solana
 solders

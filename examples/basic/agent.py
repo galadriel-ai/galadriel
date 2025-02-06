@@ -17,8 +17,7 @@ agent = CodeAgent(
 )
 
 client = SimpleMessageClient(
-    "What is the capital of Estonia?",
-    "What's the price of Solana today?"
+    "What is the capital of Estonia?", "What's the price of Solana today?"
 )
 
 runtime = AgentRuntime(

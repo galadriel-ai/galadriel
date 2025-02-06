@@ -1,4 +1,1 @@
--e ../../. # Install dependencies from pyproject.toml in galadriel-agent
-
-litellm
-chromadb
+-e ../../. # Install dependencies from pyproject.toml in galadriel
