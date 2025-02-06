@@ -2,7 +2,7 @@ import os
 from galadriel import CodeAgent
 from galadriel.agent import LiteLLMModel
 from galadriel.tools.web3.dexscreener import get_token_profile
-from tools.coin_price_tool import coin_price_api
+from galadriel.tools.web3.coingecko import get_coin_price
 
 
 model = LiteLLMModel(
@@ -12,7 +12,7 @@ model = LiteLLMModel(
 
 research_agent = CodeAgent(
     tools=[
-        coin_price_api,
+        get_coin_price,
         get_token_profile,
     ],
     model=model,
