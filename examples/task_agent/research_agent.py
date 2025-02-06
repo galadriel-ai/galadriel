@@ -8,8 +8,8 @@ from galadriel import CodeAgent
 from galadriel.agent import LiteLLMModel
 from galadriel.entities import Message
 from galadriel.tools.web3.dexscreener import get_token_profile
+from galadriel.tools.web3.coingecko import get_coin_price
 from repositories.memory_repository import MemoryRepository
-from tools.coin_price_tool import coin_price_api
 from tools.memory_tool import update_long_term_memory
 
 memory_repository = MemoryRepository()
@@ -67,7 +67,7 @@ class ResearchAgent(Agent):
         )
         return CodeAgent(
             tools=[
-                coin_price_api,
+                get_coin_price,
                 get_token_profile,
             ],
             model=model,
