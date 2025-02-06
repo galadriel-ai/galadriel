@@ -46,21 +46,22 @@ def setup_function():
     agent.generate_proof.execute.return_value = "mock_proof"
 
 
-#async def test_publishes_proof():
-#    user_agent = MockAgent()
-#    runtime = AgentRuntime(
-#        inputs=[],
-#        outputs=[],
-#        agent=user_agent,
-#    )
-#    request = Message(
-#        content="hello",
-#        conversation_id=CONVERSATION_ID,
-#    )
-#    await runtime.run_request(request)
-#    agent.publish_proof.execute.assert_called_with(
-#        request, RESPONSE_MESSAGE, "mock_proof"
-#    )
+@pytest.mark.skip(reason="Proof publishing functionality not yet implemented")
+async def test_publishes_proof():
+    user_agent = MockAgent()
+    runtime = AgentRuntime(
+        inputs=[],
+        outputs=[],
+        agent=user_agent,
+    )
+    request = Message(
+        content="hello",
+        conversation_id=CONVERSATION_ID,
+    )
+    await runtime.run_request(request)
+    agent.publish_proof.execute.assert_called_with(
+        request, RESPONSE_MESSAGE, "mock_proof"
+    )
 
 
 async def test_post_output_to_client():
