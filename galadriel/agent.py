@@ -7,6 +7,7 @@ from typing import Optional
 from typing import Set
 
 from dotenv import load_dotenv as _load_dotenv
+
 # pylint:disable=W0401,W0614
 # pylint:disable=W0614
 from smolagents import CodeAgent as InternalCodeAgent
