@@ -81,7 +81,7 @@ class OutputClient(AgentOutput):
         with open(self.file_name, "w", encoding="utf-8") as f:
             f.write(json.dumps([]))
 
-    async def send(self, request: Message, response: Message, proof: str) -> None:
+    async def send(self, request: Message, response: Message) -> None:
         print("GOT GENERATED TWEET ============================")
         tweet = TwitterPost.from_dict(response.additional_kwargs)
         print(json.dumps(tweet.to_dict(), indent=4))

@@ -127,7 +127,7 @@ class OutputClient(AgentOutput):
     def __init__(self):
         self.result = None
 
-    async def send(self, request: Message, response: Message, proof: str) -> None:
+    async def send(self, request: Message, response: Message) -> None:
         print("GOT GENERATED TWEET ============================")
         tweet = TwitterPost.from_dict(response.additional_kwargs)
         print(json.dumps(tweet.to_dict(), indent=4))

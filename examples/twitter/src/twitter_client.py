@@ -60,7 +60,7 @@ class TwitterClient(AgentInput, AgentOutput):
         asyncio.create_task(self._run_post_loop())
         asyncio.create_task(self._run_reply_loop())
 
-    async def send(self, _: Message, response: Message, proof: str) -> None:
+    async def send(self, _: Message, response: Message) -> None:
         response_type = response.type
         if not response_type or not response.additional_kwargs:
             return

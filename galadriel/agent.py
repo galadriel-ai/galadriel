@@ -7,12 +7,8 @@ from typing import Optional
 from typing import Set
 
 from dotenv import load_dotenv as _load_dotenv
-
 # pylint:disable=W0401,W0614
-from smolagents import *
-
 # pylint:disable=W0614
-from smolagents.agents import LogLevel
 from smolagents import CodeAgent as InternalCodeAgent
 from smolagents import ToolCallingAgent as InternalToolCallingAgent
 
@@ -44,7 +40,7 @@ class AgentInput:
 
 
 class AgentOutput:
-    async def send(self, request: Message, response: Message, proof: str) -> None:
+    async def send(self, request: Message, response: Message) -> None:
         pass
 
 
@@ -148,10 +144,10 @@ class AgentRuntime:
                 memory = await self._get_memory()
                 logger.info(f"Current agent memory: {memory}")
         if response:
-            proof = await self._generate_proof(request, response)
-            await self._publish_proof(request, response, proof)
+            # proof = await self._generate_proof(request, response)
+            # await self._publish_proof(request, response, proof)
             for output in self.outputs:
-                await output.send(request, response, proof)
+                await output.send(request, response)
 
     async def _get_memory(self) -> List[Dict[str, str]]:
         return self.agent.write_memory_to_messages(summary_mode=True)

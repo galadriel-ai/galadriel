@@ -370,7 +370,7 @@ from agent.{agent_name} import {class_name}
 
 class GenericOutput(AgentOutput):
 
-    async def send(self, request: Message, response: Message, proof: str) -> None:
+    async def send(self, request: Message, response: Message) -> None:
         print(f"Received response: {{response.content}}")
 
 

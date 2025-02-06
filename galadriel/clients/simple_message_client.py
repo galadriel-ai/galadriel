@@ -30,8 +30,7 @@ class SimpleMessageClient(AgentInput, AgentOutput):
             except asyncio.CancelledError:
                 break
 
-    async def send(self, request: Message, response: Message, proof: str):
+    async def send(self, request: Message, response: Message):
         print("\n======== simple_message_client.post_output ========")
         print("request:", request)
         print("response:", response)
-        print("proof:", proof)
