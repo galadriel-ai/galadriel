@@ -5,7 +5,6 @@ from pathlib import Path
 from discord_agent import ElonMuskAgent
 from galadriel.tools.composio_converter import convert_action
 from tools import get_time
-from galadriel.memory.memory_repository import memory_repository
 from galadriel import AgentRuntime
 from galadriel.clients import DiscordClient
 import os
@@ -26,7 +25,6 @@ composio_weather_tool = convert_action(
 )
 
 elon_musk_agent = ElonMuskAgent(
-    memory_repository=memory_repository,
     character_json_path="agent.json",
     tools=[composio_weather_tool, get_time],
     model=model,
