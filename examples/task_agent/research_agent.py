@@ -1,6 +1,6 @@
 import os
 from galadriel import CodeAgent
-from galadriel.agent import LiteLLMModel
+from galadriel.core_agent import LiteLLMModel
 from galadriel.tools.web3.dexscreener import get_token_profile
 from galadriel.tools.web3.coingecko import get_coin_price
 
