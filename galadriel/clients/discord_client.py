@@ -27,7 +27,7 @@ class CommandsCog(commands.Cog):
 
 
 class DiscordClient(commands.Bot, AgentInput, AgentOutput):
-    def __init__(self, guild_id: str, logger: logging.Logger):
+    def __init__(self, guild_id: str, logger: Optional[logging.Logger] = None):
         # Set up intents
         intents = discord.Intents.default()
         intents.message_content = True
@@ -36,7 +36,7 @@ class DiscordClient(commands.Bot, AgentInput, AgentOutput):
         super().__init__(command_prefix="!", intents=intents)
         self.message_queue = None
         self.guild_id = guild_id
-        self.logger = logger
+        self.logger = logger or logging.getLogger("discord_client")
 
     async def on_ready(self):
         self.logger.info(f"Bot connected as {self.user.name}")
