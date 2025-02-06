@@ -20,7 +20,7 @@ class TwitterMentionClient(TwitterApiClient, AgentInput, AgentOutput):
             message = Message(content=mention)
             await queue.put(message)
 
-    async def send(self, request: Message, response: Message, proof: str) -> None:
+    async def send(self, request: Message, response: Message) -> None:
         await self._post_reply(
             response.additional_kwargs["reply_to_id"], response.content
         )

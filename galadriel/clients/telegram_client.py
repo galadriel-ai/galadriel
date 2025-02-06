@@ -48,7 +48,7 @@ class TelegramClient(AgentInput, AgentOutput):
         self.logger.info("Starting AsyncTeleBot polling...")
         await self.bot.infinity_polling()
 
-    async def send(self, request: Message, response: Message, proof: str):
+    async def send(self, request: Message, response: Message):
         if not response.conversation_id:
             self.logger.warning("No conversation_id found in request; cannot respond.")
             return

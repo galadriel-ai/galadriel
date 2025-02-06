@@ -17,5 +17,5 @@ class Cron(AgentInput):
             except asyncio.CancelledError:
                 break
 
-    async def send(self, request: Message, response: Message, proof: str):
+    async def send(self, request: Message, response: Message):
         pass

@@ -8,9 +8,7 @@ from typing import Set
 
 from dotenv import load_dotenv as _load_dotenv
 # pylint:disable=W0401,W0614
-from smolagents import *
 # pylint:disable=W0614
-from smolagents.agents import LogLevel
 from smolagents import CodeAgent as InternalCodeAgent
 from smolagents import ToolCallingAgent as InternalToolCallingAgent
 
@@ -41,7 +39,7 @@ class AgentInput:
 
 
 class AgentOutput:
-    async def send(self, request: Message, response: Message, proof: str) -> None:
+    async def send(self, request: Message, response: Message) -> None:
         pass
 
 
@@ -92,13 +90,13 @@ class ToolCallingAgent(Agent, InternalToolCallingAgent):
 # This is not meant to be read or modified by the end developer
 class AgentRuntime:
     def __init__(
-        # pylint:disable=R0917
-        self,
-        inputs: List[AgentInput],
-        outputs: List[AgentOutput],
-        agent: Agent,
-        short_term_memory: Optional[ShortTermMemory] = None,
-        pricing: Optional[Pricing] = None,
+            # pylint:disable=R0917
+            self,
+            inputs: List[AgentInput],
+            outputs: List[AgentOutput],
+            agent: Agent,
+            short_term_memory: Optional[ShortTermMemory] = None,
+            pricing: Optional[Pricing] = None,
     ):
         self.inputs = inputs
         self.outputs = outputs
@@ -140,8 +138,8 @@ class AgentRuntime:
             # Run the agent if no errors occurred so far
             response = await self.agent.execute(request)
         if response:
-            proof = await self._generate_proof(request, response)
-            await self._publish_proof(request, response, proof)
+            # proof = await self._generate_proof(request, response)
+            # await self._publish_proof(request, response, proof)
             for output in self.outputs:
                 await output.send(request, response, proof)
 
