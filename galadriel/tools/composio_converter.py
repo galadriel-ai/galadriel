@@ -7,7 +7,7 @@ from galadriel.core_agent import Tool
 def convert_action(api_key: str, action: str) -> Tool:
     """
     Convert a single Composio action into a Galadriel Tool.
-    
+
     This allows importing individual actions from Composio, like 'WEATHERMAP_WEATHER',
     rather than importing an entire app's worth of tools.
 
@@ -25,7 +25,7 @@ def convert_action(api_key: str, action: str) -> Tool:
 def convert_app(api_key: str, app: App) -> list[Tool]:
     """
     Convert all tools from a Composio App into Galadriel Tools.
-    
+
     Composio organizes related tools into Apps (e.g. GitHub, Weather).
     This converts all tools within a specified app into Galadriel Tools.
 
