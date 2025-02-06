@@ -2,8 +2,10 @@ from typing import Dict
 from typing import List
 from unittest.mock import MagicMock
 
-from galadriel import agent
+import pytest
+
 from galadriel import AgentRuntime, Agent, AgentInput, AgentOutput
+from galadriel import agent
 from galadriel.domain import validate_solana_payment
 from galadriel.entities import Message, PushOnlyQueue, Pricing
 from galadriel.errors import PaymentValidationError
@@ -31,12 +33,12 @@ class MockAgentOutput(AgentOutput):
     def __init__(self):
         self.output_requests: List[Message] = []
         self.output_responses: List[Message] = []
-        self.output_proofs: List[str] = []
+        # self.output_proofs: List[str] = []
 
-    async def send(self, request: Message, response: Message, proof: str):
+    async def send(self, request: Message, response: Message):
         self.output_requests.append(request)
         self.output_responses.append(response)
-        self.output_proofs.append(proof)
+        # self.output_proofs.append(proof)
 
 
 def setup_function():
@@ -65,6 +67,7 @@ async def test_adds_history():
     assert user_agent.called_messages[0] == expected
 
 
+@pytest.mark.skip("Proofs out of scope for framework early release")
 async def test_publishes_proof():
     user_agent = MockAgent()
     runtime = AgentRuntime(
@@ -98,7 +101,7 @@ async def test_post_output_to_client():
     await runtime.run_request(request)
     assert output_client.output_requests[0] == request
     assert output_client.output_responses[0] == RESPONSE_MESSAGE
-    assert output_client.output_proofs[0] == "mock_proof"
+    # assert output_client.output_proofs[0] == "mock_proof"
 
 
 async def test_payment_validation(monkeypatch):
