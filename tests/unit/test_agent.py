@@ -9,7 +9,6 @@ from galadriel import agent
 from galadriel.domain import validate_solana_payment
 from galadriel.entities import Message, PushOnlyQueue, Pricing
 from galadriel.errors import PaymentValidationError
-from galadriel.memory.in_memory import InMemoryShortTermMemory
 
 CONVERSATION_ID = "ci1"
 RESPONSE_MESSAGE = Message(content="goodbye")
@@ -47,27 +46,7 @@ def setup_function():
     agent.generate_proof.execute.return_value = "mock_proof"
 
 
-async def test_adds_history():
-    short_term_memory = InMemoryShortTermMemory()
-    message = Message(content="hello", conversation_id=CONVERSATION_ID)
-    short_term_memory.add(message)
-    user_agent = MockAgent()
-    runtime = AgentRuntime(
-        inputs=[],
-        outputs=[],
-        agent=user_agent,
-        short_term_memory=short_term_memory,
-    )
-    request = Message(
-        content="world",
-        conversation_id=CONVERSATION_ID,
-    )
-    await runtime.run_request(request)
-    expected = Message(content="hello\n\nworld", conversation_id=CONVERSATION_ID)
-    assert user_agent.called_messages[0] == expected
-
-
-@pytest.mark.skip("Proofs out of scope for framework early release")
+@pytest.mark.skip(reason="Proof publishing functionality not yet implemented")
 async def test_publishes_proof():
     user_agent = MockAgent()
     runtime = AgentRuntime(

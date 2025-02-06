@@ -5,7 +5,6 @@ from pathlib import Path
 from discord_agent import ElonMuskAgent
 from galadriel.tools.composio_converter import convert_action
 from tools import get_time
-from galadriel.memory.memory_repository import memory_repository
 from galadriel import AgentRuntime
 from galadriel.clients import DiscordClient
 import os
@@ -19,14 +18,13 @@ model = LiteLLMModel(model_id="gpt-4o", api_key=os.getenv("OPENAI_API_KEY"))
 
 logger = get_agent_logger()
 
-discord_client = DiscordClient(guild_id=os.getenv("DISCORD_GUILD_ID"), logger=logger)
+discord_client = DiscordClient(guild_id=os.getenv("DISCORD_GUILD_ID"))
 
 composio_weather_tool = convert_action(
     os.getenv("COMPOSIO_API_KEY"), "WEATHERMAP_WEATHER"
 )
 
 elon_musk_agent = ElonMuskAgent(
-    memory_repository=memory_repository,
     character_json_path="agent.json",
     tools=[composio_weather_tool, get_time],
     model=model,

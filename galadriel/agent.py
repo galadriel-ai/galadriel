@@ -2,7 +2,7 @@ import asyncio
 from abc import ABC
 from abc import abstractmethod
 from pathlib import Path
-from typing import List
+from typing import Dict, List
 from typing import Optional
 from typing import Set
 
@@ -12,7 +12,6 @@ from dotenv import load_dotenv as _load_dotenv
 from smolagents import CodeAgent as InternalCodeAgent
 from smolagents import ToolCallingAgent as InternalToolCallingAgent
 
-from galadriel.domain import add_conversation_history
 from galadriel.domain import generate_proof
 from galadriel.domain import publish_proof
 from galadriel.domain import validate_solana_payment
@@ -20,9 +19,11 @@ from galadriel.domain.prompts import format_prompt
 from galadriel.entities import Message
 from galadriel.entities import Pricing
 from galadriel.entities import PushOnlyQueue
-from galadriel.entities import ShortTermMemory
 from galadriel.errors import PaymentValidationError
 from galadriel.logging_utils import init_logging
+from galadriel.logging_utils import get_agent_logger
+
+logger = get_agent_logger()
 
 DEFAULT_PROMPT_TEMPLATE = "{{request}}"
 
@@ -55,10 +56,12 @@ class CodeAgent(Agent, InternalCodeAgent):
         InternalCodeAgent.__init__(self, **kwargs)
         self.prompt_template = prompt_template or DEFAULT_PROMPT_TEMPLATE
 
-    async def execute(self, request: Message) -> Message:
+    async def execute(self, request: Message, flush_memory: bool = False) -> Message:
         request_dict = {"request": request.content}
         answer = InternalCodeAgent.run(
-            self, format_prompt.execute(self.prompt_template, request_dict)
+            self,
+            task=format_prompt.execute(self.prompt_template, request_dict),
+            reset=flush_memory,  # retain memory
         )
         return Message(
             content=str(answer),
@@ -74,10 +77,12 @@ class ToolCallingAgent(Agent, InternalToolCallingAgent):
         InternalToolCallingAgent.__init__(self, **kwargs)
         self.prompt_template = prompt_template or DEFAULT_PROMPT_TEMPLATE
 
-    async def execute(self, request: Message) -> Message:
+    async def execute(self, request: Message, flush_memory: bool = False) -> Message:
         request_dict = {"request": request.content}
         answer = InternalToolCallingAgent.run(
-            self, format_prompt.execute(self.prompt_template, request_dict)
+            self,
+            task=format_prompt.execute(self.prompt_template, request_dict),
+            reset=flush_memory,  # retain memory
         )
         return Message(
             content=str(answer),
@@ -90,25 +95,25 @@ class ToolCallingAgent(Agent, InternalToolCallingAgent):
 # This is not meant to be read or modified by the end developer
 class AgentRuntime:
     def __init__(
-            # pylint:disable=R0917
-            self,
-            inputs: List[AgentInput],
-            outputs: List[AgentOutput],
-            agent: Agent,
-            short_term_memory: Optional[ShortTermMemory] = None,
-            pricing: Optional[Pricing] = None,
+        # pylint:disable=R0917
+        self,
+        inputs: List[AgentInput],
+        outputs: List[AgentOutput],
+        agent: Agent,
+        pricing: Optional[Pricing] = None,
+        debug: bool = False,
     ):
         self.inputs = inputs
         self.outputs = outputs
         self.agent = agent
         self.pricing = pricing
-        self.short_term_memory = short_term_memory
         self.spent_payments: Set[str] = set()
+        self.debug = debug
 
         env_path = Path(".") / ".env"
         _load_dotenv(dotenv_path=env_path)
         # AgentConfig should have some settings for debug?
-        init_logging(False)
+        init_logging(self.debug)
 
     async def run(self):
         input_queue = asyncio.Queue()
@@ -122,8 +127,6 @@ class AgentRuntime:
             # await self.upload_state()
 
     async def run_request(self, request: Message):
-        request = await self._add_conversation_history(request)
-
         response = None
         # Handle payment validation
         if self.pricing:
@@ -137,16 +140,17 @@ class AgentRuntime:
         if not response:
             # Run the agent if no errors occurred so far
             response = await self.agent.execute(request)
+            if self.debug:
+                memory = await self._get_memory()
+                logger.info(f"Current agent memory: {memory}")
         if response:
             # proof = await self._generate_proof(request, response)
             # await self._publish_proof(request, response, proof)
             for output in self.outputs:
                 await output.send(request, response)
 
-    async def _add_conversation_history(self, request: Message) -> Message:
-        if self.short_term_memory:
-            return add_conversation_history.execute(request, self.short_term_memory)
-        return request
+    async def _get_memory(self) -> List[Dict[str, str]]:
+        return self.agent.write_memory_to_messages(summary_mode=True)
 
     async def _generate_proof(self, request: Message, response: Message) -> str:
         return generate_proof.execute(request, response)

@@ -8,8 +8,7 @@ from galadriel import AgentRuntime
 from galadriel.clients import SimpleMessageClient
 from galadriel.entities import Message
 from galadriel.entities import Pricing
-from galadriel.memory.in_memory import InMemoryShortTermMemory
-from research_agent import ResearchAgent
+from research_agent import research_agent
 
 
 async def main():
@@ -32,16 +31,12 @@ async def main():
         conversation_id="conversationid123",
         additional_kwargs={"id": "id124", "author_id": "authorid123"},
     )
-    test_client = SimpleMessageClient(input=[message1, message2])
+    test_client = SimpleMessageClient(message1.content, message2.content)
 
-    short_term_memory = InMemoryShortTermMemory()
-
-    research_agent = ResearchAgent()
     agent = AgentRuntime(
         inputs=[test_client],
         outputs=[test_client],
         agent=research_agent,
-        short_term_memory=short_term_memory,
         pricing=_get_pricing("agent.json"),
     )
     await agent.run()
