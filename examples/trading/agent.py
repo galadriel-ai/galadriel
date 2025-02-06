@@ -5,9 +5,10 @@ from dotenv import load_dotenv
 
 from galadriel import AgentRuntime
 from galadriel.agent import CodeAgent
-from galadriel.agent import LiteLLMModel
+from galadriel.core_agent import LiteLLMModel
 from galadriel.clients import Cron
 from galadriel.tools.web3 import dexscreener
+from galadriel.tools.web3 import coingecko
 from galadriel.tools.web3 import jupiter
 from galadriel.tools.web3 import solana
 
@@ -39,6 +40,9 @@ model = LiteLLMModel(
 
 tools = [
     dexscreener.fetch_market_data,
+    coingecko.get_coin_price,
+    coingecko.get_coin_historical_data,
+    coingecko.fetch_trending_coins,
     solana.get_all_portfolios,
     solana.get_user_balance,
     solana.update_user_balance,
