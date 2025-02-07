@@ -5,7 +5,6 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 from galadriel import Agent
-from galadriel import AgentOutput
 from galadriel import AgentRuntime
 from galadriel.clients import Cron
 from galadriel.clients.twitter_post_client import TwitterPostClient
@@ -34,30 +33,20 @@ class TwitterAgent(Agent):
         self.model = model
 
     async def execute(self, request: Message) -> Message:
-        response = self.model([
-            {
-                "role": "system",
-                "content": self.prompt,
-            }
-        ])
+        response = self.model(
+            [
+                {
+                    "role": "system",
+                    "content": self.prompt,
+                }
+            ]
+        )
         return Message(content=response.content)
-
-
-class RandomOutput(AgentOutput):
-
-    async def send(self, request: Message, response: Message) -> None:
-        print(response)
 
 
 agent = TwitterAgent(
     prompt=AGENT_PROMPT,
     model=llm_model,
-    # TwitterCredentials(
-    #         consumer_api_key=os.getenv("TWITTER_CONSUMER_API_KEY", ""),
-    #         consumer_api_secret=os.getenv("TWITTER_CONSUMER_API_SECRET", ""),
-    #         access_token=os.getenv("TWITTER_ACCESS_TOKEN", ""),
-    #         access_token_secret=os.getenv("TWITTER_ACCESS_TOKEN_SECRET", ""),
-    #     )
 )
 
 runtime = AgentRuntime(

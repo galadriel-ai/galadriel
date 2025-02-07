@@ -28,5 +28,5 @@ class TwitterPostClient(AgentOutput):
     async def send(self, request: Message, response: Message) -> None:
         self.twitter_post_tool(
             response.content,
-            in_reply_to_id=(response.additional_kwargs or {}).get("in_reply_to_id")
+            in_reply_to_id=(response.additional_kwargs or {}).get("in_reply_to_id"),
         )
