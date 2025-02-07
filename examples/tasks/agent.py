@@ -4,9 +4,7 @@ import asyncio
 
 from galadriel import AgentRuntime
 
-from galadriel.clients import DiscordClient
 from galadriel.clients import SimpleMessageClient
-from galadriel.clients import TelegramClient
 from galadriel.clients import TwitterMentionClient
 from galadriel.clients.twitter_mention_client import TwitterCredentials
 from galadriel.entities import Message
@@ -18,8 +16,6 @@ logger = get_agent_logger()
 
 
 async def main():
-    clients = []
-    """
     twitter_client = TwitterMentionClient(
         TwitterCredentials(
             consumer_api_key=os.getenv("TWITTER_CONSUMER_API_KEY"),
@@ -30,14 +26,6 @@ async def main():
         user_id=os.getenv("TWITTER_USER_ID"),
         logger=logger,
     )
-    clients.append(twitter_client)
-    discord_client = DiscordClient(
-        guild_id=os.getenv("DISCORD_GUILD_ID"), logger=logger
-    )
-    clients.append(discord_client)
-    telegram_client = TelegramClient(token=os.getenv("TELEGRAM_TOKEN"), logger=logger)
-    clients.append(telegram_client)
-    """
     message1 = Message(
         content="is ShitCoin good investment now with high prices? 5aqB4BGzQyFybjvKBjdcP8KAstZo81ooUZnf64vSbLLWbUqNSGgXWaGHNteiK2EJrjTmDKdLYHamJpdQBFevWuvy",
         conversation_id="conversationid123",
@@ -48,11 +36,12 @@ async def main():
         conversation_id="conversationid123",
         additional_kwargs={"id": "id124", "author_id": "authorid123"},
     )
-    test_client = SimpleMessageClient(message1.content, message2.content)
+
+    simple_client = SimpleMessageClient(message1.content, message2.content)
     clients.append(test_client)
     agent = AgentRuntime(
-        inputs=clients,
-        outputs=clients,
+        inputs=[twitter_client, simple_client],
+        outputs=[twitter_client, simple_client],
         agent=research_agent,
         pricing=Pricing(
             wallet_address="5RYHzQuknP2viQjYzP27wXVWKeaxonZgMBPQA86GV92t",
