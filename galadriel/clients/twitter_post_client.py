@@ -1,4 +1,5 @@
 from galadriel import AgentOutput
+from galadriel.connectors.twitter import TwitterApiClient
 from galadriel.entities import Message
 from galadriel.tools.twitter import TwitterPostTool
 
@@ -22,11 +23,12 @@ class TwitterPostClient(AgentOutput):
     ```
     """
 
-    def __init__(self):
-        self.twitter_post_tool = TwitterPostTool()
+    # def __init__(self):
+    #     self.twitter_post_tool = TwitterApiClient()
 
     async def send(self, request: Message, response: Message) -> None:
-        self.twitter_post_tool(
-            response.content,
-            in_reply_to_id=(response.additional_kwargs or {}).get("in_reply_to_id"),
-        )
+        print("@@@ Posting tweet")
+        # self.twitter_post_tool(
+        #     response.content,
+        #     in_reply_to_id=(response.additional_kwargs or {}).get("in_reply_to_id"),
+        # )

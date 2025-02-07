@@ -21,7 +21,7 @@ class CredentialsException(Exception):
     pass
 
 
-class TwitterPostTool(TwitterApiClient, Tool):
+class TwitterPostTool(Tool):
     name = TWITTER_POST_TOOL_NAME
     description = (
         "This is a tool that posts a tweet to twitter. "
@@ -36,16 +36,18 @@ class TwitterPostTool(TwitterApiClient, Tool):
     }
     output_type = "object"
 
-    def __init__(self, _credentials: Optional[TwitterCredentials] = None):
-        if not _credentials:
-            credentials = _get_credentials_from_env()
-        else:
-            credentials = _credentials
-        super().__init__(credentials)
+    # def __init__(self, _credentials: Optional[TwitterCredentials] = None):
+        # if not _credentials:
+        #     credentials = _get_credentials_from_env()
+        # else:
+        #     credentials = _credentials
+        # super().__init__(credentials)
 
     def forward(self, tweet: str, in_reply_to_id: str) -> Dict:  # pylint:disable=W0221
+        print(f"@@@@ Posting tweet: {tweet}")
         response = self.post_tweet(tweet, in_reply_to_id)
-        return response or {}
+        return {}
+        # return response or {}
 
 
 class TwitterSearchTool(TwitterApiClient, Tool):
