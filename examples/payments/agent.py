@@ -19,7 +19,7 @@ model = LiteLLMModel(
     api_key=os.getenv("OPENAI_API_KEY"),
 )
 
-# Setup a researcher who will perform Web3 related tasks
+# Set up a researcher who will perform Web3 related tasks
 researcher = CodeAgent(
     tools=[
         coingecko.get_coin_price,
@@ -36,7 +36,7 @@ agent_pricing = Pricing(
 )
 
 # The client will pass a research task to the agent with a signature of transaction of Solana.
-# This transactions proves that
+# This transaction proves that
 # https://explorer.solana.com/tx/5aqB4BGzQyFybjvKBjdcP8KAstZo81ooUZnf64vSbLLWbUqNSGgXWaGHNteiK2EJrjTmDKdLYHamJpdQBFevWuvy
 simple_client = SimpleMessageClient(
     "Is Bitcoin good investment now with high prices? 5aqB4BGzQyFybjvKBjdcP8KAstZo81ooUZnf64vSbLLWbUqNSGgXWaGHNteiK2EJrjTmDKdLYHamJpdQBFevWuvy",
