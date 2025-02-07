@@ -38,7 +38,7 @@ class ElonMuskAgent(ToolCallingAgent):
         try:
             self.character_json_path = character_json_path
             # validate content of character_json_path
-            _= load_agent_template(
+            _ = load_agent_template(
                 TELEGRAM_SYSTEM_PROMPT, Path(self.character_json_path)
             )
         except Exception as e:
