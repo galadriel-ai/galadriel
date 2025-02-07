@@ -625,7 +625,7 @@ def _create_solana_wallet(path: str) -> str:
     _update_agent_env_file({"SOLANA_PRIVATE_KEY_PATH": path})
 
     keypair = Keypair()
-    private_key_json = json.dumps(keypair.to_json()).encode("utf-8")
+    private_key_json = keypair.to_json()
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "wb") as file:
         file.write(private_key_json)
