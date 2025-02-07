@@ -3,7 +3,6 @@ from typing import Optional
 import logging
 from datetime import datetime
 import gradio as gr
-from queue import Queue
 
 from galadriel import AgentInput, AgentOutput
 from galadriel.entities import Message, PushOnlyQueue, HumanMessage
@@ -14,8 +13,8 @@ class GradioClient(AgentInput, AgentOutput):
         self.message_queue = None
         self.logger = logger or logging.getLogger("gradio_client")
         self.conversation_id = "gradio"
-        self.input_queue = Queue()
-        self.output_queue = Queue()
+        self.input_queue = asyncio.Queue()
+        self.output_queue = asyncio.Queue()
         self.history = []
 
         # Initialize the Gradio interface with a chatbot component
@@ -52,7 +51,7 @@ class GradioClient(AgentInput, AgentOutput):
         if not message:
             return "", history
 
-        self.input_queue.put(message)
+        await self.input_queue.put(message)
         history = history or []
         history.append((message, None))
         return "", history
@@ -61,7 +60,7 @@ class GradioClient(AgentInput, AgentOutput):
         """Process the response and update the UI"""
         while self.output_queue.empty():
             await asyncio.sleep(0.1)
-        new_message = self.output_queue.get()
+        new_message = await self.output_queue.get()
         history.append((None, new_message))
         return history
 
@@ -79,7 +78,7 @@ class GradioClient(AgentInput, AgentOutput):
         # Process messages from input queue
         while True:
             if not self.input_queue.empty():
-                user_input = self.input_queue.get()
+                user_input = await self.input_queue.get()
 
                 msg = HumanMessage(
                     content=user_input,
@@ -100,4 +99,4 @@ class GradioClient(AgentInput, AgentOutput):
         if not message:
             self.logger.error("No message to send")
             raise ValueError("No message to send")
-        self.output_queue.put(message)
+        await self.output_queue.put(message)
