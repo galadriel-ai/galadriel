@@ -3,7 +3,7 @@ from dotenv import load_dotenv
 from pathlib import Path
 
 from galadriel.tools.composio_converter import convert_action
-from elon_musk import ElonMuskAgent
+from elon_musk import CharacterAgent
 from tools import get_time
 from galadriel import AgentRuntime
 from galadriel.clients import TelegramClient
@@ -22,7 +22,7 @@ composio_weather_tool = convert_action(
     os.getenv("COMPOSIO_API_KEY"), "WEATHERMAP_WEATHER"
 )
 
-elon_musk_agent = ElonMuskAgent(
+elon_musk_agent = CharacterAgent(
     character_json_path="agent.json",
     tools=[composio_weather_tool, get_time],
     model=model,
