@@ -29,7 +29,7 @@ composio_weather_tool = convert_action(
 )
 
 # Add agent with GPT-4o model and tools helpful to answer Discord users' questions
-elon_musk_agent = ElonMuskAgent(
+elon_musk_agent = CharacterAgent(
     character_json_path="agent.json",
     tools=[composio_weather_tool, get_time],
     model=model,
