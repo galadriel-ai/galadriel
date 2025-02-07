@@ -6,10 +6,10 @@ from typing import Dict, List
 from typing import Optional
 from typing import Set
 
+from pprint import pformat
+
 from dotenv import load_dotenv as _load_dotenv
 
-# pylint:disable=W0401,W0614
-# pylint:disable=W0614
 from smolagents import CodeAgent as InternalCodeAgent
 from smolagents import ToolCallingAgent as InternalToolCallingAgent
 
@@ -53,16 +53,22 @@ class AgentState:
 # pylint:disable=E0102
 class CodeAgent(Agent, InternalCodeAgent):
 
-    def __init__(self, prompt_template: Optional[str] = None, **kwargs):
+    def __init__(
+        self,
+        prompt_template: Optional[str] = None,
+        flush_memory: Optional[bool] = False,
+        **kwargs,
+    ):
         InternalCodeAgent.__init__(self, **kwargs)
         self.prompt_template = prompt_template or DEFAULT_PROMPT_TEMPLATE
+        self.flush_memory = flush_memory
 
-    async def execute(self, request: Message, flush_memory: bool = False) -> Message:
+    async def execute(self, request: Message) -> Message:
         request_dict = {"request": request.content}
         answer = InternalCodeAgent.run(
             self,
             task=format_prompt.execute(self.prompt_template, request_dict),
-            reset=flush_memory,  # retain memory
+            reset=self.flush_memory,  # retain memory
         )
         return Message(
             content=str(answer),
@@ -74,16 +80,22 @@ class CodeAgent(Agent, InternalCodeAgent):
 # pylint:disable=E0102
 class ToolCallingAgent(Agent, InternalToolCallingAgent):
 
-    def __init__(self, prompt_template: Optional[str] = None, **kwargs):
+    def __init__(
+        self,
+        prompt_template: Optional[str] = None,
+        flush_memory: Optional[bool] = False,
+        **kwargs,
+    ):
         InternalToolCallingAgent.__init__(self, **kwargs)
         self.prompt_template = prompt_template or DEFAULT_PROMPT_TEMPLATE
+        self.flush_memory = flush_memory
 
-    async def execute(self, request: Message, flush_memory: bool = False) -> Message:
+    async def execute(self, request: Message) -> Message:
         request_dict = {"request": request.content}
         answer = InternalToolCallingAgent.run(
             self,
             task=format_prompt.execute(self.prompt_template, request_dict),
-            reset=flush_memory,  # retain memory
+            reset=self.flush_memory,  # retain memory
         )
         return Message(
             content=str(answer),
@@ -143,7 +155,7 @@ class AgentRuntime:
             response = await self.agent.execute(request)
             if self.debug:
                 memory = await self._get_memory()
-                logger.info(f"Current agent memory: {memory}")
+                logger.info(f"Current agent memory: {pformat(memory)}")
         if response:
             # proof = await self._generate_proof(request, response)
             # await self._publish_proof(request, response, proof)
