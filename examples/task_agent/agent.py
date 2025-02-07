@@ -54,32 +54,12 @@ async def main():
         inputs=clients,
         outputs=clients,
         agent=research_agent,
-        pricing=_get_pricing("agent.json"),
+        pricing=Pricing(
+            wallet_address="5RYHzQuknP2viQjYzP27wXVWKeaxonZgMBPQA86GV92t",
+            cost=0.001,
+        ),
     )
     await agent.run()
-
-
-def _get_pricing(agent_json_path: str) -> Pricing:
-    try:
-        with open(agent_json_path, "r", encoding="utf-8") as f:
-            agent_config = json.loads(f.read())
-    except:
-        raise Exception(f"Failed to read pricing {agent_json_path}")
-    pricing_config = agent_config.get("pricing", {})
-    agent_wallet_address = pricing_config.get("wallet_address")
-    if not agent_wallet_address:
-        raise Exception(
-            f'agent json: {agent_json_path}, is missing ["pricing"]["wallet_address"]'
-        )
-    task_cost_sol = pricing_config.get("cost")
-    if not task_cost_sol:
-        raise Exception(
-            f'agent json: {agent_json_path}, is missing ["pricing"]["cost"]'
-        )
-    return Pricing(
-        wallet_address=agent_wallet_address,
-        cost=task_cost_sol,
-    )
 
 
 if __name__ == "__main__":
