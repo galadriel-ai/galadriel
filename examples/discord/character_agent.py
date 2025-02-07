@@ -1,5 +1,4 @@
 import json
-import os
 from pathlib import Path
 from typing import Callable
 from typing import Dict
@@ -15,7 +14,7 @@ from galadriel.domain.prompts.format_prompt import load_agent_template
 from galadriel.entities import AgentMessage
 from galadriel.entities import Message
 
-TELEGRAM_SYSTEM_PROMPT = """
+DISCORD_SYSTEM_PROMPT = """
 {{system}}
 
 # Areas of Expertise
@@ -33,7 +32,7 @@ Be very brief, and concise, add a statement in your voice.
 """
 
 
-class ElonMuskAgent(ToolCallingAgent):
+class CharacterAgent(ToolCallingAgent):
     def __init__(
         self,
         character_json_path: str,
@@ -65,10 +64,11 @@ class ElonMuskAgent(ToolCallingAgent):
             planning_interval=planning_interval,
         )
 
+        # Discord-specific initialization
         self.character_json_path = character_json_path
         try:
             self.character_prompt, self.character_name = load_agent_template(
-                TELEGRAM_SYSTEM_PROMPT, Path(self.character_json_path)
+                DISCORD_SYSTEM_PROMPT, Path(self.character_json_path)
             )
         except Exception as e:
             self.logger.log(
