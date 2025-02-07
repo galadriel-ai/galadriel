@@ -10,7 +10,7 @@ def execute(prompt_template: str, prompt_state: Dict) -> str:
     return prompt
 
 
-def load_agent_template(template: str, json_path: str) -> tuple[str, str]:
+def load_agent_template(template: str, json_path: str) -> str:
     """
     Load agent personality from JSON and update template with random values.
 
@@ -36,7 +36,7 @@ def load_agent_template(template: str, json_path: str) -> tuple[str, str]:
 
         updated_template = execute(template, agent_values)
 
-        return updated_template, data.get("name")
+        return updated_template
 
     except FileNotFoundError:
         raise FileNotFoundError(f"Agent personality file not found: {json_path}")
