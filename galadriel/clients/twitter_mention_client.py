@@ -14,7 +14,10 @@ from galadriel.entities import PushOnlyQueue
 
 class TwitterMentionClient(TwitterApiClient, AgentInput, AgentOutput):
     def __init__(
-        self, _credentials: TwitterCredentials, user_id: str, logger: Optional[logging.Logger] = None
+        self,
+        _credentials: TwitterCredentials,
+        user_id: str,
+        logger: Optional[logging.Logger] = None,
     ):
         super().__init__(_credentials)
         self.user_id = user_id
