@@ -33,10 +33,21 @@ Please remember the chat history and use it to answer the question.
 class ElonMuskAgent(ToolCallingAgent):
     def __init__(self, character_json_path: str, **kwargs):
         super().__init__(**kwargs)
-        self.character_json_path = character_json_path
+        try:
+            self.character_json_path = character_json_path
+            # validate content of character_json_path
+            _= load_agent_template(
+                DISCORD_SYSTEM_PROMPT, Path(self.character_json_path)
+            )
+        except Exception as e:
+            self.logger.log(
+                Text(f"Error validating character JSON path: {e}"), level=LogLevel.ERROR
+            )
+            raise e
 
     async def execute(self, message: Message) -> Message:
         try:
+            # Load the agent template on every execution to ensure randomness
             character_prompt = load_agent_template(
                 DISCORD_SYSTEM_PROMPT, Path(self.character_json_path)
             )
