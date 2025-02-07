@@ -30,7 +30,7 @@ Please remember the chat history and use it to answer the question.
 """
 
 
-class ElonMuskAgent(ToolCallingAgent):
+class CharacterAgent(ToolCallingAgent):
     def __init__(self, character_json_path: str, **kwargs):
         super().__init__(**kwargs)
         try:
