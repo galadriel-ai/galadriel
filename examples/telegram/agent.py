@@ -3,7 +3,7 @@ from dotenv import load_dotenv
 from pathlib import Path
 
 from galadriel.tools.composio_converter import convert_action
-from telegram_agent import ElonMuskAgent
+from elon_musk import ElonMuskAgent
 from tools import get_time
 from galadriel import AgentRuntime
 from galadriel.clients import TelegramClient
