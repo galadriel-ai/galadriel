@@ -35,8 +35,10 @@ agent_pricing = Pricing(
     cost=0.001,  # Price per task in SOL
 )
 
-# The client will pass a research task to the agent with a signature of transaction of Solana.
-# This transaction proves that
+# The client will pass a research task to the agent with either
+# - a link to the transaction on Solscan
+# - a signature of transaction of Solana
+# Example transaction passed to SimpleMessageClient below:
 # https://explorer.solana.com/tx/5aqB4BGzQyFybjvKBjdcP8KAstZo81ooUZnf64vSbLLWbUqNSGgXWaGHNteiK2EJrjTmDKdLYHamJpdQBFevWuvy
 simple_client = SimpleMessageClient(
     "Is Bitcoin good investment now with high prices? 5aqB4BGzQyFybjvKBjdcP8KAstZo81ooUZnf64vSbLLWbUqNSGgXWaGHNteiK2EJrjTmDKdLYHamJpdQBFevWuvy",
