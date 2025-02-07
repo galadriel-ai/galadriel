@@ -29,10 +29,10 @@ elon_musk_agent = ElonMuskAgent(
     max_steps=6,
 )
 
-agent = AgentRuntime(
+runtime = AgentRuntime(
     inputs=[telegram_client],
     outputs=[telegram_client],
     agent=elon_musk_agent,
 )
 
-asyncio.run(agent.run())
+asyncio.run(runtime.run())
