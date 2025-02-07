@@ -1,17 +1,15 @@
 import json
-import os
 from pathlib import Path
 
 from rich.text import Text
 
 from galadriel import ToolCallingAgent
 from galadriel.core_agent import LogLevel
-from galadriel.core_agent import Tool
 from galadriel.domain.prompts.format_prompt import load_agent_template
 from galadriel.entities import AgentMessage
 from galadriel.entities import Message
 
-TELEGRAM_SYSTEM_PROMPT = """
+DISCORD_SYSTEM_PROMPT = """
 {{system}}
 
 # Areas of Expertise
@@ -22,24 +20,24 @@ TELEGRAM_SYSTEM_PROMPT = """
 {{lore}}
 {{topics}}
 
-# Task: You received a new message on telegram from {{user_name}}. You must reply in the voice and style of {{agent_name}}, here's the message:
+# Task: You received a new message on discord from {{user_name}}. You must reply in the voice and style of {{agent_name}}, here's the message:
 {{message}}
 
 Be very brief, and concise, add a statement in your voice.
-Maintain a natural conversation on telegram.
+Maintain a natural conversation on discord.
 Don't overuse emojis.
 Please remember the chat history and use it to answer the question.
 """
 
 
-class ElonMuskAgent(ToolCallingAgent):
+class CharacterAgent(ToolCallingAgent):
     def __init__(self, character_json_path: str, **kwargs):
         super().__init__(**kwargs)
         try:
             self.character_json_path = character_json_path
             # validate content of character_json_path
             _ = load_agent_template(
-                TELEGRAM_SYSTEM_PROMPT, Path(self.character_json_path)
+                DISCORD_SYSTEM_PROMPT, Path(self.character_json_path)
             )
         except Exception as e:
             self.logger.log(
@@ -49,8 +47,9 @@ class ElonMuskAgent(ToolCallingAgent):
 
     async def execute(self, message: Message) -> Message:
         try:
+            # Load the agent template on every execution to ensure randomness
             character_prompt = load_agent_template(
-                TELEGRAM_SYSTEM_PROMPT, Path(self.character_json_path)
+                DISCORD_SYSTEM_PROMPT, Path(self.character_json_path)
             )
             task_message = character_prompt.replace(
                 "{{message}}", message.content
