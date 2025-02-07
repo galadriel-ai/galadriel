@@ -173,7 +173,9 @@ class AmmV4PoolKeys:
 
 
 @tool
-def buy_token_with_sol(pair_address: str, sol_in: float = 0.01, slippage: int = 5) -> str:
+def buy_token_with_sol(
+    pair_address: str, sol_in: float = 0.01, slippage: int = 5
+) -> str:
     """
     Buy a token with SOL using the Raydium AMM V4.
     Args:
@@ -190,7 +192,9 @@ def buy_token_with_sol(pair_address: str, sol_in: float = 0.01, slippage: int = 
 
 
 @tool
-def sell_token_for_sol(pair_address: str, percentage: int = 100, slippage: int = 5) -> str:
+def sell_token_for_sol(
+    pair_address: str, percentage: int = 100, slippage: int = 5
+) -> str:
     """
     Sell a token for SOL using the Raydium AMM V4.
     Args:
@@ -215,15 +219,23 @@ def fetch_amm_v4_pool_keys(pair_address: str) -> Optional[AmmV4PoolKeys]:
 
     try:
         amm_id = Pubkey.from_string(pair_address)
-        amm_data = client.get_account_info_json_parsed(amm_id, commitment=Processed).value.data
+        amm_data = client.get_account_info_json_parsed(
+            amm_id, commitment=Processed
+        ).value.data
         amm_data_decoded = LIQUIDITY_STATE_LAYOUT_V4.parse(amm_data)
         marketId = Pubkey.from_bytes(amm_data_decoded.serumMarket)
-        marketInfo = client.get_account_info_json_parsed(marketId, commitment=Processed).value.data
+        marketInfo = client.get_account_info_json_parsed(
+            marketId, commitment=Processed
+        ).value.data
         market_decoded = MARKET_STATE_LAYOUT_V3.parse(marketInfo)
         vault_signer_nonce = market_decoded.vault_signer_nonce
 
-        ray_authority_v4 = Pubkey.from_string("5Q544fKrFoe6tsEbD7S8EmxGTJYAKtTVhAW5Q5pge4j1")
-        open_book_program = Pubkey.from_string("srmqPvymJeFKQ4zGQed1GFppgkRHL9kaELCbyksJtPX")
+        ray_authority_v4 = Pubkey.from_string(
+            "5Q544fKrFoe6tsEbD7S8EmxGTJYAKtTVhAW5Q5pge4j1"
+        )
+        open_book_program = Pubkey.from_string(
+            "srmqPvymJeFKQ4zGQed1GFppgkRHL9kaELCbyksJtPX"
+        )
 
         pool_keys = AmmV4PoolKeys(
             amm_id=amm_id,
@@ -237,7 +249,8 @@ def fetch_amm_v4_pool_keys(pair_address: str) -> Optional[AmmV4PoolKeys]:
             quote_vault=Pubkey.from_bytes(amm_data_decoded.poolPcTokenAccount),
             market_id=marketId,
             market_authority=Pubkey.create_program_address(
-                seeds=[bytes(marketId), bytes_of(vault_signer_nonce)], program_id=open_book_program
+                seeds=[bytes(marketId), bytes_of(vault_signer_nonce)],
+                program_id=open_book_program,
             ),
             market_base_vault=Pubkey.from_bytes(market_decoded.base_vault),
             market_quote_vault=Pubkey.from_bytes(market_decoded.quote_vault),
@@ -273,8 +286,12 @@ def get_amm_v4_reserves(pool_keys: AmmV4PoolKeys) -> tuple:
         quote_account = balances[0]
         base_account = balances[1]
 
-        quote_account_balance = quote_account.data.parsed["info"]["tokenAmount"]["uiAmount"]
-        base_account_balance = base_account.data.parsed["info"]["tokenAmount"]["uiAmount"]
+        quote_account_balance = quote_account.data.parsed["info"]["tokenAmount"][
+            "uiAmount"
+        ]
+        base_account_balance = base_account.data.parsed["info"]["tokenAmount"][
+            "uiAmount"
+        ]
 
         if quote_account_balance is None or base_account_balance is None:
             print("Error: One of the account balances is None.")
@@ -311,21 +328,35 @@ def make_amm_v4_swap_instruction(
     try:
 
         keys = [
-            AccountMeta(pubkey=accounts.token_program_id, is_signer=False, is_writable=False),
+            AccountMeta(
+                pubkey=accounts.token_program_id, is_signer=False, is_writable=False
+            ),
             AccountMeta(pubkey=accounts.amm_id, is_signer=False, is_writable=True),
-            AccountMeta(pubkey=accounts.ray_authority_v4, is_signer=False, is_writable=False),
+            AccountMeta(
+                pubkey=accounts.ray_authority_v4, is_signer=False, is_writable=False
+            ),
             AccountMeta(pubkey=accounts.open_orders, is_signer=False, is_writable=True),
-            AccountMeta(pubkey=accounts.target_orders, is_signer=False, is_writable=True),
+            AccountMeta(
+                pubkey=accounts.target_orders, is_signer=False, is_writable=True
+            ),
             AccountMeta(pubkey=accounts.base_vault, is_signer=False, is_writable=True),
             AccountMeta(pubkey=accounts.quote_vault, is_signer=False, is_writable=True),
-            AccountMeta(pubkey=accounts.open_book_program, is_signer=False, is_writable=False),
+            AccountMeta(
+                pubkey=accounts.open_book_program, is_signer=False, is_writable=False
+            ),
             AccountMeta(pubkey=accounts.market_id, is_signer=False, is_writable=True),
             AccountMeta(pubkey=accounts.bids, is_signer=False, is_writable=True),
             AccountMeta(pubkey=accounts.asks, is_signer=False, is_writable=True),
             AccountMeta(pubkey=accounts.event_queue, is_signer=False, is_writable=True),
-            AccountMeta(pubkey=accounts.market_base_vault, is_signer=False, is_writable=True),
-            AccountMeta(pubkey=accounts.market_quote_vault, is_signer=False, is_writable=True),
-            AccountMeta(pubkey=accounts.market_authority, is_signer=False, is_writable=False),
+            AccountMeta(
+                pubkey=accounts.market_base_vault, is_signer=False, is_writable=True
+            ),
+            AccountMeta(
+                pubkey=accounts.market_quote_vault, is_signer=False, is_writable=True
+            ),
+            AccountMeta(
+                pubkey=accounts.market_authority, is_signer=False, is_writable=False
+            ),
             AccountMeta(pubkey=token_account_in, is_signer=False, is_writable=True),
             AccountMeta(pubkey=token_account_out, is_signer=False, is_writable=True),
             AccountMeta(pubkey=owner, is_signer=True, is_writable=False),
@@ -354,19 +385,26 @@ def get_token_balance(pubkey: Pubkey, mint_str: str) -> float | None:
     if response.value:
         accounts = response.value
         if accounts:
-            token_amount = accounts[0].account.data.parsed["info"]["tokenAmount"]["uiAmount"]
+            token_amount = accounts[0].account.data.parsed["info"]["tokenAmount"][
+                "uiAmount"
+            ]
             if token_amount:
                 return float(token_amount)
     return None
 
 
-def confirm_txn(txn_sig: Signature, max_retries: int = 20, retry_interval: int = 3) -> bool:
+def confirm_txn(
+    txn_sig: Signature, max_retries: int = 20, retry_interval: int = 3
+) -> bool:
     retries = 1
 
     while retries < max_retries:
         try:
             txn_res = client.get_transaction(
-                txn_sig, encoding="json", commitment=Confirmed, max_supported_transaction_version=0
+                txn_sig,
+                encoding="json",
+                commitment=Confirmed,
+                max_supported_transaction_version=0,
             )
 
             txn_json = json.loads(txn_res.value.transaction.meta.to_json())
@@ -388,13 +426,17 @@ def confirm_txn(txn_sig: Signature, max_retries: int = 20, retry_interval: int =
     return None
 
 
-def buy(payer_keypair: Keypair, pair_address: str, sol_in: float = 0.01, slippage: int = 5) -> str:
+def buy(
+    payer_keypair: Keypair, pair_address: str, sol_in: float = 0.01, slippage: int = 5
+) -> str:
     try:
         pool_keys: Optional[AmmV4PoolKeys] = fetch_amm_v4_pool_keys(pair_address)
         if pool_keys is None:
             return "Failed to fetch pool keys."
 
-        mint = pool_keys.base_mint if pool_keys.base_mint != WSOL else pool_keys.quote_mint
+        mint = (
+            pool_keys.base_mint if pool_keys.base_mint != WSOL else pool_keys.quote_mint
+        )
         amount_in = int(sol_in * SOL_DECIMAL)
 
         base_reserve, quote_reserve, token_decimal = get_amm_v4_reserves(pool_keys)
@@ -417,7 +459,9 @@ def buy(payer_keypair: Keypair, pair_address: str, sol_in: float = 0.01, slippag
             )
 
         seed = base64.urlsafe_b64encode(os.urandom(24)).decode("utf-8")
-        wsol_token_account = Pubkey.create_with_seed(payer_keypair.pubkey(), seed, TOKEN_PROGRAM_ID)
+        wsol_token_account = Pubkey.create_with_seed(
+            payer_keypair.pubkey(), seed, TOKEN_PROGRAM_ID
+        )
         balance_needed = Token.get_min_balance_rent_for_exempt_for_account(client)
 
         create_wsol_account_instruction = create_account_with_seed(
@@ -506,7 +550,9 @@ def sell(
         if pool_keys is None:
             return "Failed to fetch pool keys."
 
-        mint = pool_keys.base_mint if pool_keys.base_mint != WSOL else pool_keys.quote_mint
+        mint = (
+            pool_keys.base_mint if pool_keys.base_mint != WSOL else pool_keys.quote_mint
+        )
         token_balance = get_token_balance(payer_keypair.pubkey(), str(mint))
 
         if token_balance == 0 or token_balance is None:
@@ -524,7 +570,9 @@ def sell(
         token_account = get_associated_token_address(payer_keypair.pubkey(), mint)
 
         seed = base64.urlsafe_b64encode(os.urandom(24)).decode("utf-8")
-        wsol_token_account = Pubkey.create_with_seed(payer_keypair.pubkey(), seed, TOKEN_PROGRAM_ID)
+        wsol_token_account = Pubkey.create_with_seed(
+            payer_keypair.pubkey(), seed, TOKEN_PROGRAM_ID
+        )
         balance_needed = Token.get_min_balance_rent_for_exempt_for_account(client)
 
         create_wsol_account_instruction = create_account_with_seed(
@@ -612,15 +660,21 @@ def sell(
 def sol_for_tokens(sol_amount, base_vault_balance, quote_vault_balance, swap_fee=0.25):
     effective_sol_used = sol_amount - (sol_amount * (swap_fee / 100))
     constant_product = base_vault_balance * quote_vault_balance
-    updated_base_vault_balance = constant_product / (quote_vault_balance + effective_sol_used)
+    updated_base_vault_balance = constant_product / (
+        quote_vault_balance + effective_sol_used
+    )
     tokens_received = base_vault_balance - updated_base_vault_balance
     return round(tokens_received, 9)
 
 
-def tokens_for_sol(token_amount, base_vault_balance, quote_vault_balance, swap_fee=0.25):
+def tokens_for_sol(
+    token_amount, base_vault_balance, quote_vault_balance, swap_fee=0.25
+):
     effective_tokens_sold = token_amount * (1 - (swap_fee / 100))
     constant_product = base_vault_balance * quote_vault_balance
-    updated_quote_vault_balance = constant_product / (base_vault_balance + effective_tokens_sold)
+    updated_quote_vault_balance = constant_product / (
+        base_vault_balance + effective_tokens_sold
+    )
     sol_received = quote_vault_balance - updated_quote_vault_balance
     return round(sol_received, 9)
 
