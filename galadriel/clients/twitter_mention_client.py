@@ -14,11 +14,11 @@ from galadriel.entities import PushOnlyQueue
 
 class TwitterMentionClient(TwitterApiClient, AgentInput, AgentOutput):
     def __init__(
-        self, _credentials: TwitterCredentials, user_id: str, logger: logging.Logger
+        self, _credentials: TwitterCredentials, user_id: str, logger: Optional[logging.Logger] = None
     ):
         super().__init__(_credentials)
         self.user_id = user_id
-        self.logger = logger
+        self.logger = logger or logging.getLogger("twitter_mention_client")
 
     async def start(self, queue: PushOnlyQueue) -> None:
         mentions = await self._fetch_mentions(self.user_id)

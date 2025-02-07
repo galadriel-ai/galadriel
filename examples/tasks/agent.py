@@ -16,7 +16,6 @@ twitter_client = TwitterMentionClient(
         access_token_secret=os.getenv("TWITTER_ACCESS_TOKEN_SECRET"),
     ),
     user_id=os.getenv("TWITTER_USER_ID"),
-    logger=logger,
 )
 
 simple_client = SimpleMessageClient(
