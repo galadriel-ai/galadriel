@@ -31,8 +31,8 @@ researcher = CodeAgent(
 
 # Configure agent's pricing information
 agent_pricing = Pricing(
-    wallet_address="5RYHzQuknP2viQjYzP27wXVWKeaxonZgMBPQA86GV92t", # Agent's wallet address
-    cost=0.001, # Price per task in SOL
+    wallet_address="5RYHzQuknP2viQjYzP27wXVWKeaxonZgMBPQA86GV92t",  # Agent's wallet address
+    cost=0.001,  # Price per task in SOL
 )
 
 # The client will pass a research task to the agent with a signature of transaction of Solana.
@@ -55,8 +55,8 @@ simple_client = SimpleMessageClient(
 
 # Combine all elements into runtime
 runtime = AgentRuntime(
-    inputs=[simple_client], # Runtime inputs, pass twitter_client if you use it
-    outputs=[simple_client], # Runtime outputs, pass twitter_client if you use it
+    inputs=[simple_client],  # Runtime inputs, pass twitter_client if you use it
+    outputs=[simple_client],  # Runtime outputs, pass twitter_client if you use it
     agent=researcher,
     pricing=agent_pricing,
 )
