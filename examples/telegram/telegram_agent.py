@@ -43,7 +43,7 @@ class ElonMuskAgent(ToolCallingAgent):
             )
         except Exception as e:
             self.logger.log(
-                Text(f"Error validating character JSON path: {e}"), level=LogLevel.ERROR
+                Text(f"Error validating character file: {e}"), level=LogLevel.ERROR
             )
             raise e
 
