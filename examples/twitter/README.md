@@ -1,73 +1,68 @@
-# Twitter agent example
+# Twitter "agent" example
 
-### Install the requirements
+This is a Twitter "agent" that posts on twitter every 3 hours.
+It has a cron job that triggers every 3 hours and generates a Twitter post
+that is then posted on Twitter through its official API.
 
-It's recommended to use a virtual env
+## Features
 
-In the root of the repo:
+- 🤖 Works automatically with no user input
+- 🌤️ Posts tweets using a Twitter Client
+
+## Framework Components Used
+
+This example demonstrates several key features of the Galadriel framework:
+
+- `Cron`: Triggers agent actions at a configured interval
+- `Agent`: Implements the base Agent interface for a custom "agent" implementation
+- `LiteLLMModel`: Integration with language models via LiteLLM
+- Custom tools:
+    - Composio Weather API (converted using `convert_action`)
+    - Time tool
+- `TwitterPostClient`: A client for posting Tweets on Twitter
+
+## Setup and Running
+
+1. Setup local env and install `galadriel`.
+
+```bash
 ```shell
-pip install -e ".[dev]"
-```
-
-### Modify the .env
-
-**Paid tier of the Twitter API is required for full functionality,**
-for just posting free tier will suffice.
-
-```shell
-cp template.env .env
-```
-
-### Run
-
-```shell
-python agent.py
-```
-
-## Deployment
-
-In the root of the repo
-```
-git pull
+pip install -r requirements.txt
+python3 -m venv venv
 source venv/bin/activate
-pip install -e ".[dev]"
-cd examples/twitter
-
-pgrep -af python
-# something like this: 3153266 python agent.py
-kill <pid>
-# Deploy
-nohup python agent.py --name daige > logs.log 2>&1 &
-
-tail -f logs.log -n 100
+pip install galadriel
 ```
 
+2. Rename `template.env` to `.env` and add your OpenAI API key
+   along with credentials for Twitter.
 
-### Tests
+```bash
+OPENAI_API_KEY=
 
-```shell
-python -m pytest tests
+# Under "Consumer Keys"
+TWITTER_CONSUMER_API_KEY=
+TWITTER_CONSUMER_API_SECRET=
+# Under "Authentication Tokens -> "Access Token and Secret" (requires Write permission)
+TWITTER_ACCESS_TOKEN=
+TWITTER_ACCESS_TOKEN_SECRET=
 ```
 
-### Test outputs locally
+Check out https://developer.x.com/, for these values.
+User authentication needs to be set up with write access.
 
-This enables changing the code/prompting without actually posting on Twitter :)
 
-```shell
-python testing.py --help
+You can also include something like
 
-python testing.py --type perplexity --count 1
-
-python testing.py --type search --count 1
+```bash
+DRY_RUN=true
 ```
 
-### Generate a quote for a given tweet ID
+in your `.env` to skip the actual Twitter posting part, just to see
+what the Agent would have posted. This can be useful for testing and
+modifying the prompt.
 
-```shell
-# Quote a specific tweet
-python manual_tweet.py --name <agent_name> --tweet_id <tweet_id>
-# Give it context from a .txt file
-python manual_tweet.py --name <agent_name> --context_file <file_path>
+4. Run the agent:
+
+```bash
+python twitter_agent.py
 ```
-
-It will show the generated tweet and ask if it should post it.
