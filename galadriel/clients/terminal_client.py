@@ -22,13 +22,13 @@ class TerminalClient(AgentInput, AgentOutput):
     async def start(self, queue: PushOnlyQueue) -> None:
         self.message_queue = queue
         self.logger.info("Terminal chat started. Type 'exit' to quit.")
-        
+
         while True:
             try:
                 # Get user input
                 user_input = await self.get_user_input()
-                
-                if user_input.lower() == 'exit':
+
+                if user_input.lower() == "exit":
                     print("Goodbye!")
                     break
 
@@ -50,4 +50,3 @@ class TerminalClient(AgentInput, AgentOutput):
 
     async def send(self, request: Message, response: Message) -> None:
         print(f"\nAgent: {response.content}")
-        

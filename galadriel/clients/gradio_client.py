@@ -17,7 +17,7 @@ class GradioClient(AgentInput, AgentOutput):
         self.input_queue = Queue()
         self.output_queue = Queue()
         self.history = []
-        
+
         # Initialize the Gradio interface with a chatbot component
         with gr.Blocks() as self.interface:
             self.chatbot = gr.Chatbot(
@@ -35,35 +35,23 @@ class GradioClient(AgentInput, AgentOutput):
                 )
                 self.submit = gr.Button("Send", scale=1)
             self.clear = gr.Button("Clear")
-            
+
             # Set up event handlers with chaining
             self.msg.submit(
-                self._handle_message,
-                [self.msg, self.chatbot],
-                [self.msg, self.chatbot]
-            ).then(
-                self._process_response,
-                [self.chatbot],
-                [self.chatbot]
-            )
-            
+                self._handle_message, [self.msg, self.chatbot], [self.msg, self.chatbot]
+            ).then(self._process_response, [self.chatbot], [self.chatbot])
+
             self.submit.click(
-                self._handle_message,
-                [self.msg, self.chatbot],
-                [self.msg, self.chatbot]
-            ).then(
-                self._process_response,
-                [self.chatbot],
-                [self.chatbot]
-            )
-            
+                self._handle_message, [self.msg, self.chatbot], [self.msg, self.chatbot]
+            ).then(self._process_response, [self.chatbot], [self.chatbot])
+
             self.clear.click(lambda: [], None, self.chatbot, queue=False)
 
     async def _handle_message(self, message: str, history):
         """Handle incoming messages from Gradio"""
         if not message:
             return "", history
-        
+
         self.input_queue.put(message)
         history = history or []
         history.append((message, None))
@@ -73,28 +61,26 @@ class GradioClient(AgentInput, AgentOutput):
         """Process the response and update the UI"""
         while self.output_queue.empty():
             await asyncio.sleep(0.1)
-        new_message = self.output_queue.get()   
+        new_message = self.output_queue.get()
         history.append((None, new_message))
         return history
 
     async def start(self, queue: PushOnlyQueue) -> None:
         self.message_queue = queue
-        
+
         # Launch Gradio interface in a background thread
         self.interface.queue()
         self.interface.launch(
-            server_name="0.0.0.0",
-            share=False,
-            prevent_thread_lock=True
+            server_name="0.0.0.0", share=False, prevent_thread_lock=True
         )
         # Log the local URL for accessing the Gradio interface
         self.logger.info(f"Gradio interface available at: http://0.0.0.0:7860")
-        
+
         # Process messages from input queue
         while True:
             if not self.input_queue.empty():
                 user_input = self.input_queue.get()
-                
+
                 msg = HumanMessage(
                     content=user_input,
                     conversation_id=self.conversation_id,
@@ -105,7 +91,7 @@ class GradioClient(AgentInput, AgentOutput):
                     },
                 )
                 await self.message_queue.put(msg)
-            
+
             await asyncio.sleep(0.1)
 
     async def send(self, request: Message, response: Message) -> None:
