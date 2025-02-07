@@ -33,6 +33,10 @@ Please remember the chat history and use it to answer the question.
 
 
 class ElonMuskAgent(ToolCallingAgent):
+    def __init__(self, character_json_path: str, **kwargs):
+        super().__init__(**kwargs)
+        self.character_json_path = character_json_path
+
     async def execute(self, message: Message) -> Message:
         try:
             character_prompt = load_agent_template(
