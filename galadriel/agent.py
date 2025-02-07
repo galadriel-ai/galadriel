@@ -9,6 +9,7 @@ from typing import Set
 from pprint import pformat
 
 from dotenv import load_dotenv as _load_dotenv
+
 # pylint:disable=W0401,W0614
 # pylint:disable=W0614
 from smolagents import CodeAgent as InternalCodeAgent
@@ -54,7 +55,13 @@ class AgentState:
 # pylint:disable=E0102
 class CodeAgent(Agent, InternalCodeAgent):
 
-    def __init__(self, prompt_template: Optional[str] = None, character_json_path: Optional[str] = None, flush_memory: Optional[bool] = False, **kwargs):
+    def __init__(
+        self,
+        prompt_template: Optional[str] = None,
+        character_json_path: Optional[str] = None,
+        flush_memory: Optional[bool] = False,
+        **kwargs,
+    ):
         InternalCodeAgent.__init__(self, **kwargs)
         self.prompt_template = prompt_template or DEFAULT_PROMPT_TEMPLATE
         self.character_json_path = character_json_path
@@ -77,7 +84,13 @@ class CodeAgent(Agent, InternalCodeAgent):
 # pylint:disable=E0102
 class ToolCallingAgent(Agent, InternalToolCallingAgent):
 
-    def __init__(self, prompt_template: Optional[str] = None, character_json_path: Optional[str] = None, flush_memory: Optional[bool] = False, **kwargs):
+    def __init__(
+        self,
+        prompt_template: Optional[str] = None,
+        character_json_path: Optional[str] = None,
+        flush_memory: Optional[bool] = False,
+        **kwargs,
+    ):
         InternalToolCallingAgent.__init__(self, **kwargs)
         self.prompt_template = prompt_template or DEFAULT_PROMPT_TEMPLATE
         self.character_json_path = character_json_path
