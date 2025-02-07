@@ -26,19 +26,12 @@ async def main():
         user_id=os.getenv("TWITTER_USER_ID"),
         logger=logger,
     )
-    message1 = Message(
-        content="is ShitCoin good investment now with high prices? 5aqB4BGzQyFybjvKBjdcP8KAstZo81ooUZnf64vSbLLWbUqNSGgXWaGHNteiK2EJrjTmDKdLYHamJpdQBFevWuvy",
-        conversation_id="conversationid123",
-        additional_kwargs={"id": "id123", "author_id": "authorid123"},
-    )
-    message2 = Message(
-        content="is FartoCoin good investment now with high prices? 5aqB4BGzQyFybjvKBjdcP8KAstZo81ooUZnf64vSbLLWbUqNSGgXWaGHNteiK2EJrjTmDKdLYHamJpdQBFevWuvy",
-        conversation_id="conversationid123",
-        additional_kwargs={"id": "id124", "author_id": "authorid123"},
+
+    simple_client = SimpleMessageClient(
+        "Is Bitcoin good investment now with high prices? 5aqB4BGzQyFybjvKBjdcP8KAstZo81ooUZnf64vSbLLWbUqNSGgXWaGHNteiK2EJrjTmDKdLYHamJpdQBFevWuvy",
+        "Should I buy ETH at this dip? 5aqB4BGzQyFybjvKBjdcP8KAstZo81ooUZnf64vSbLLWbUqNSGgXWaGHNteiK2EJrjTmDKdLYHamJpdQBFevWuvy",
     )
 
-    simple_client = SimpleMessageClient(message1.content, message2.content)
-    clients.append(test_client)
     agent = AgentRuntime(
         inputs=[twitter_client, simple_client],
         outputs=[twitter_client, simple_client],
