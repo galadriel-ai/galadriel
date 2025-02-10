@@ -126,7 +126,10 @@ class AgentRuntime:
         # AgentConfig should have some settings for debug?
         init_logging(self.debug)
 
-    async def run(self):
+    def run(self):
+        asyncio.run(self._run())
+
+    async def _run(self):
         input_queue = asyncio.Queue()
         push_only_queue = PushOnlyQueue(input_queue)
         for agent_input in self.inputs:

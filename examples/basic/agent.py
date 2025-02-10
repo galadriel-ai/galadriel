@@ -1,4 +1,3 @@
-import asyncio
 import os
 from pathlib import Path
 
@@ -30,4 +29,4 @@ runtime = AgentRuntime(
 )
 
 # Run the agent
-asyncio.run(runtime.run())
+runtime.run()
