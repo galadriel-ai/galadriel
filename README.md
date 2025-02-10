@@ -49,10 +49,10 @@ Clients serve as the bridge between agents and external data sources, handling b
 Tools extend an agent’s capabilities by providing predefined functions that enable interaction with external APIs, data sources, and systems. These tools empower agents to perform tasks such as fetching real-time weather updates or submitting blockchain transactions. Each tool defines its name, purpose, input requirements, and output format, ensuring structured and meaningful interactions. Galadriel supports any tool from HuggingFace, Composio and Langchain out-of-the-box.
 
 ### Agents  
-Agents are the core intelligence behind the system, capable of reasoning, processing inputs, and generating informed responses. Our framework supports **ToolCallingAgent** and **CodeAgent**, which build upon Hugging Face’s [Smolagents](https://github.com/huggingface/smolagents) while introducing enhancements for improved integration with the runtime. Agents leverage **ReAct**-based reasoning and can access a wide variety of LLMs via [LiteLLM](https://www.litellm.ai/). Additionally, they can be configured with custom personalities and interact with powerful tools to enhance their decision-making capabilities.
+Agents are the core intelligence behind the system, capable of reasoning, processing inputs, and generating informed responses. Our framework supports ToolCallingAgent and CodeAgent, which build upon Hugging Face’s [Smolagents](https://github.com/huggingface/smolagents) while introducing enhancements for improved integration with the runtime. Agents leverage ReAct-based reasoning and can access a wide variety of LLMs via [LiteLLM](https://www.litellm.ai/). Additionally, they can be configured with custom personalities and interact with powerful tools to enhance their decision-making capabilities.
 
 ### Runtime  
-The **Agent Runtime** ensures continuous and autonomous agent execution. It manages the lifecycle of agent interactions, efficiently processing incoming requests while maintaining agent state. The runtime follows a structured execution loop:
+The Agent Runtime ensures continuous and autonomous agent execution. It manages the lifecycle of agent interactions, efficiently processing incoming requests while maintaining agent state. The runtime follows a structured execution loop:
 
 1. **Receive a Message** – An input client sends a message to the runtime.
 2. **Process the Message** – The agent receives and handles the request.
