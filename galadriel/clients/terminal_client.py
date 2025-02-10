@@ -28,6 +28,10 @@ class TerminalClient(AgentInput, AgentOutput):
                 # Get user input
                 user_input = await self.get_user_input()
 
+                # Ignore empty
+                if not user_input.strip():
+                    continue
+
                 if user_input.lower() == "exit":
                     print("Goodbye!")
                     break
