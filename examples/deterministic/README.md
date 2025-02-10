@@ -1,8 +1,21 @@
-# Twitter "agent" example
+# Deterministic Agent Example
 
-This is a Twitter "agent" that posts on twitter every 3 hours.
+This is an example of deterministic Twitter "agent" that posts on twitter every 3 hours.
 It has a cron job that triggers every 3 hours and generates a Twitter post
 that is then posted on Twitter through its official API.
+
+## Why deterministic?
+
+The _agency_ of agents exists on a spectrum. The more agentic an agent is, the more its behavior is influenced by the LLM. 
+However, there is a tradeoff—LLM execution is probabilistic, meaning it may not always produce the same behavior. 
+In some cases, a developer may prefer a more deterministic approach to ensure consistency.
+
+In this example, the developer chose to make the Twitter agent follow a fixed process in each iteration of the loop:
+1. Retrieve the content of the tweet from the LLM.
+2. Post the tweet.
+
+Allowing the LLM to make probabilistic decisions in this scenario would only increase costs and reduce the reliability of the desired flow.
+At the same time, the developer still wanted to leverage key functionalities of the framework, such as tooling, orchestration (`Cron`), and more.
 
 ## Features
 
