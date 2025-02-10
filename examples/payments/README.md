@@ -1,8 +1,8 @@
-# Researcher Agent
+# Payments
 
 ## Description
 
-This example demonstrates a research agent that requires **SOL payments** from users before executing tasks. The agent is designed to analyze investment-related queries and retrieve relevant data from Web3 tools. It uses:
+This example demonstrates a research agent which receives **SOL payments** from users before executing tasks. The agent is designed to analyze investment-related queries and retrieve relevant data from Web3 tools. It uses:
 
 - **gpt-4o model** from OpenAI for language processing.
 - **CodeAgent** from [smolagents](https://huggingface.co/docs/smolagents/reference/agents#smolagents.CodeAgent) to execute a series of steps for reaching a final result.
