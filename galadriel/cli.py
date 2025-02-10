@@ -258,11 +258,12 @@ def import_wallet(private_key: str, path: str):
     if private_key and path:
         raise click.ClickException("Please provide only one of --private-key or --path")
 
+    # FIXME Disable this check for now
     # Check if the .agents.env file exists
-    if not os.path.exists(".agents.env"):
-        raise click.ClickException(
-            "No .agents.env file found in current directory. Please run this command under your project directory."
-        )
+    # if not os.path.exists(".agents.env"):
+    #    raise click.ClickException(
+    #        "No .agents.env file found in current directory. Please run this command under your project directory."
+    #    )
 
     if private_key:
         # Check if the private key is a valid json
@@ -617,11 +618,12 @@ def _create_solana_wallet(path: str) -> str:
     if os.path.exists(path):
         raise click.ClickException(f"File {path} already exists")
 
+    # FIXME Disable this check for now
     # Check if the .agents.env file exists
-    if not os.path.exists(".agents.env"):
-        raise click.ClickException(
-            "No .agents.env file found in current directory. Please run this command under your project directory."
-        )
+    # if not os.path.exists(".agents.env"):
+    #    raise click.ClickException(
+    #        "No .agents.env file found in current directory. Please run this command under your project directory."
+    #    )
 
     # Update the .agents.env file with the new wallet path
     _update_agent_env_file({"SOLANA_PRIVATE_KEY_PATH": path})
