@@ -258,6 +258,12 @@ def import_wallet(private_key: str, path: str):
     if private_key and path:
         raise click.ClickException("Please provide only one of --private-key or --path")
 
+    # Check if the .agents.env file exists
+    if not os.path.exists(".agents.env"):
+        raise click.ClickException(
+            "No .agents.env file found in current directory. Please run this command under your project directory."
+        )
+
     if private_key:
         # Check if the private key is a valid json
         try:
@@ -296,16 +302,6 @@ def _assert_config_files(image_name: str) -> Tuple[str, str]:
             "DOCKER_USERNAME or DOCKER_PASSWORD not found in .env file"
         )
     return docker_username, docker_password
-
-
-def _get_agent_name() -> Optional[str]:
-    if not os.path.exists(".agents.env"):
-        raise click.ClickException(
-            "No .agents.env file found in current directory. Please create one."
-        )
-    env_vars = dict(dotenv_values(".agents.env"))
-    agent_name = env_vars.get("AGENT_NAME")
-    return agent_name
 
 
 def _create_agent_template(
@@ -621,13 +617,19 @@ def _create_solana_wallet(path: str) -> str:
     if os.path.exists(path):
         raise click.ClickException(f"File {path} already exists")
 
+    # Check if the .agents.env file exists
+    if not os.path.exists(".agents.env"):
+        raise click.ClickException(
+            "No .agents.env file found in current directory. Please run this command under your project directory."
+        )
+
     # Update the .agents.env file with the new wallet path
     _update_agent_env_file({"SOLANA_PRIVATE_KEY_PATH": path})
 
     keypair = Keypair()
-    private_key_json = json.dumps(keypair.to_json()).encode("utf-8")
+    private_key_json = keypair.to_json()
     os.makedirs(os.path.dirname(path), exist_ok=True)
-    with open(path, "wb") as file:
+    with open(path, "w", encoding="utf-8") as file:
         file.write(private_key_json)
 
     return str(keypair.pubkey())
