@@ -1,4 +1,5 @@
 import socket
+import struct
 import threading
 import logging
 from typing import Optional
@@ -10,47 +11,25 @@ logger = logging.getLogger()
 
 class TrafficForwarder:
     BUFFER_SIZE = 1024
-    PORT = 8000
+    REMOTE_PORT = 8001
     REMOTE_CID = 3  # The CID of the TEE host
-    REMOTE_PORT_OPENAI = 8001
-    REMOTE_PORT_DISCORD = 8002
-    REMOTE_PORT_GALADRIEL = 8003
-    REMOTE_PORT_PREPLEXITY = 8004
-    REMOTE_PORT_TELEGRAM = 8005
-    REMOTE_PORT_TWITTER = 8006
-    REMOTE_PORT_S3 = 8007
-    REMOTE_PORT_DEXSCREENER = 8008
-    REMOTE_PORT_COINGECKO = 8009
-
-    REMOTE_PORTS = {
-        "api.openai.com": REMOTE_PORT_OPENAI,
-        "discord.com": REMOTE_PORT_DISCORD,
-        "api.galadriel.com": REMOTE_PORT_GALADRIEL,
-        "api.preplexity.ai": REMOTE_PORT_PREPLEXITY,
-        "api.telegram.org": REMOTE_PORT_TELEGRAM,
-        "api.twitter.com": REMOTE_PORT_TWITTER,
-        "agents-memory-storage.s3.us-east-1.amazonaws.com": REMOTE_PORT_S3,
-        "api.dexscreener.com": REMOTE_PORT_DEXSCREENER,
-        "api.coingecko.com": REMOTE_PORT_COINGECKO,
-    }
 
     def __init__(self, local_ip: str, local_port: int):
         self.local_ip = local_ip
         self.local_port = local_port
 
-    def guess_the_destination_port(self, data: bytes) -> int:
-        # This is a simple heuristic, we look for the domain name in the SSL handshake data
-        # and return the corresponding VSOCK port
-        #
-        # https://wiki.osdev.org/TLS_Handshake#Client_Hello_Message
-        text = data.decode("utf-8", errors="ignore")
-        for url, port in self.REMOTE_PORTS.items():
-            if url in text:
-                print(f"Got destination port: {port} for url: {url}")
-                return port
-        # TODO: what if no destination?
-        print("Error, did not get a destination port!\n")
-        return self.REMOTE_PORT_OPENAI
+    def get_original_destination(self, client_socket):
+        """
+        Retrieves the original destination IP and port using SO_ORIGINAL_DST.
+        """
+        try:
+            original_dst = client_socket.getsockopt(socket.SOL_IP, 80, 16)
+            port, ip_raw = struct.unpack_from("!2xH4s8x", original_dst)
+            original_ip = socket.inet_ntoa(ip_raw)
+            return original_ip, port
+        except Exception as exc:
+            logger.error(f"Failed to get original destination: {exc}")
+            return None, None
 
     def forward(self, source, destination, first_string: Optional[bytes] = None):
         """Forward data between two sockets."""
@@ -81,14 +60,32 @@ class TrafficForwarder:
             )
             while True:
                 client_socket = dock_socket.accept()[0]
+                original_ip, original_port = self.get_original_destination(
+                    client_socket
+                )
+                if not original_ip or not original_port:
+                    logger.info(
+                        f"Failed to get original destination, closing connection"
+                    )
+                    client_socket.close()
+                    continue
+
+                logger.info(f"Forwarding traffic to {original_ip}:{original_port}")
                 data = client_socket.recv(self.BUFFER_SIZE)
-                destination_port = self.guess_the_destination_port(data)
+                ip_encoded = socket.inet_aton(
+                    original_ip
+                )  # Convert IP to 4-byte binary
+                port_encoded = struct.pack(
+                    "!H", original_port
+                )  # Convert port to 2-byte binary
+                destination_and_data = ip_encoded + port_encoded + data
 
                 server_socket = socket.socket(socket.AF_VSOCK, socket.SOCK_STREAM)
-                server_socket.connect((self.REMOTE_CID, destination_port))
+                server_socket.connect((self.REMOTE_CID, self.REMOTE_PORT))
 
                 outgoing_thread = threading.Thread(
-                    target=self.forward, args=(client_socket, server_socket, data)
+                    target=self.forward,
+                    args=(client_socket, server_socket, destination_and_data),
                 )
                 incoming_thread = threading.Thread(
                     target=self.forward, args=(server_socket, client_socket)

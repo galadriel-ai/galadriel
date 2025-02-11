@@ -5,14 +5,18 @@ ip addr add 127.0.0.1/32 dev lo
 
 ip link set dev lo up
 
+# Add a route to the default gateway
+ip route add default dev lo src 127.0.0.1
+
+# Verify routing table
+ip route show
+
+echo "nameserver 127.0.0.1" > /etc/resolv.conf
+
 # Add a hosts record, pointing target site calls to local loopback
-echo "127.0.0.1   api.openai.com" >> /etc/hosts
-echo "127.0.0.1   discord.com" >> /etc/hosts
-echo "127.0.0.1   api.galadriel.com" >> /etc/hosts
-echo "127.0.0.1   api.preplexity.ai" >> /etc/hosts
-echo "127.0.0.1   api.telegram.org" >> /etc/hosts
-echo "127.0.0.1   api.twitter.com" >> /etc/hosts
-echo "127.0.0.1   agents-memory-storage.s3.us-east-1.amazonaws.com" >> /etc/hosts
+
+# Setup forwarding
+/app/setup_forwarding.sh
 
 # Start the server
 echo "Starting enclave services"
