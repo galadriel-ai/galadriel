@@ -9,5 +9,8 @@ class WalletTool(Tool):
     """
 
     def __init__(self, *args, **kwargs):
-        self.wallet_repository = WalletRepository(os.getenv("SOLANA_KEY_PATH"))
+        key_path = os.getenv("SOLANA_KEY_PATH")
+        if not key_path:
+            raise ValueError("SOLANA_KEY_PATH environment variable is not set")
+        self.wallet_repository = WalletRepository(key_path)
         super().__init__(*args, **kwargs)

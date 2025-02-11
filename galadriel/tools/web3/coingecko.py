@@ -12,6 +12,8 @@ class CoingeckoTool(Tool):
 
     def __init__(self, *args, **kwargs):
         self.api_key = os.getenv("COINGECKO_API_KEY")
+        if not self.api_key:
+            raise ValueError("COINGECKO_API_KEY environment variable is not set")
         super().__init__(*args, **kwargs)
 
 
