@@ -15,5 +15,6 @@ data/
 __pycache__/
 .python-version
 .composio.lock
+.gradio
 
 dist

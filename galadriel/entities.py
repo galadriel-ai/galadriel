@@ -1,6 +1,5 @@
 import asyncio
 from typing import Dict
-from typing import List
 from typing import Optional
 
 from pydantic import BaseModel
@@ -22,14 +21,6 @@ class HumanMessage(Message):
 
 class AgentMessage(Message):
     type: str = "agent"
-
-
-class ShortTermMemory:
-    def get(self, conversation_id: str) -> List[Message]:
-        pass
-
-    def add(self, conversation_id: str, message: Message):
-        pass
 
 
 class PushOnlyQueue:

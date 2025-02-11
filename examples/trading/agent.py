@@ -15,6 +15,7 @@ from galadriel.tools.web3 import solana_tools as solana
 
 TRADING_INTERVAL_SECONDS = 300
 
+# Set up a complex trading prompt which explains the trading strategy
 TRADING_PROMPT = """
         You are an expert crypto trading advisor. Based on the user's portfolio, current market data, and trading patterns, your task is to suggest one of three actions for each token: Buy, Sell, or Hold. Follow these steps to determine the decision and execute the trade:
         1. Understand the user's position: Evaluate the current holdings of the user (e.g., Alice has 10 SOL).
@@ -39,6 +40,7 @@ model = LiteLLMModel(
     api_key=os.getenv("OPENAI_API_KEY"),
 )
 
+# Prepare a Web3 specific toolkit, relevant for the trading agent
 tools = [
     dexscreener.fetch_market_data,
     coingecko.GetCoinPriceTool(),
@@ -50,6 +52,7 @@ tools = [
     solana.update_user_balance,
 ]
 
+# Create a trading agent
 trading_agent = CodeAgent(
     prompt_template=TRADING_PROMPT,
     model=model,
@@ -58,10 +61,12 @@ trading_agent = CodeAgent(
     additional_authorized_imports=["json"],
 )
 
+# Set up the runtime
 runtime = AgentRuntime(
     inputs=[Cron(TRADING_INTERVAL_SECONDS)],
     outputs=[],
     agent=trading_agent,
 )
 
+# Run the agent
 asyncio.run(runtime.run())
