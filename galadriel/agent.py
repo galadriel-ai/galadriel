@@ -113,7 +113,7 @@ class AgentRuntime:
         agent: Agent,
         pricing: Optional[Pricing] = None,
         debug: bool = False,
-        disable_logs: bool = True,
+        disable_logs: bool = False,
     ):
         self.inputs = inputs
         self.outputs = outputs
