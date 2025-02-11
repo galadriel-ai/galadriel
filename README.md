@@ -1,183 +1,62 @@
-# Galadriel Agent
+# Galadriel
 
-## Setup
+Galadriel is a Python framework for building autonomous, economically useful AI Agents.
+
+## Quickstart
+Note: you should setup local env for this. In terminal
 ```shell
-python -m venv venv
+python3 -m venv venv
 source venv/bin/activate
-pip install -e ".[dev]"
-# or 
-pip install -e .
-
-cp template.env .env
-nano .env
 ```
 
-## Run an agent
-This takes the agent definition from `agents/daige.json`
+And then, install `galadriel` package.
 ```shell
-python main.py
-```
-Can also run in docker
-```shell
-docker compose up --build
+pip install galadriel
 ```
 
+Now, create a new python file and copy the code below to create sample agent.
+It uses `TestClient` which sends 2 messages sequentially to the agent and prints the result of agent execution.
 
-## Linting etc
-```shell
-source toolbox.sh
-lint
-format
-type-check
+```python
+import asyncio
+from galadriel import AgentRuntime, CodeAgent
+from galadriel.clients import SimpleMessageClient
+from galadriel.core_agent import LiteLLMModel, DuckDuckGoSearchTool
+
+model = LiteLLMModel(model_id="gpt-4o", api_key="<ADD YOUR OPENAI KEY HERE>")
+
+agent = CodeAgent(
+    model=model,
+    tools=[DuckDuckGoSearchTool()]
+)
+
+client = SimpleMessageClient("Explain the concept of blockchain")
+
+runtime = AgentRuntime(
+    agent=agent,
+    inputs=[client],
+    outputs=[client],
+)
+asyncio.run(runtime.run())
 ```
 
-## Testing
-Ensure that dev dependencies are installed
-```shell
-source toolbox.sh
-unit-test
-```
+## Components
 
+### Clients  
+Clients serve as the bridge between agents and external data sources, handling both input and output operations. An input client (`AgentInput`) supplies messages to the agent, while an output client (`AgentOutput`) delivers the agent’s responses to their intended destination. This modular design allows seamless integration with a variety of sources, from scheduled jobs (like cron tasks) to interactive applications (such as Discord bots).
 
-## Deployment
+### Tools  
+Tools extend an agent’s capabilities by providing predefined functions that enable interaction with external APIs, data sources, and systems. These tools empower agents to perform tasks such as fetching real-time weather updates or submitting blockchain transactions. Each tool defines its name, purpose, input requirements, and output format, ensuring structured and meaningful interactions. Galadriel supports any tool from HuggingFace, Composio and Langchain out-of-the-box.
 
-```shell
-./deploy.sh
-```
+### Agents  
+Agents are the core intelligence behind the system, capable of reasoning, processing inputs, and generating informed responses. Our framework supports ToolCallingAgent and CodeAgent, which build upon Hugging Face’s [Smolagents](https://github.com/huggingface/smolagents) while introducing enhancements for improved integration with the runtime. Agents leverage ReAct-based reasoning and can access a wide variety of LLMs via [LiteLLM](https://www.litellm.ai/). Additionally, they can be configured with custom personalities and interact with powerful tools to enhance their decision-making capabilities.
 
-## Before using CLI - IMPORTANT
+### Runtime  
+The Agent Runtime ensures continuous and autonomous agent execution. It manages the lifecycle of agent interactions, efficiently processing incoming requests while maintaining agent state. The runtime follows a structured execution loop:
 
-After running `galadriel agent init` you'll need:
-1.  to copy the `galadriel-agent` folder to the root of the project.
-2. add the following line to `docker-compose.yml`, inside the `volumes` section:
-    ```
-    - ./galadriel-agent:/home/appuser/galadriel-agent
-    ```
-explanation:
-- galadriel-agent is not yet a package, so we need to mount it as a volume inside the docker container.
-- this is a temporary solution until the package is published on pypi.
+1. **Receive a Message** – An input client sends a message to the runtime.
+2. **Process the Message** – The agent receives and handles the request.
+3. **Send the Response** – The agent's output is forwarded to the appropriate client.
+4. **Repeat** – The runtime continuously handles incoming messages in a loop.
 
-
-# Galadriel Agent CLI
-
-Command-line interface for creating, building, and managing Galadriel agents.
-
-## Commands
-
-### Initialize a New Agent
-Create a new agent project with all necessary files and structure.
-```
-galadriel agent init
-```
-This will prompt you for:
-- Agent name
-- Docker username
-- Docker password
-- Galadriel API key
-
-The command creates:
-- Basic agent structure
-- Docker configuration
-- Environment files
-- Required Python files
-
-### Build Agent
-Build the Docker image for your agent.
-```
-galadriel agent build [--image-name NAME]
-```
-Options:
-- `--image-name`: Name for the Docker image (default: "agent")
-
-### Publish Agent
-Push the agent's Docker image to Docker Hub.
-```
-galadriel agent publish [--image-name NAME]
-```
-Options:
-- `--image-name`: Name for the Docker image (default: "agent")
-
-### Deploy Agent
-Deploy the agent to the Galadriel platform.
-```
-galadriel agent deploy [--image-name NAME]
-```
-Options:
-- `--image-name`: Name for the Docker image (default: "agent")
-
-### Update Agent
-Update an existing agent on the Galadriel platform.
-```
-galadriel agent update [--image-name NAME] [--agent-id AGENT_ID]
-```
-Options:
-- `--image-name`: Name for the Docker image (default: "agent")
-- `--agent-id`: ID of the agent to update
-
-### Get Agent State
-Retrieve the current state of a deployed agent.
-```
-galadriel agent state --agent-id AGENT_ID
-```
-Required:
-- `--agent-id`: ID of the deployed agent
-
-### List All Agents
-Get information about all deployed agents.
-```
-galadriel agent states
-```
-
-### Destroy Agent
-Remove a deployed agent from the Galadriel platform.
-```
-galadriel agent destroy AGENT_ID
-```
-Required:
-- `AGENT_ID`: ID of the agent to destroy
-
-## Configuration Files
-
-### .env
-Required environment variables for deployment:
-```
-DOCKER_USERNAME=your_username
-DOCKER_PASSWORD=your_password
-GALADRIEL_API_KEY=your_api_key
-```
-
-### .agents.env
-Environment variables for the agent runtime (do not include deployment credentials):
-```
-# Example
-OPENAI_API_KEY=your_key
-DATABASE_URL=your_url
-```
-
-## Examples
-
-Create and deploy a new agent:
-```
-# Initialize new agent
-galadriel init
-
-# Build and deploy
-galadriel deploy --image-name my-agent
-
-# Check agent status
-galadriel state --agent-id your-agent-id
-```
-
-## Error Handling
-
-- All commands will display detailed error messages if something goes wrong
-- Check your `.env` and `.agents.env` files if you encounter authentication issues
-- Ensure Docker is running before using build/publish commands
-- Verify your Galadriel API key is valid for deployment operations
-
-## Notes
-
-- Make sure Docker is installed and running for build/publish operations
-- Ensure you have necessary permissions on Docker Hub
-- Keep your API keys and credentials secure
-- Don't include sensitive credentials in `.agents.env`
+This architecture enables real-time, scalable, and efficient agent operations across diverse environments.

@@ -1,5 +1,5 @@
 function lint {
-  pylint --rcfile=setup.cfg galadriel_agent/*
+  pylint --rcfile=setup.cfg galadriel/*
 }
 
 function format {
@@ -7,7 +7,7 @@ function format {
 }
 
 function type-check {
-  mypy galadriel_agent
+  mypy galadriel
 }
 
 function unit-test {
@@ -19,5 +19,5 @@ function cov {
     --cov-report html:tests/reports/coverage/htmlcov \
     --cov-report xml:tests/reports/coverage/cobertura-coverage.xml \
     --cov-report term \
-    --cov=galadriel_agent
+    --cov=galadriel
 }

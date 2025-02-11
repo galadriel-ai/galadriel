@@ -1,9 +1,0 @@
-{
-    "name": "Task Agent",
-    "description": "Conducts research on a single or list of tokens provided by the user",
-    "pricing": {
-      "cost": "0.001",
-      "token": "SOL",
-      "wallet_address": "0xSolana"
-    }
-  }

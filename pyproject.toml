@@ -1,14 +1,18 @@
 [tool.poetry]
-name = "galadriel_agent"
-version = "0.0.1"
+name = "galadriel"
+version = "0.0.6"
 description = ""
 authors = [
     "Kaspar Peterson <kaspar@galadriel.com>",
     "Kristjan Peterson <kristjan@galadriel.com>",
     "Krešimir Grofelnik <kresimir@galadriel.com>",
     "Isaac Reis <isaac@galadriel.com>",
+    "Maciej Witowski <maciej@galadriel.com>",
+    "Han Zhao <han@galadriel.com>",
 ]
 readme = "README.md"
+
+packages = [{ include = "galadriel" }]
 
 [tool.poetry.dependencies]
 python = "^3.10"
@@ -23,31 +27,39 @@ aiofiles = "^22.0.0"
 rich = "^13.9.4"
 boto3 = "^1.35.0"
 python-json-logger = "^2.0.7"
-smolagents = "^1.2.2"
+smolagents = "^1.6.0"
+composio-langchain = "^0.6.19"
+langchain-community = "^0.3.16"
 types-aiofiles = "^24.1.0.20241221"
 "discord.py" = "^2.4.0"
 pyTelegramBotAPI = "^4.26.0"
-litellm = {version = "^1.58.2", optional = true}
+solana = "^0.35.0"
+solders = "^0.21.0,<0.24.0"
+jupiter-python-sdk =  "^0.0.2.0"
+litellm = {version = "^1.58.2"}
+audioop-lts = { version = "^0.2.1", python = "^3.13" }
 black = { version = "^24.8.0", optional = true }
 mypy = { version = "^1.11.2", optional = true }
+py = { version = "^1.11.0", optional = true }
 pylint = { version = "^3.2.7", optional = true }
 pytest = { version = "^8.3.2", optional = true }
 pytest-asyncio = { version = "0.24.0", optional = true }
 pytest-mock = { version = "^3.14.0", optional = true }
 pytest-cov = { version = "^5.0.0", optional = true }
+pytest-xprocess = { version = "^0.18.0", optional = true }
 twine = { version = "^5.1.1", optional = true }
 build = { version = "^1.2.2", optional = true }
 types-requests = { version = "^2.32.0.20241016", optional = true }
 
 [tool.poetry.extras]
-dev = ["black", "mypy", "pylint", "pytest", "pytest-asyncio", "pytest-mock", "twine", "build", "litellm", "types-requests"]
+dev = ["black", "mypy", "pylint", "pytest", "pytest-asyncio", "pytest-mock", "pytest-xprocess", "twine", "build", "types-requests"]
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.scripts]
-galadriel = "galadriel_agent.cli:galadriel"
+galadriel = "galadriel.cli:galadriel"
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

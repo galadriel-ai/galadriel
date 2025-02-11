@@ -1,4 +1,5 @@
--e ../../. # Install dependencies from pyproject.toml in galadriel-agent
+-e ../../. # Install dependencies from pyproject.toml in galadriel
 
-litellm
-smolagents
+jupiter-python-sdk
+solana
+solders
