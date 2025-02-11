@@ -113,7 +113,7 @@ class AgentRuntime:
         agent: Agent,
         pricing: Optional[Pricing] = None,
         debug: bool = False,
-        disable_logs: bool = False,
+        enable_logs: bool = False,
     ):
         self.inputs = inputs
         self.outputs = outputs
@@ -121,12 +121,12 @@ class AgentRuntime:
         self.pricing = pricing
         self.spent_payments: Set[str] = set()
         self.debug = debug
-        self.disable_logs = disable_logs
+        self.enable_logs = enable_logs
 
         env_path = Path(".") / ".env"
         _load_dotenv(dotenv_path=env_path)
         # AgentConfig should have some settings for debug?
-        if not self.disable_logs:
+        if self.enable_logs:
             init_logging(self.debug)
 
     async def run(self):
@@ -154,7 +154,7 @@ class AgentRuntime:
         if not response:
             # Run the agent if no errors occurred so far
             response = await self.agent.execute(request)
-            if self.debug and not self.disable_logs:
+            if self.debug and self.enable_logs:
                 memory = await self._get_memory()
                 logger.info(f"Current agent memory: {pformat(memory)}")
         if response:
