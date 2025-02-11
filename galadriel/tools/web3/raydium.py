@@ -180,8 +180,15 @@ class BuyTokenWithSolTool(WalletTool):
     name = "buy_token_with_sol"
     description = "Buy a token with SOL using the Raydium AMM V4."
     inputs = {
-        "pair_address": {"type": "string", "description": "The address of the AMM V4 pair"},
-        "sol_in": {"type": "number", "description": "The amount of SOL to swap", "default": 0.01},
+        "pair_address": {
+            "type": "string",
+            "description": "The address of the AMM V4 pair",
+        },
+        "sol_in": {
+            "type": "number",
+            "description": "The amount of SOL to swap",
+            "default": 0.01,
+        },
         "slippage": {
             "type": "integer",
             "description": "The slippage tolerance percentage",
@@ -190,7 +197,9 @@ class BuyTokenWithSolTool(WalletTool):
     }
     output_type = "string"
 
-    def forward(self, pair_address: str, sol_in: float = 0.01, slippage: int = 5) -> str:
+    def forward(
+        self, pair_address: str, sol_in: float = 0.01, slippage: int = 5
+    ) -> str:
         payer_keypair = self.wallet_repository.get_wallet()
         result = buy(payer_keypair, pair_address, sol_in, slippage)
         return result
@@ -200,7 +209,10 @@ class SellTokenForSolTool(WalletTool):
     name = "sell_token_for_sol"
     description = "Sell a token for SOL using the Raydium AMM V4."
     inputs = {
-        "pair_address": {"type": "string", "description": "The address of the AMM V4 pair"},
+        "pair_address": {
+            "type": "string",
+            "description": "The address of the AMM V4 pair",
+        },
         "percentage": {
             "type": "integer",
             "description": "The percentage of token to sell",
@@ -214,7 +226,9 @@ class SellTokenForSolTool(WalletTool):
     }
     output_type = "string"
 
-    def forward(self, pair_address: str, percentage: int = 100, slippage: int = 5) -> str:
+    def forward(
+        self, pair_address: str, percentage: int = 100, slippage: int = 5
+    ) -> str:
         payer_keypair = self.wallet_repository.get_wallet()
         result = sell(payer_keypair, pair_address, percentage, slippage)
         return result
@@ -482,15 +496,23 @@ def fetch_amm_v4_pool_keys(pair_address: str) -> Optional[AmmV4PoolKeys]:
 
     try:
         amm_id = Pubkey.from_string(pair_address)
-        amm_data = client.get_account_info_json_parsed(amm_id, commitment=Processed).value.data
+        amm_data = client.get_account_info_json_parsed(
+            amm_id, commitment=Processed
+        ).value.data
         amm_data_decoded = LIQUIDITY_STATE_LAYOUT_V4.parse(amm_data)
         marketId = Pubkey.from_bytes(amm_data_decoded.serumMarket)
-        marketInfo = client.get_account_info_json_parsed(marketId, commitment=Processed).value.data
+        marketInfo = client.get_account_info_json_parsed(
+            marketId, commitment=Processed
+        ).value.data
         market_decoded = MARKET_STATE_LAYOUT_V3.parse(marketInfo)
         vault_signer_nonce = market_decoded.vault_signer_nonce
 
-        ray_authority_v4 = Pubkey.from_string("5Q544fKrFoe6tsEbD7S8EmxGTJYAKtTVhAW5Q5pge4j1")
-        open_book_program = Pubkey.from_string("srmqPvymJeFKQ4zGQed1GFppgkRHL9kaELCbyksJtPX")
+        ray_authority_v4 = Pubkey.from_string(
+            "5Q544fKrFoe6tsEbD7S8EmxGTJYAKtTVhAW5Q5pge4j1"
+        )
+        open_book_program = Pubkey.from_string(
+            "srmqPvymJeFKQ4zGQed1GFppgkRHL9kaELCbyksJtPX"
+        )
 
         pool_keys = AmmV4PoolKeys(
             amm_id=amm_id,
@@ -541,8 +563,12 @@ def get_amm_v4_reserves(pool_keys: AmmV4PoolKeys) -> tuple:
         quote_account = balances[0]
         base_account = balances[1]
 
-        quote_account_balance = quote_account.data.parsed["info"]["tokenAmount"]["uiAmount"]
-        base_account_balance = base_account.data.parsed["info"]["tokenAmount"]["uiAmount"]
+        quote_account_balance = quote_account.data.parsed["info"]["tokenAmount"][
+            "uiAmount"
+        ]
+        base_account_balance = base_account.data.parsed["info"]["tokenAmount"][
+            "uiAmount"
+        ]
 
         if quote_account_balance is None or base_account_balance is None:
             logger.error("Error: One of the account balances is None.")
@@ -579,21 +605,35 @@ def make_amm_v4_swap_instruction(
     try:
 
         keys = [
-            AccountMeta(pubkey=accounts.token_program_id, is_signer=False, is_writable=False),
+            AccountMeta(
+                pubkey=accounts.token_program_id, is_signer=False, is_writable=False
+            ),
             AccountMeta(pubkey=accounts.amm_id, is_signer=False, is_writable=True),
-            AccountMeta(pubkey=accounts.ray_authority_v4, is_signer=False, is_writable=False),
+            AccountMeta(
+                pubkey=accounts.ray_authority_v4, is_signer=False, is_writable=False
+            ),
             AccountMeta(pubkey=accounts.open_orders, is_signer=False, is_writable=True),
-            AccountMeta(pubkey=accounts.target_orders, is_signer=False, is_writable=True),
+            AccountMeta(
+                pubkey=accounts.target_orders, is_signer=False, is_writable=True
+            ),
             AccountMeta(pubkey=accounts.base_vault, is_signer=False, is_writable=True),
             AccountMeta(pubkey=accounts.quote_vault, is_signer=False, is_writable=True),
-            AccountMeta(pubkey=accounts.open_book_program, is_signer=False, is_writable=False),
+            AccountMeta(
+                pubkey=accounts.open_book_program, is_signer=False, is_writable=False
+            ),
             AccountMeta(pubkey=accounts.market_id, is_signer=False, is_writable=True),
             AccountMeta(pubkey=accounts.bids, is_signer=False, is_writable=True),
             AccountMeta(pubkey=accounts.asks, is_signer=False, is_writable=True),
             AccountMeta(pubkey=accounts.event_queue, is_signer=False, is_writable=True),
-            AccountMeta(pubkey=accounts.market_base_vault, is_signer=False, is_writable=True),
-            AccountMeta(pubkey=accounts.market_quote_vault, is_signer=False, is_writable=True),
-            AccountMeta(pubkey=accounts.market_authority, is_signer=False, is_writable=False),
+            AccountMeta(
+                pubkey=accounts.market_base_vault, is_signer=False, is_writable=True
+            ),
+            AccountMeta(
+                pubkey=accounts.market_quote_vault, is_signer=False, is_writable=True
+            ),
+            AccountMeta(
+                pubkey=accounts.market_authority, is_signer=False, is_writable=False
+            ),
             AccountMeta(pubkey=token_account_in, is_signer=False, is_writable=True),
             AccountMeta(pubkey=token_account_out, is_signer=False, is_writable=True),
             AccountMeta(pubkey=owner, is_signer=True, is_writable=False),
@@ -622,13 +662,17 @@ def get_token_balance(pubkey: Pubkey, mint_str: str) -> float | None:
     if response.value:
         accounts = response.value
         if accounts:
-            token_amount = accounts[0].account.data.parsed["info"]["tokenAmount"]["uiAmount"]
+            token_amount = accounts[0].account.data.parsed["info"]["tokenAmount"][
+                "uiAmount"
+            ]
             if token_amount:
                 return float(token_amount)
     return None
 
 
-def confirm_txn(txn_sig: Signature, max_retries: int = 20, retry_interval: int = 3) -> bool:
+def confirm_txn(
+    txn_sig: Signature, max_retries: int = 20, retry_interval: int = 3
+) -> bool:
     retries = 1
 
     while retries < max_retries:
@@ -663,4 +707,6 @@ def confirm_txn(txn_sig: Signature, max_retries: int = 20, retry_interval: int =
 if __name__ == "__main__":
     # buy_token
     buy_token_with_sol_tool = BuyTokenWithSolTool()
-    buy_token_with_sol_tool.forward("HWy1jotHpo6UqeQxx49dpYYdQB8wj9Qk9MdxwjLvDHB8", 0.01, 5)
+    buy_token_with_sol_tool.forward(
+        "HWy1jotHpo6UqeQxx49dpYYdQB8wj9Qk9MdxwjLvDHB8", 0.01, 5
+    )

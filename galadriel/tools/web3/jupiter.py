@@ -40,14 +40,19 @@ class SwapTokenTool(WalletTool):
     name = "swap_token"
     description = "Swaps one token for another in the user's portfolio."
     inputs = {
-        "user_address": {"type": "string", "description": "The solana address of the user"},
+        "user_address": {
+            "type": "string",
+            "description": "The solana address of the user",
+        },
         "token1": {"type": "string", "description": "The address of the token to sell"},
         "token2": {"type": "string", "description": "The address of the token to buy"},
         "amount": {"type": "number", "description": "The amount of token1 to swap"},
     }
     output_type = "string"
 
-    def forward(self, user_address: str, token1: str, token2: str, amount: float) -> str:
+    def forward(
+        self, user_address: str, token1: str, token2: str, amount: float
+    ) -> str:
         wallet = self.wallet_repository.get_wallet()
 
         result = asyncio.run(swap(wallet, user_address, token1, token2, amount))

@@ -44,7 +44,9 @@ class GetCoinPriceTool(CoingeckoTool):
 
 class GetCoinHistoricalDataTool(CoingeckoTool):
     name = "get_coin_historical_data"
-    description = "This is a tool that returns the historical data of given crypto token."
+    description = (
+        "This is a tool that returns the historical data of given crypto token."
+    )
     inputs = {
         "task": {
             "type": "string",
@@ -72,12 +74,18 @@ class GetCoinHistoricalDataTool(CoingeckoTool):
 class FetchTrendingCoinsTool(CoingeckoTool):
     name = "fetch_trending_coins"
     description = "This is a tool that returns the trending coins on coingecko."
-    inputs = {"dummy": {"type": "string", "description": "Dummy argument to make the tool work"}}
+    inputs = {
+        "dummy": {
+            "type": "string",
+            "description": "Dummy argument to make the tool work",
+        }
+    }
     output_type = "string"
 
     def forward(self, dummy: str) -> str:
         response = call_coingecko_api(
-            api_key=self.api_key, request="https://api.coingecko.com/api/v3/search/trending"
+            api_key=self.api_key,
+            request="https://api.coingecko.com/api/v3/search/trending",
         )
         data = response.json()
         return data
