@@ -22,6 +22,8 @@ from spl.token.constants import TOKEN_PROGRAM_ID
 
 from jupiter_python_sdk.jupiter import Jupiter
 
+from galadriel.tools.web3.wallet_tool import WalletTool
+
 
 SOLANA_API_URL = "https://api.mainnet-beta.solana.com"
 
@@ -34,28 +36,28 @@ JUPITER_QUERY_ORDER_HISTORY_API_URL = "https://jup.ag/api/limit/v1/orderHistory"
 JUPITER_QUERY_TRADE_HISTORY_API_URL = "https://jup.ag/api/limit/v1/tradeHistory"
 
 
-@tool
-def swap_token(user_address: str, token1: str, token2: str, amount: float) -> str:
-    """
-    Swaps one token for another in the user's portfolio.
+class SwapTokenTool(WalletTool):
+    name = "swap_token"
+    description = "Swaps one token for another in the user's portfolio."
+    inputs = {
+        "user_address": {
+            "type": "string",
+            "description": "The solana address of the user",
+        },
+        "token1": {"type": "string", "description": "The address of the token to sell"},
+        "token2": {"type": "string", "description": "The address of the token to buy"},
+        "amount": {"type": "number", "description": "The amount of token1 to swap"},
+    }
+    output_type = "string"
 
-    Args:
-        user_address: The solana address of the user.
-        token1: The address of the token to sell.
-        token2: The address of the token to buy.
-        amount: The amount of token1 to swap.
+    def forward(
+        self, user_address: str, token1: str, token2: str, amount: float
+    ) -> str:
+        wallet = self.wallet_repository.get_wallet()
 
-    Returns:
-        A message indicating the result of the swap.
-    """
+        result = asyncio.run(swap(wallet, user_address, token1, token2, amount))
 
-    wallet_repository = WalletRepository(os.getenv("SOLANA_KEY_PATH"))
-
-    result = asyncio.run(
-        swap(wallet_repository.get_wallet(), user_address, token1, token2, amount)
-    )
-
-    return f"Successfully swapped {amount} {token1} for {token2}, tx sig: {result}."
+        return f"Successfully swapped {amount} {token1} for {token2}, tx sig: {result}."
 
 
 async def swap(

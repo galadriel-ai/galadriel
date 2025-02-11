@@ -3,3 +3,4 @@
 jupiter-python-sdk
 solana
 solders
+gradio
