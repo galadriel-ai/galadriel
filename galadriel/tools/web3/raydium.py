@@ -45,6 +45,9 @@ from construct import (
     BytesInteger,
 )
 from construct import Struct as cStruct
+import logging
+
+logger = logging.getLogger(__name__)
 
 UNIT_BUDGET = 150_000
 UNIT_PRICE = 1_000_000
@@ -173,7 +176,6 @@ class AmmV4PoolKeys:
     token_program_id: Pubkey
 
 
-@tool
 class BuyTokenWithSolTool(WalletTool):
     name = "buy_token_with_sol"
     description = "Buy a token with SOL using the Raydium AMM V4."
@@ -272,7 +274,7 @@ def fetch_amm_v4_pool_keys(pair_address: str) -> Optional[AmmV4PoolKeys]:
 
         return pool_keys
     except Exception as e:
-        print(f"Error fetching pool keys: {e}")
+        logger.error(f"Error fetching pool keys: {e}")
         return None
 
 
@@ -302,7 +304,7 @@ def get_amm_v4_reserves(pool_keys: AmmV4PoolKeys) -> tuple:
         ]
 
         if quote_account_balance is None or base_account_balance is None:
-            print("Error: One of the account balances is None.")
+            logger.error("Error: One of the account balances is None.")
             return None, None, None
 
         if base_mint == WSOL:
@@ -314,14 +316,14 @@ def get_amm_v4_reserves(pool_keys: AmmV4PoolKeys) -> tuple:
             quote_reserve = quote_account_balance
             token_decimal = base_decimal
 
-        print(f"Base Mint: {base_mint} | Quote Mint: {quote_mint}")
-        print(
+        logger.info(f"Base Mint: {base_mint} | Quote Mint: {quote_mint}")
+        logger.info(
             f"Base Reserve: {base_reserve} | Quote Reserve: {quote_reserve} | Token Decimal: {token_decimal}"
         )
         return base_reserve, quote_reserve, token_decimal
 
     except Exception as e:
-        print(f"Error occurred: {e}")
+        logger.error(f"Error occurred: {e}")
         return None, None, None
 
 
@@ -379,7 +381,7 @@ def make_amm_v4_swap_instruction(
 
         return swap_instruction
     except Exception as e:
-        print(f"Error occurred: {e}")
+        logger.error(f"Error occurred: {e}")
         return None
 
 
@@ -418,19 +420,19 @@ def confirm_txn(
             txn_json = json.loads(txn_res.value.transaction.meta.to_json())
 
             if txn_json["err"] is None:
-                print("Transaction confirmed... try count:", retries)
+                logger.info("Transaction confirmed... try count:", retries)
                 return True
 
-            print("Error: Transaction not confirmed. Retrying...")
+            logger.error("Error: Transaction not confirmed. Retrying...")
             if txn_json["err"]:
-                print("Transaction failed.")
+                logger.error("Transaction failed.")
                 return False
         except Exception as e:
-            print("Awaiting confirmation... try count:", retries)
+            logger.info("Awaiting confirmation... try count:", retries)
             retries += 1
             time.sleep(retry_interval)
 
-    print("Max retries reached. Transaction confirmation failed.")
+    logger.error("Max retries reached. Transaction confirmation failed.")
     return None
 
 
