@@ -11,7 +11,7 @@ from galadriel.clients import Cron
 from galadriel.tools.web3 import dexscreener
 from galadriel.tools.web3 import coingecko
 from galadriel.tools.web3 import jupiter
-from galadriel.tools.web3 import solana
+from galadriel.tools.web3 import solana_tools as solana
 
 TRADING_INTERVAL_SECONDS = 300
 
@@ -41,13 +41,13 @@ model = LiteLLMModel(
 
 tools = [
     dexscreener.fetch_market_data,
-    coingecko.get_coin_price,
-    coingecko.get_coin_historical_data,
-    coingecko.fetch_trending_coins,
+    coingecko.GetCoinPriceTool(),
+    coingecko.GetCoinHistoricalDataTool(),
+    coingecko.FetchTrendingCoinsTool(),
+    jupiter.SwapTokenTool(),
     solana.get_all_portfolios,
     solana.get_user_balance,
     solana.update_user_balance,
-    jupiter.swap_token,
 ]
 
 trading_agent = CodeAgent(

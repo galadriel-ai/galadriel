@@ -270,13 +270,13 @@ def import_wallet(private_key: str, path: str):
         os.makedirs(os.path.dirname(DEFAULT_SOLANA_KEY_PATH), exist_ok=True)
         with open(DEFAULT_SOLANA_KEY_PATH, "w") as file:
             file.write(private_key)
-        _update_agent_env_file({"SOLANA_PRIVATE_KEY_PATH": DEFAULT_SOLANA_KEY_PATH})
+        _update_agent_env_file({"SOLANA_KEY_PATH": DEFAULT_SOLANA_KEY_PATH})
 
         click.echo(f"Successfully imported Solana wallet from private key")
     elif path:
         if not os.path.exists(path):
             raise click.ClickException(f"File {path} does not exist")
-        _update_agent_env_file({"SOLANA_PRIVATE_KEY_PATH": path})
+        _update_agent_env_file({"SOLANA_KEY_PATH": path})
 
         click.echo(f"Successfully imported Solana wallet from {path}")
 
@@ -622,7 +622,7 @@ def _create_solana_wallet(path: str) -> str:
         raise click.ClickException(f"File {path} already exists")
 
     # Update the .agents.env file with the new wallet path
-    _update_agent_env_file({"SOLANA_PRIVATE_KEY_PATH": path})
+    _update_agent_env_file({"SOLANA_KEY_PATH": path})
 
     keypair = Keypair()
     private_key_json = keypair.to_json()

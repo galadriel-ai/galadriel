@@ -31,17 +31,7 @@ from spl.token.instructions import (
 
 from galadriel.core_agent import tool
 from galadriel.repository.wallet_repository import WalletRepository
-
-UNIT_BUDGET = 150_000
-UNIT_PRICE = 1_000_000
-
-RAYDIUM_AMM_V4 = Pubkey.from_string("HWy1jotHpo6UqeQxx49dpYYdQB8wj9Qk9MdxwjLvDHB8")
-TOKEN_PROGRAM_ID = Pubkey.from_string("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA")
-ACCOUNT_LAYOUT_LEN = 165
-WSOL = Pubkey.from_string("So11111111111111111111111111111111111111112")
-SOL_DECIMAL = 1e9
-
-client = Client("https://api.devnet.solana.com")  # type: ignore
+from galadriel.tools.web3.wallet_tool import WalletTool
 
 from construct import (
     Bytes,
@@ -55,6 +45,17 @@ from construct import (
     BytesInteger,
 )
 from construct import Struct as cStruct
+
+UNIT_BUDGET = 150_000
+UNIT_PRICE = 1_000_000
+
+RAYDIUM_AMM_V4 = Pubkey.from_string("HWy1jotHpo6UqeQxx49dpYYdQB8wj9Qk9MdxwjLvDHB8")
+TOKEN_PROGRAM_ID = Pubkey.from_string("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA")
+ACCOUNT_LAYOUT_LEN = 165
+WSOL = Pubkey.from_string("So11111111111111111111111111111111111111112")
+SOL_DECIMAL = 1e9
+
+client = Client("https://api.devnet.solana.com")  # type: ignore
 
 LIQUIDITY_STATE_LAYOUT_V4 = cStruct(
     "status" / Int64ul,
@@ -173,41 +174,48 @@ class AmmV4PoolKeys:
 
 
 @tool
-def buy_token_with_sol(
-    pair_address: str, sol_in: float = 0.01, slippage: int = 5
-) -> str:
-    """
-    Buy a token with SOL using the Raydium AMM V4.
-    Args:
-        pair_address: The address of the AMM V4 pair.
-        sol_in: The amount of SOL to swap.
-        slippage: The slippage tolerance percentage.
-    Returns:
-        str: A message indicating the result of the transaction.
-    """
-    wallet_repository = WalletRepository(os.getenv("SOLANA_KEY_PATH"))
-    payer_keypair = wallet_repository.get_wallet()
-    result = buy(payer_keypair, pair_address, sol_in, slippage)
-    return result
+class BuyTokenWithSolTool(WalletTool):
+    name = "buy_token_with_sol"
+    description = "Buy a token with SOL using the Raydium AMM V4."
+    inputs = {
+        "pair_address": {"type": "string", "description": "The address of the AMM V4 pair"},
+        "sol_in": {"type": "number", "description": "The amount of SOL to swap", "default": 0.01},
+        "slippage": {
+            "type": "integer",
+            "description": "The slippage tolerance percentage",
+            "default": 5,
+        },
+    }
+    output_type = "string"
+
+    def forward(self, pair_address: str, sol_in: float = 0.01, slippage: int = 5) -> str:
+        payer_keypair = self.wallet_repository.get_wallet()
+        result = buy(payer_keypair, pair_address, sol_in, slippage)
+        return result
 
 
-@tool
-def sell_token_for_sol(
-    pair_address: str, percentage: int = 100, slippage: int = 5
-) -> str:
-    """
-    Sell a token for SOL using the Raydium AMM V4.
-    Args:
-        pair_address: The address of the AMM V4 pair.
-        percentage: The percentage of token to sell.
-        slippage: The slippage tolerance percentage.
-    Returns:
-        str: A message indicating the result of the transaction.
-    """
-    wallet_repository = WalletRepository(os.getenv("SOLANA_KEY_PATH"))
-    payer_keypair = wallet_repository.get_wallet()
-    result = sell(payer_keypair, pair_address, percentage, slippage)
-    return result
+class SellTokenForSolTool(WalletTool):
+    name = "sell_token_for_sol"
+    description = "Sell a token for SOL using the Raydium AMM V4."
+    inputs = {
+        "pair_address": {"type": "string", "description": "The address of the AMM V4 pair"},
+        "percentage": {
+            "type": "integer",
+            "description": "The percentage of token to sell",
+            "default": 100,
+        },
+        "slippage": {
+            "type": "integer",
+            "description": "The slippage tolerance percentage",
+            "default": 5,
+        },
+    }
+    output_type = "string"
+
+    def forward(self, pair_address: str, percentage: int = 100, slippage: int = 5) -> str:
+        payer_keypair = self.wallet_repository.get_wallet()
+        result = sell(payer_keypair, pair_address, percentage, slippage)
+        return result
 
 
 def fetch_amm_v4_pool_keys(pair_address: str) -> Optional[AmmV4PoolKeys]:
@@ -682,4 +690,5 @@ def tokens_for_sol(
 # main function to run the code
 if __name__ == "__main__":
     # buy_token
-    buy_token_with_sol("HWy1jotHpo6UqeQxx49dpYYdQB8wj9Qk9MdxwjLvDHB8", 0.01, 5)
+    buy_token_with_sol_tool = BuyTokenWithSolTool()
+    buy_token_with_sol_tool.forward("HWy1jotHpo6UqeQxx49dpYYdQB8wj9Qk9MdxwjLvDHB8", 0.01, 5)
