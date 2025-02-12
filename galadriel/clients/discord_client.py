@@ -26,6 +26,7 @@ class DiscordClient(commands.Bot, AgentInput, AgentOutput):
     """
 
     CONVERSATION_ID_PREFIX = "discord_"
+    _is_bot_started = False
 
     def __init__(self, guild_id: str, logger: Optional[logging.Logger] = None):
         """Initialize the Discord client.
@@ -44,6 +45,11 @@ class DiscordClient(commands.Bot, AgentInput, AgentOutput):
         self.message_queue: Optional[PushOnlyQueue] = None
         self.guild_id = guild_id
         self.logger = logger or logging.getLogger("discord_client")
+
+    async def ensure_bot_is_started(self) -> None:
+        if not self._is_bot_started:
+            await super().start(os.getenv("DISCORD_TOKEN", ""))
+            self._is_bot_started = True
 
     async def on_ready(self):
         """Event handler called when the bot successfully connects to Discord.
@@ -113,8 +119,9 @@ class DiscordClient(commands.Bot, AgentInput, AgentOutput):
         Note:
             Requires DISCORD_TOKEN environment variable to be set
         """
+        await self.ensure_bot_is_started()
         self.message_queue = queue
-        await super().start(os.getenv("DISCORD_TOKEN", ""))
+
 
     async def send(self, request: Message, response: Message) -> None:
         """Send a response message to the appropriate Discord channel.
@@ -127,6 +134,8 @@ class DiscordClient(commands.Bot, AgentInput, AgentOutput):
             ValueError: If the response's conversation_id is None
             Exception: If message sending fails
         """
+        await self.ensure_bot_is_started()
+
         should_respond = (
                 response.conversation_id
                 and response.conversation_id.startswith(self.CONVERSATION_ID_PREFIX)
