@@ -123,6 +123,7 @@ class DiscordClient(commands.Bot, AgentInput, AgentOutput):
         self.message_queue = queue
 
 
+    # TODO Enable some way of setting up "default output channel" for Discord (i.e based on input from other clients, always post to this channel))
     async def send(self, request: Message, response: Message) -> None:
         """Send a response message to the appropriate Discord channel.
 
