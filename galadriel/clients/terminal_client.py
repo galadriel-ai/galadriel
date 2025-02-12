@@ -1,6 +1,5 @@
 import asyncio
 from typing import Optional
-import sys
 import logging
 from datetime import datetime
 
@@ -10,7 +9,7 @@ from galadriel.entities import Message, PushOnlyQueue, HumanMessage
 
 class TerminalClient(AgentInput, AgentOutput):
     def __init__(self, logger: Optional[logging.Logger] = None):
-        self.message_queue = None
+        self.message_queue: Optional[PushOnlyQueue] = None
         self.logger = logger or logging.getLogger("terminal_client")
         self.conversation_id = "terminal"  # Single conversation ID for terminal
 
@@ -41,8 +40,8 @@ class TerminalClient(AgentInput, AgentOutput):
                     content=user_input,
                     conversation_id=self.conversation_id,
                     additional_kwargs={
-                        "author": "user",
-                        "message_id": "1",
+                        "author": "user_terminal",
+                        "message_id": "terminal",
                         "timestamp": str(datetime.now().isoformat()),
                     },
                 )

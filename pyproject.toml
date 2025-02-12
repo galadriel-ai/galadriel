@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "galadriel"
-version = "0.0.8"
+version = "0.0.9"
 description = ""
 authors = [
     "Kaspar Peterson <kaspar@galadriel.com>",
@@ -62,5 +62,33 @@ build-backend = "poetry.core.masonry.api"
 [tool.poetry.scripts]
 galadriel = "galadriel.cli:galadriel"
 
+[tool.black]
+line-length = 120
+
+[tool.mypy]
+ignore_missing_imports = true
+
+[tool.pylint]
+max-line-length = 120
+ignore = ["docker-compose.yml", "*.yaml", "*.json", "*.md"]
+ignore-patterns = ["^\\."]  # Ignore hidden files/directories
+disable = [
+    "missing-docstring",
+    "missing-module-docstring",
+    "missing-class-docstring",
+    "too-many-instance-attributes",
+    "raise-missing-from",
+    "fixme",
+    "broad-exception-caught",
+    "logging-fstring-interpolation",
+    "too-few-public-methods",
+    "logging-too-many-args",
+    "no-member"
+]
+max-args = 7
+const-rgx = "([A-Z_][A-Z0-9_]*)$"
+
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
+testpaths = ["tests"]
+python_files = ["test_*.py"]

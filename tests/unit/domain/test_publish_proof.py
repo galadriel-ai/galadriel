@@ -58,4 +58,5 @@ def test_execute_calls_endpoint():
                 "signature": "TODO:",
             }
         ),
+        timeout=30,
     )

@@ -4,8 +4,8 @@ from typing import Optional
 from typing import Set
 
 from solana.rpc.api import Client
-from solders.pubkey import Pubkey
-from solders.signature import Signature
+from solders.pubkey import Pubkey  # pylint: disable=E0401
+from solders.signature import Signature  # pylint: disable=E0401
 
 from galadriel.entities import Message
 from galadriel.entities import Pricing
@@ -18,9 +18,7 @@ class TaskAndPaymentSignature:
     signature: str
 
 
-def execute(
-    pricing: Pricing, existing_payments: Set[str], request: Message
-) -> TaskAndPaymentSignature:
+def execute(pricing: Pricing, existing_payments: Set[str], request: Message) -> TaskAndPaymentSignature:
     """Validate the payment for the request.
     Args:
         request: The message containing the transaction signature
@@ -50,23 +48,21 @@ def execute(
 def _validate_solana_payment(pricing: Pricing, tx_signature: str) -> bool:
     http_client = Client("https://api.mainnet-beta.solana.com")
     tx_sig = Signature.from_string(tx_signature)
-    tx_info = http_client.get_transaction(
-        tx_sig=tx_sig, max_supported_transaction_version=10
-    )
+    tx_info = http_client.get_transaction(tx_sig=tx_sig, max_supported_transaction_version=10)
     if not tx_info.value:
         return False
     transaction = tx_info.value.transaction.transaction  # The actual transaction
-    account_keys = transaction.message.account_keys
-    index = _get_key_index(account_keys, pricing.wallet_address)
+    account_keys = transaction.message.account_keys  # type: ignore
+    index = _get_key_index(account_keys, pricing.wallet_address)  # type: ignore
     if index < 0:
         return False
 
     meta = tx_info.value.transaction.meta
-    if meta.err is not None:
+    if meta.err is not None:  # type: ignore
         return False
 
-    pre_balance = meta.pre_balances[index]
-    post_balance = meta.post_balances[index]
+    pre_balance = meta.pre_balances[index]  # type: ignore
+    post_balance = meta.post_balances[index]  # type: ignore
     amount_sent = post_balance - pre_balance
     if amount_sent >= pricing.cost * 10**9:
         return True

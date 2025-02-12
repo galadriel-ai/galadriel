@@ -34,25 +34,21 @@ class LlmClient:
         if _api_key:
             api_key = _api_key
         else:
-            api_key = os.getenv("LLM_API_KEY")
+            api_key = os.getenv("LLM_API_KEY", "")
+            if not api_key:
+                raise LlmException("Missing LLM API key, in constructor and/or LLM_API_KEY environment variable")
         if not api_key:
-            raise LlmException(
-                "Missing LLM base_url, in constructor and/or LLM_BASE_URL environment variable"
-            )
+            raise LlmException("Missing LLM base_url, in constructor and/or LLM_BASE_URL environment variable")
         self.client = AsyncOpenAI(
             base_url=base_url,
             api_key=api_key,
         )
         # Configurations?
 
-    async def completion(
-        self, model: str, messages: Iterable[ChatCompletionMessageParam]
-    ) -> Optional[ChatCompletion]:
+    async def completion(self, model: str, messages: Iterable[ChatCompletionMessageParam]) -> Optional[ChatCompletion]:
         for i in range(RETRY_COUNT):
             try:
-                return await self.client.chat.completions.create(
-                    model=model, messages=messages
-                )
+                return await self.client.chat.completions.create(model=model, messages=messages)
             except Exception as e:
                 logger.error("Error calling Galadriel completions API", e)
             # Retry after 4 * i seconds

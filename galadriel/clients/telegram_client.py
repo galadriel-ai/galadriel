@@ -28,11 +28,7 @@ class TelegramClient(AgentInput, AgentOutput):
                 self.logger.warning("Queue not initialized. Ignoring incoming message.")
                 return
             user = message.from_user
-            author = (
-                f"{user.first_name} {user.last_name}".strip()
-                if user.first_name
-                else user.username or str(user.id)
-            )
+            author = f"{user.first_name} {user.last_name}".strip() if user.first_name else user.username or str(user.id)
             incoming = HumanMessage(
                 content=message.text,
                 conversation_id=str(message.chat.id),

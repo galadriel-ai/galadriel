@@ -2,7 +2,6 @@ import os
 import requests
 
 from galadriel.core_agent import Tool
-from galadriel.repository.wallet_repository import WalletRepository
 
 
 class CoingeckoTool(Tool):
@@ -19,7 +18,7 @@ class CoingeckoTool(Tool):
 
 class GetCoinPriceTool(CoingeckoTool):
     name = "get_coin_price"
-    description = "This is a tool that returns the price of given crypto token together with market cap, 24hr vol and 24hr change."
+    description = "This is a tool that returns the price of given crypto token together with market cap, 24hr vol and 24hr change."  # pylint: disable=C0301
     inputs = {
         "task": {
             "type": "string",
@@ -28,7 +27,7 @@ class GetCoinPriceTool(CoingeckoTool):
     }
     output_type = "string"
 
-    def forward(self, task: str) -> str:
+    def forward(self, task: str) -> str:  # pylint: disable=W0221
         response = call_coingecko_api(
             api_key=self.api_key,
             request="https://api.coingecko.com/api/v3/simple/price"
@@ -46,9 +45,7 @@ class GetCoinPriceTool(CoingeckoTool):
 
 class GetCoinHistoricalDataTool(CoingeckoTool):
     name = "get_coin_historical_data"
-    description = (
-        "This is a tool that returns the historical data of given crypto token."
-    )
+    description = "This is a tool that returns the historical data of given crypto token."
     inputs = {
         "task": {
             "type": "string",
@@ -61,13 +58,10 @@ class GetCoinHistoricalDataTool(CoingeckoTool):
     }
     output_type = "string"
 
-    def forward(self, task: str, days: str) -> str:
+    def forward(self, task: str, days: str) -> str:  # pylint: disable=W0221
         response = call_coingecko_api(
             api_key=self.api_key,
-            request="https://api.coingecko.com/api/v3/coins/"
-            + task
-            + "/market_chart?vs_currency=usd&days="
-            + days,
+            request="https://api.coingecko.com/api/v3/coins/" + task + "/market_chart?vs_currency=usd&days=" + days,
         )
         data = response.json()
         return data
@@ -84,7 +78,7 @@ class FetchTrendingCoinsTool(CoingeckoTool):
     }
     output_type = "string"
 
-    def forward(self, dummy: str) -> str:
+    def forward(self, dummy: str) -> str:  # pylint: disable=W0221, W0613
         response = call_coingecko_api(
             api_key=self.api_key,
             request="https://api.coingecko.com/api/v3/search/trending",
@@ -98,6 +92,7 @@ def call_coingecko_api(api_key: str, request: str) -> requests.Response:
     return requests.get(
         request,
         headers=headers,
+        timeout=30,
     )
 
 

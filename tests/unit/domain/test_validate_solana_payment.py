@@ -11,9 +11,7 @@ from galadriel.entities import Message, Pricing
 
 @pytest.fixture
 def pricing():
-    return Pricing(
-        cost=0.1, wallet_address="HN7cABqLq46Es1jh92dQQisAq662SmxELLLsHHe4YWrH"
-    )
+    return Pricing(cost=0.1, wallet_address="HN7cABqLq46Es1jh92dQQisAq662SmxELLLsHHe4YWrH")
 
 
 def test_successful_payment_validation(monkeypatch, pricing):

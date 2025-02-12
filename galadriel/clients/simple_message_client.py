@@ -12,7 +12,7 @@ class SimpleMessageClient(AgentInput, AgentOutput):
         if not messages:
             raise ValueError("At least one message must be provided.")
 
-        self.infinite_interval_seconds: int = repeat_messages_interval
+        self.infinite_interval_seconds: Optional[int] = repeat_messages_interval
         self.messages: List[Message] = [Message(content=msg) for msg in messages]
 
     async def start(self, queue: PushOnlyQueue):

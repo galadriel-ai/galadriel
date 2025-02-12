@@ -35,7 +35,7 @@ class DiscordClient(commands.Bot, AgentInput, AgentOutput):
         intents.guild_messages = True
 
         super().__init__(command_prefix="!", intents=intents)
-        self.message_queue = None
+        self.message_queue: Optional[PushOnlyQueue] = None
         self.guild_id = guild_id
         self.logger = logger or logging.getLogger("discord_client")
 
@@ -54,6 +54,7 @@ class DiscordClient(commands.Bot, AgentInput, AgentOutput):
         except discord.HTTPException as e:
             self.logger.error(f"Failed to sync commands to guild {self.guild_id}: {e}")
 
+    # pylint: disable=W0221
     async def on_message(self, message: discord.Message):
         # Ignore messages from the bot itself
         if message.author == self.user:
@@ -70,20 +71,22 @@ class DiscordClient(commands.Bot, AgentInput, AgentOutput):
                     "timestamp": str(message.created_at.isoformat()),
                 },
             )
-            await self.message_queue.put(msg)
+            await self.message_queue.put(msg)  # type: ignore
             self.logger.info(f"Added message to queue: {msg}")
         except Exception as e:
             self.logger.error(f"Failed to add message to queue: {e}")
             raise e
 
-    async def start(self, queue: PushOnlyQueue) -> None:
+    async def start(self, queue: PushOnlyQueue) -> None:  # type: ignore[override]
         self.message_queue = queue
-        await super().start(os.getenv("DISCORD_TOKEN"))
+        await super().start(os.getenv("DISCORD_TOKEN", ""))
 
     async def send(self, request: Message, response: Message) -> None:
         try:
+            if response.conversation_id is None:
+                raise ValueError("conversation_id cannot be None")
             channel = self.get_channel(int(response.conversation_id))
-            await channel.send(response.content)
+            await channel.send(response.content)  # type: ignore[union-attr]
         except Exception as e:
             self.logger.error(f"Failed to post output: {e}")
             raise e

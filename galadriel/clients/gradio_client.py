@@ -10,12 +10,11 @@ from galadriel.entities import Message, PushOnlyQueue, HumanMessage
 
 class GradioClient(AgentInput, AgentOutput):
     def __init__(self, logger: Optional[logging.Logger] = None):
-        self.message_queue = None
+        self.message_queue: Optional[PushOnlyQueue] = None
         self.logger = logger or logging.getLogger("gradio_client")
         self.conversation_id = "gradio"
-        self.input_queue = asyncio.Queue()
-        self.output_queue = asyncio.Queue()
-        self.history = []
+        self.input_queue: asyncio.Queue[str] = asyncio.Queue()
+        self.output_queue: asyncio.Queue[str] = asyncio.Queue()
 
         # Initialize the Gradio interface with a chatbot component
         with gr.Blocks() as self.interface:
@@ -36,13 +35,13 @@ class GradioClient(AgentInput, AgentOutput):
             self.clear = gr.Button("Clear")
 
             # Set up event handlers with chaining
-            self.msg.submit(
-                self._handle_message, [self.msg, self.chatbot], [self.msg, self.chatbot]
-            ).then(self._process_response, [self.chatbot], [self.chatbot])
+            self.msg.submit(self._handle_message, [self.msg, self.chatbot], [self.msg, self.chatbot]).then(
+                self._process_response, [self.chatbot], [self.chatbot]
+            )
 
-            self.submit.click(
-                self._handle_message, [self.msg, self.chatbot], [self.msg, self.chatbot]
-            ).then(self._process_response, [self.chatbot], [self.chatbot])
+            self.submit.click(self._handle_message, [self.msg, self.chatbot], [self.msg, self.chatbot]).then(
+                self._process_response, [self.chatbot], [self.chatbot]
+            )
 
             self.clear.click(lambda: [], None, self.chatbot, queue=False)
 
@@ -69,11 +68,9 @@ class GradioClient(AgentInput, AgentOutput):
 
         # Launch Gradio interface in a background thread
         self.interface.queue()
-        self.interface.launch(
-            server_name="0.0.0.0", share=False, prevent_thread_lock=True
-        )
+        self.interface.launch(server_name="0.0.0.0", share=False, prevent_thread_lock=True)
         # Log the local URL for accessing the Gradio interface
-        self.logger.info(f"Gradio interface available at: http://0.0.0.0:7860")
+        self.logger.info("Gradio interface available at: http://0.0.0.0:7860")
 
         # Process messages from input queue
         while True:
@@ -84,8 +81,8 @@ class GradioClient(AgentInput, AgentOutput):
                     content=user_input,
                     conversation_id=self.conversation_id,
                     additional_kwargs={
-                        "author": "user",
-                        "message_id": "1",
+                        "author": "user_gradio",
+                        "message_id": "gradio",
                         "timestamp": str(datetime.now().isoformat()),
                     },
                 )

@@ -1,5 +1,5 @@
 function lint {
-  pylint --rcfile=setup.cfg galadriel/*
+  pylint galadriel/*
 }
 
 function format {

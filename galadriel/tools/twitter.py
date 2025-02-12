@@ -74,9 +74,7 @@ class TwitterSearchTool(TwitterApiClient, Tool):
 
 class TwitterRepliesTool(TwitterApiClient, Tool):
     name = TWITTER_REPLIES_TOOL_NAME
-    description = (
-        "This is a tool that gets replies to a tweet. It returns a list of results."
-    )
+    description = "This is a tool that gets replies to a tweet. It returns a list of results."
     inputs = {
         "conversation_id": {
             "type": "string",
