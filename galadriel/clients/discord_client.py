@@ -25,6 +25,8 @@ class DiscordClient(commands.Bot, AgentInput, AgentOutput):
         logger: Logger instance for tracking bot activities
     """
 
+    CONVERSATION_ID_PREFIX = "discord_"
+
     def __init__(self, guild_id: str, logger: Optional[logging.Logger] = None):
         """Initialize the Discord client.
 
@@ -89,7 +91,7 @@ class DiscordClient(commands.Bot, AgentInput, AgentOutput):
         try:
             msg = HumanMessage(
                 content=message.content,
-                conversation_id=str(message.channel.id),
+                conversation_id=f"{self.CONVERSATION_ID_PREFIX}{message.channel.id}",
                 additional_kwargs={
                     "author": message.author.name,
                     "message_id": message.id,
@@ -125,11 +127,18 @@ class DiscordClient(commands.Bot, AgentInput, AgentOutput):
             ValueError: If the response's conversation_id is None
             Exception: If message sending fails
         """
+        should_respond = (
+                response.conversation_id
+                and response.conversation_id.startswith(self.CONVERSATION_ID_PREFIX)
+        )
+        if not should_respond:
+            self.logger.info(f"This isn't Discord conversation: {response.conversation_id}. Ignoring...")
+            return
+
+        channel_id = response.conversation_id.split(self.CONVERSATION_ID_PREFIX)[1]
         try:
-            if response.conversation_id is None:
-                raise ValueError("conversation_id cannot be None")
-            channel = self.get_channel(int(response.conversation_id))
-            await channel.send(response.content)  # type: ignore[union-attr]
+            channel = self.get_channel(int(channel_id))
+            await channel.send(response.content)
         except Exception as e:
             self.logger.error(f"Failed to post output: {e}")
             raise e
