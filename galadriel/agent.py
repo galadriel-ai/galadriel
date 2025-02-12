@@ -145,9 +145,7 @@ class AgentRuntime:
         # Handle payment validation
         if self.pricing:
             try:
-                task_and_payment = validate_solana_payment.execute(
-                    self.pricing, self.spent_payments, request
-                )
+                task_and_payment = validate_solana_payment.execute(self.pricing, self.spent_payments, request)
                 request.content = task_and_payment.task
             except PaymentValidationError as e:
                 response = Message(content=str(e))
@@ -164,7 +162,7 @@ class AgentRuntime:
                 await output.send(request, response)
 
     async def _get_memory(self) -> List[Dict[str, str]]:
-        return self.agent.write_memory_to_messages(summary_mode=True)
+        return self.agent.write_memory_to_messages(summary_mode=True)  # type: ignore
 
     async def _generate_proof(self, request: Message, response: Message) -> str:
         return generate_proof.execute(request, response)

@@ -17,7 +17,7 @@ def main():
     client_socket.listen()
 
     while True:
-        client_connection, addr = client_socket.accept()
+        client_connection, _ = client_socket.accept()
         payload = client_connection.recv(4096)
         request = json.loads(payload.decode())
 

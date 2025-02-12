@@ -18,9 +18,7 @@ agent = CodeAgent(
 )
 
 # Add basic client which sends two messages to the agent and prints agent's result
-client = SimpleMessageClient(
-    "What is the capital of Estonia?", "What's the price of Solana today?"
-)
+client = SimpleMessageClient("What is the capital of Estonia?", "What's the price of Solana today?")
 
 # Set up the runtime
 runtime = AgentRuntime(

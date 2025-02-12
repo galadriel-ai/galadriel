@@ -1,7 +1,6 @@
 import json
 import os
 import re
-import shutil
 import subprocess
 from pathlib import Path
 from typing import Optional
@@ -17,6 +16,7 @@ from solders.keypair import Keypair
 
 API_BASE_URL = "https://api.galadriel.com/v1"
 DEFAULT_SOLANA_KEY_PATH = os.path.expanduser("~/secret/.private_key.json")
+REQUEST_TIMEOUT = 180  # seconds
 
 
 @click.group(
@@ -53,9 +53,7 @@ def init() -> None:
         agent_name_input = click.prompt("Enter agent name", type=str)
         agent_name = _sanitize_agent_name(agent_name_input)
         if not agent_name:
-            print(
-                "Invalid agent name: name should only contain alphanumerical and _ symbols."
-            )
+            print("Invalid agent name: name should only contain alphanumerical and _ symbols.")
 
     # docker_username = click.prompt("Enter Docker username", type=str)
     # docker_password = click.prompt("Enter Docker password", hide_input=True, type=str)
@@ -135,9 +133,7 @@ def update(agent_id: str, image_name: str):
     click.echo(f"Updating agent {agent_id}")
     try:
         docker_username, _ = _assert_config_files(image_name=image_name)
-        status = _galadriel_update(
-            image_name=image_name, docker_username=docker_username, agent_id=agent_id
-        )
+        status = _galadriel_update(image_name=image_name, docker_username=docker_username, agent_id=agent_id)
         if status:
             click.echo(f"Successfully updated agent {agent_id}")
         else:
@@ -162,12 +158,11 @@ def state(agent_id: str):
                 "Content-Type": "application/json",
                 "Authorization": f"Bearer {api_key}",
             },
+            timeout=REQUEST_TIMEOUT,
         )
 
         if not response.status_code == 200:
-            click.echo(
-                f"Failed to get agent state with status {response.status_code}: {response.text}"
-            )
+            click.echo(f"Failed to get agent state with status {response.status_code}: {response.text}")
         click.echo(json.dumps(response.json(), indent=2))
     except Exception as e:
         click.echo(f"Failed to get agent state: {str(e)}")
@@ -188,12 +183,11 @@ def states():
                 "Content-Type": "application/json",
                 "Authorization": f"Bearer {api_key}",
             },
+            timeout=REQUEST_TIMEOUT,
         )
 
         if not response.status_code == 200:
-            click.echo(
-                f"Failed to get agent state with status {response.status_code}: {response.text}"
-            )
+            click.echo(f"Failed to get agent state with status {response.status_code}: {response.text}")
         click.echo(json.dumps(response.json(), indent=2))
     except Exception as e:
         click.echo(f"Failed to get agent state: {str(e)}")
@@ -215,14 +209,13 @@ def destroy(agent_id: str):
                 "Content-Type": "application/json",
                 "Authorization": f"Bearer {api_key}",
             },
+            timeout=REQUEST_TIMEOUT,
         )
 
         if response.status_code == 200:
             click.echo(f"Successfully destroyed agent {agent_id}")
         else:
-            click.echo(
-                f"Failed to destroy agent with status {response.status_code}: {response.text}"
-            )
+            click.echo(f"Failed to destroy agent with status {response.status_code}: {response.text}")
     except Exception as e:
         click.echo(f"Failed to destroy agent: {str(e)}")
 
@@ -233,9 +226,7 @@ def wallet():
 
 
 @wallet.command()
-@click.option(
-    "--path", default=DEFAULT_SOLANA_KEY_PATH, help="Path to save the wallet key file"
-)
+@click.option("--path", default=DEFAULT_SOLANA_KEY_PATH, help="Path to save the wallet key file")
 def create(path: str):
     """Create a new admin wallet"""
     try:
@@ -246,9 +237,7 @@ def create(path: str):
 
 
 @wallet.command(name="import")
-@click.option(
-    "--private-key", help="Private key of the wallet to import in JSON format"
-)
+@click.option("--private-key", help="Private key of the wallet to import in JSON format")
 @click.option("--path", help="Path to the wallet key file to import")
 def import_wallet(private_key: str, path: str):
     """Import an existing wallet"""
@@ -270,16 +259,14 @@ def import_wallet(private_key: str, path: str):
         try:
             json.loads(private_key)
         except json.JSONDecodeError:
-            raise click.ClickException(
-                "Invalid private key! Please provide a valid JSON array"
-            )
+            raise click.ClickException("Invalid private key! Please provide a valid JSON array")
         # Save the private key to the default path
         os.makedirs(os.path.dirname(DEFAULT_SOLANA_KEY_PATH), exist_ok=True)
-        with open(DEFAULT_SOLANA_KEY_PATH, "w") as file:
+        with open(DEFAULT_SOLANA_KEY_PATH, "w", encoding="utf-8") as file:
             file.write(private_key)
         _update_agent_env_file({"SOLANA_KEY_PATH": DEFAULT_SOLANA_KEY_PATH})
 
-        click.echo(f"Successfully imported Solana wallet from private key")
+        click.echo("Successfully imported Solana wallet from private key")
     elif path:
         if not os.path.exists(path):
             raise click.ClickException(f"File {path} does not exist")
@@ -299,15 +286,12 @@ def _assert_config_files(image_name: str) -> Tuple[str, str]:
     docker_password = os.getenv("DOCKER_PASSWORD")
     os.environ["IMAGE_NAME"] = image_name  # required for docker-compose.yml
     if not docker_username or not docker_password:
-        raise click.ClickException(
-            "DOCKER_USERNAME or DOCKER_PASSWORD not found in .env file"
-        )
+        raise click.ClickException("DOCKER_USERNAME or DOCKER_PASSWORD not found in .env file")
     return docker_username, docker_password
 
 
-def _create_agent_template(
-    agent_name: str, docker_username: str, docker_password: str, galadriel_api_key: str
-) -> None:
+# pylint: disable=W0613
+def _create_agent_template(agent_name: str, docker_username: str, docker_password: str, galadriel_api_key: str) -> None:
     """
     Generates the Python code and directory structure for a new Galadriel agent.
 
@@ -434,9 +418,7 @@ build-backend = "poetry.core.masonry.api"
 
 def _build_image(docker_username: str) -> None:
     """Core logic to build the Docker image."""
-    click.echo(
-        f"Building Docker image with tag {docker_username}/{os.environ['IMAGE_NAME']}..."
-    )
+    click.echo(f"Building Docker image with tag {docker_username}/{os.environ['IMAGE_NAME']}...")
     subprocess.run(["docker-compose", "build"], check=True)
     click.echo("Successfully built Docker image!")
 
@@ -450,22 +432,18 @@ def _publish_image(image_name: str, docker_username: str, docker_password: str) 
         ["docker", "login", "-u", docker_username, "--password-stdin"],
         input=docker_password.encode(),
         capture_output=True,
+        check=False,
     )
     if login_process.returncode != 0:
-        raise click.ClickException(
-            f"Docker login failed: {login_process.stderr.decode()}"
-        )
+        raise click.ClickException(f"Docker login failed: {login_process.stderr.decode()}")
 
     # Create repository if it doesn't exist
-    click.echo(
-        f"Creating repository {docker_username}/{image_name} if it doesn't exist..."
-    )
-    create_repo_url = (
-        f"https://hub.docker.com/v2/repositories/{docker_username}/{image_name}"
-    )
+    click.echo(f"Creating repository {docker_username}/{image_name} if it doesn't exist...")
+    create_repo_url = f"https://hub.docker.com/v2/repositories/{docker_username}/{image_name}"
     token_response = requests.post(
         "https://hub.docker.com/v2/users/login/",
         json={"username": docker_username, "password": docker_password},
+        timeout=REQUEST_TIMEOUT,
     )
     if token_response.status_code == 200:
         token = token_response.json()["token"]
@@ -476,12 +454,11 @@ def _publish_image(image_name: str, docker_username: str, docker_password: str) 
                 "Authorization": f"JWT {token}",
             },
             json={"name": image_name, "is_private": False},
+            timeout=REQUEST_TIMEOUT,
         )
     # Push image to Docker Hub
     click.echo(f"Pushing Docker image {docker_username}/{image_name}:latest ...")
-    subprocess.run(
-        ["docker", "push", f"{docker_username}/{image_name}:latest"], check=True
-    )
+    subprocess.run(["docker", "push", f"{docker_username}/{image_name}:latest"], check=True)
 
     click.echo("Successfully pushed Docker image!")
 
@@ -490,9 +467,7 @@ def _galadriel_deploy(image_name: str, docker_username: str) -> Optional[str]:
     """Deploy agent to Galadriel platform."""
 
     if not os.path.exists(".agents.env"):
-        raise click.ClickException(
-            "No .agents.env file found in current directory. Please create one."
-        )
+        raise click.ClickException("No .agents.env file found in current directory. Please create one.")
 
     env_vars = dict(dotenv_values(".agents.env"))
 
@@ -515,6 +490,7 @@ def _galadriel_deploy(image_name: str, docker_username: str) -> Optional[str]:
         f"{API_BASE_URL}/agents/",
         json=payload,
         headers=headers,
+        timeout=REQUEST_TIMEOUT,
     )
 
     if response.status_code == 200:
@@ -526,7 +502,7 @@ Status Code: {response.status_code}
 Response: {response.text}
 Request URL: {response.request.url}
 Request Headers: {dict(response.request.headers)}
-Request Body: {response.request.body}
+Request Body: {response.request.body!r}
 """
     click.echo(error_msg)
     return None
@@ -536,9 +512,7 @@ def _galadriel_update(image_name: str, docker_username: str, agent_id: str) -> b
     """Update agent on Galadriel platform."""
 
     if not os.path.exists(".agents.env"):
-        raise click.ClickException(
-            "No .agents.env file found in current directory. Please create one."
-        )
+        raise click.ClickException("No .agents.env file found in current directory. Please create one.")
 
     env_vars = dict(dotenv_values(".agents.env"))
 
@@ -561,21 +535,22 @@ def _galadriel_update(image_name: str, docker_username: str, agent_id: str) -> b
         f"{API_BASE_URL}/agents/{agent_id}",
         json=payload,
         headers=headers,
+        timeout=REQUEST_TIMEOUT,
     )
 
     if response.status_code == 200:
         return True
-    else:
-        error_msg = f"""
+
+    error_msg = f"""
 Failed to update agent:
 Status Code: {response.status_code}
 Response: {response.text}
 Request URL: {response.request.url}
 Request Headers: {dict(response.request.headers)}
-Request Body: {response.request.body}
+Request Body: {response.request.body!r}
 """
-        click.echo(error_msg)
-        return False
+    click.echo(error_msg)
+    return False
 
 
 def _sanitize_agent_name(user_input: str) -> str:
@@ -587,9 +562,7 @@ def _sanitize_agent_name(user_input: str) -> str:
     :param user_input: The raw folder name input from the user.
     :return: A sanitized string suitable for a folder name.
     """
-    sanitized_name = re.sub(
-        r"\W+", "_", user_input
-    )  # Replace non-alphanumeric characters with _
+    sanitized_name = re.sub(r"\W+", "_", user_input)  # Replace non-alphanumeric characters with _
     sanitized_name = sanitized_name.strip("_")  # Remove leading/trailing underscores
     return sanitized_name
 

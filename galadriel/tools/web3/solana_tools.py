@@ -2,14 +2,12 @@ import asyncio
 import json
 from typing import Dict, Optional
 
-from solana.rpc.async_api import AsyncClient
-from solana.rpc.commitment import Processed, Confirmed
-from solders.pubkey import Pubkey  # type: ignore
+from solana.rpc.commitment import Confirmed
+from solders.pubkey import Pubkey  # pylint: disable=E0401
 
 from spl.token.async_client import AsyncToken
 from spl.token.constants import TOKEN_PROGRAM_ID
 from spl.token.instructions import get_associated_token_address
-from spl.token.constants import TOKEN_PROGRAM_ID
 
 from galadriel.core_agent import tool
 
@@ -40,7 +38,7 @@ def update_user_balance(user_address: str, token: str) -> str:
         user_portfolios[user_address][token] = 0.0  # Initialize token balance if needed
 
     balance = asyncio.run(get_user_token_balance(user_address, token))
-    user_portfolios[user_address][token] = balance
+    user_portfolios[user_address][token] = balance  # type: ignore
     return "User balance updated successfully."
 
 
@@ -58,7 +56,7 @@ def get_all_users() -> str:  # Return type is now str
 
 
 @tool
-def get_all_portfolios(dummy: dict) -> str:
+def get_all_portfolios(dummy: dict) -> str:  # pylint: disable=W0613
     """
     Returns a JSON string containing the portfolios of all users.
 
@@ -84,22 +82,18 @@ async def get_user_balance(user_address: str, token: str) -> float:
         The user's balance for the specified token.
     """
     if user_address in user_portfolios:
-        return user_portfolios[user_address].get(
-            token, 0.0
-        )  # Return 0 if token not found
-    else:
-        return 0.0
+        return user_portfolios[user_address].get(token, 0.0)  # Return 0 if token not found
+    return 0.0
 
 
-async def get_user_token_balance(
-    self, user_address: str, token_address: Optional[str] = None
-) -> float:
+async def get_user_token_balance(self, user_address: str, token_address: Optional[str] = None) -> Optional[float]:
     """
     Get the token balance for a given wallet.
 
     Args:
         user_address (str): The user wallet address.
-        token_address (Option[str]): The mint address of the token, if it is set to None, the balance of SOL is returned.
+        token_address (Option[str]): The mint address of the token,
+            if it is set to None, the balance of SOL is returned.
 
     Returns:
         float: The token balance.
@@ -107,20 +101,16 @@ async def get_user_token_balance(
     try:
         user_pubkey = Pubkey.from_string(user_address)
         if not token_address:
-            response = await self.async_client.get_balance(
-                user_pubkey, commitment=Confirmed
-            )
+            response = await self.async_client.get_balance(user_pubkey, commitment=Confirmed)
             return response.value / LAMPORTS_PER_SOL
-        token_address = Pubkey.from_string(token_address)
-        spl_client = AsyncToken(
-            self.async_client, token_address, TOKEN_PROGRAM_ID, user_pubkey
-        )
+        token_address = Pubkey.from_string(token_address)  # type: ignore
+        spl_client = AsyncToken(self.async_client, token_address, TOKEN_PROGRAM_ID, user_pubkey)  # type: ignore
 
         mint = await spl_client.get_mint_info()
         if not mint.is_initialized:
             raise ValueError("Token mint is not initialized.")
 
-        wallet_ata = get_associated_token_address(user_pubkey, token_address)
+        wallet_ata = get_associated_token_address(user_pubkey, token_address)  # type: ignore
         response = await self.async_client.get_token_account_balance(wallet_ata)
         if response.value is None:
             return None
@@ -130,4 +120,4 @@ async def get_user_token_balance(
         return float(response)
 
     except Exception as error:
-        raise Exception(f"Failed to get balance: {str(error)}") from error
+        raise Exception(f"Failed to get balance: {str(error)}") from error  # pylint: disable=W0719

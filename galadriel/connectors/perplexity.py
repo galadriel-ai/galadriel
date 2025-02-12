@@ -65,12 +65,7 @@ class PerplexityClient:
                     response_json = await response.json()
                     content = response_json["choices"][0]["message"]["content"]
                     sources = "\n".join(
-                        [
-                            f"[{index + 1}] {url}"
-                            for index, url in enumerate(
-                                response_json.get("citations", [])
-                            )
-                        ]
+                        [f"[{index + 1}] {url}" for index, url in enumerate(response_json.get("citations", []))]
                     )
 
                     result = PerplexitySources(

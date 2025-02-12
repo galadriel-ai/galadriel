@@ -27,7 +27,7 @@ class TwitterMentionClient(TwitterApiClient, AgentInput, AgentOutput):
         mentions = await self._fetch_mentions(self.user_id)
         for mention in mentions:
             message = HumanMessage(
-                content=mention,
+                content=mention["text"],
                 conversation_id=mention["conversation_id"],
                 additional_kwargs={
                     "tweet_id": mention["tweet_id"],
@@ -37,9 +37,7 @@ class TwitterMentionClient(TwitterApiClient, AgentInput, AgentOutput):
             await queue.put(message)
 
     async def send(self, request: Message, response: Message) -> None:
-        if request.additional_kwargs and (
-            tweet_id := request.additional_kwargs.get("tweet_id")
-        ):
+        if request.additional_kwargs and (tweet_id := request.additional_kwargs.get("tweet_id")):
             await self._post_reply(tweet_id, response.content)
 
     async def _fetch_mentions(self, user_id: str) -> List[Dict]:

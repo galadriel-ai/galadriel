@@ -55,29 +55,19 @@ class TrafficForwarder:
             dock_socket.bind((self.local_ip, self.local_port))
             dock_socket.listen(5)
 
-            logger.info(
-                f"Traffic forwarder listening on {self.local_ip}:{self.local_port}"
-            )
+            logger.info(f"Traffic forwarder listening on {self.local_ip}:{self.local_port}")
             while True:
                 client_socket = dock_socket.accept()[0]
-                original_ip, original_port = self.get_original_destination(
-                    client_socket
-                )
+                original_ip, original_port = self.get_original_destination(client_socket)
                 if not original_ip or not original_port:
-                    logger.info(
-                        f"Failed to get original destination, closing connection"
-                    )
+                    logger.info("Failed to get original destination, closing connection")
                     client_socket.close()
                     continue
 
                 logger.info(f"Forwarding traffic to {original_ip}:{original_port}")
                 data = client_socket.recv(self.BUFFER_SIZE)
-                ip_encoded = socket.inet_aton(
-                    original_ip
-                )  # Convert IP to 4-byte binary
-                port_encoded = struct.pack(
-                    "!H", original_port
-                )  # Convert port to 2-byte binary
+                ip_encoded = socket.inet_aton(original_ip)  # Convert IP to 4-byte binary
+                port_encoded = struct.pack("!H", original_port)  # Convert port to 2-byte binary
                 destination_and_data = ip_encoded + port_encoded + data
 
                 server_socket = socket.socket(socket.AF_VSOCK, socket.SOCK_STREAM)
@@ -87,9 +77,7 @@ class TrafficForwarder:
                     target=self.forward,
                     args=(client_socket, server_socket, destination_and_data),
                 )
-                incoming_thread = threading.Thread(
-                    target=self.forward, args=(server_socket, client_socket)
-                )
+                incoming_thread = threading.Thread(target=self.forward, args=(server_socket, client_socket))
 
                 outgoing_thread.start()
                 incoming_thread.start()

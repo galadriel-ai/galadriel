@@ -1,23 +1,16 @@
 import asyncio
 import base64
 import json
-import os
-from typing import Dict
-
-from galadriel.core_agent import tool
-from galadriel.repository.wallet_repository import WalletRepository
 
 from solana.rpc.async_api import AsyncClient
 from solana.rpc.commitment import Processed, Confirmed
 from solana.rpc.types import TxOpts
 from solders import message
-from solders.keypair import Keypair  # type: ignore
-from solders.pubkey import Pubkey  # type: ignore
-from solders.transaction import VersionedTransaction  # type: ignore
+from solders.keypair import Keypair  # pylint: disable=E0401
+from solders.pubkey import Pubkey  # pylint: disable=E0401
+from solders.transaction import VersionedTransaction  # pylint: disable=E0401
 
 from spl.token.async_client import AsyncToken
-from spl.token.constants import TOKEN_PROGRAM_ID
-from spl.token.instructions import get_associated_token_address
 from spl.token.constants import TOKEN_PROGRAM_ID
 
 from jupiter_python_sdk.jupiter import Jupiter
@@ -50,16 +43,15 @@ class SwapTokenTool(WalletTool):
     }
     output_type = "string"
 
-    def forward(
-        self, user_address: str, token1: str, token2: str, amount: float
-    ) -> str:
+    def forward(self, user_address: str, token1: str, token2: str, amount: float) -> str:  # pylint: disable=W0221
         wallet = self.wallet_repository.get_wallet()
 
-        result = asyncio.run(swap(wallet, user_address, token1, token2, amount))
+        result = asyncio.run(swap(wallet, user_address, token1, float(token2), int(amount)))
 
         return f"Successfully swapped {amount} {token1} for {token2}, tx sig: {result}."
 
 
+# pylint: disable=R0914
 async def swap(
     wallet: Keypair,
     output_mint: str,
@@ -97,9 +89,7 @@ async def swap(
     )
     input_mint = str(input_mint)
     output_mint = str(output_mint)
-    spl_client = AsyncToken(
-        async_client, Pubkey.from_string(input_mint), TOKEN_PROGRAM_ID, wallet
-    )
+    spl_client = AsyncToken(async_client, Pubkey.from_string(input_mint), TOKEN_PROGRAM_ID, wallet)
     mint = await spl_client.get_mint_info()
     decimals = mint.decimals
     input_amount = int(input_amount * 10**decimals)
@@ -112,17 +102,11 @@ async def swap(
             only_direct_routes=False,
             slippage_bps=slippage_bps,
         )
-        raw_transaction = VersionedTransaction.from_bytes(
-            base64.b64decode(transaction_data)
-        )
-        signature = wallet.sign_message(
-            message.to_bytes_versioned(raw_transaction.message)
-        )
+        raw_transaction = VersionedTransaction.from_bytes(base64.b64decode(transaction_data))
+        signature = wallet.sign_message(message.to_bytes_versioned(raw_transaction.message))
         signed_txn = VersionedTransaction.populate(raw_transaction.message, [signature])
         opts = TxOpts(skip_preflight=False, preflight_commitment=Processed)
-        result = await async_client.send_raw_transaction(
-            txn=bytes(signed_txn), opts=opts
-        )
+        result = await async_client.send_raw_transaction(txn=bytes(signed_txn), opts=opts)
         print(f"Transaction sent: {json.loads(result.to_json())}")
         transaction_id = json.loads(result.to_json())["result"]
         print(f"Transaction sent: https://explorer.solana.com/tx/{transaction_id}")
@@ -131,4 +115,4 @@ async def swap(
         return str(signature)
 
     except Exception as e:
-        raise Exception(f"Swap failed: {str(e)}")
+        raise Exception(f"Swap failed: {str(e)}")  # pylint: disable=W0719

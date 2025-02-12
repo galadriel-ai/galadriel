@@ -59,9 +59,7 @@ async def test_publishes_proof():
         conversation_id=CONVERSATION_ID,
     )
     await runtime.run_request(request)
-    agent.publish_proof.execute.assert_called_with(
-        request, RESPONSE_MESSAGE, "mock_proof"
-    )
+    agent.publish_proof.execute.assert_called_with(request, RESPONSE_MESSAGE, "mock_proof")
 
 
 async def test_post_output_to_client():
@@ -86,9 +84,7 @@ async def test_post_output_to_client():
 async def test_payment_validation(monkeypatch):
     """Test payment validation flow."""
     user_agent = MockAgent()
-    pricing = Pricing(
-        cost=0.1, wallet_address="HN7cABqLq46Es1jh92dQQisAq662SmxELLLsHHe4YWrH"
-    )
+    pricing = Pricing(cost=0.1, wallet_address="HN7cABqLq46Es1jh92dQQisAq662SmxELLLsHHe4YWrH")
     runtime = AgentRuntime(inputs=[], outputs=[], agent=user_agent, pricing=pricing)
 
     # Mock successful payment validation
@@ -109,12 +105,8 @@ async def test_payment_validation_failure(monkeypatch):
     """Test payment validation failure."""
     user_agent = MockAgent()
     output_client = MockAgentOutput()
-    pricing = Pricing(
-        cost=0.1, wallet_address="HN7cABqLq46Es1jh92dQQisAq662SmxELLLsHHe4YWrH"
-    )
-    runtime = AgentRuntime(
-        inputs=[], outputs=[output_client], agent=user_agent, pricing=pricing
-    )
+    pricing = Pricing(cost=0.1, wallet_address="HN7cABqLq46Es1jh92dQQisAq662SmxELLLsHHe4YWrH")
+    runtime = AgentRuntime(inputs=[], outputs=[output_client], agent=user_agent, pricing=pricing)
 
     # Mock failed payment validation
     monkeypatch.setattr(

@@ -45,8 +45,5 @@ class RetrieverTool(Tool):
             query,
         )
         return "\nRetrieved documents:\n" + "".join(
-            [
-                f"\n\n===== Document {str(i)} =====\n" + doc.page_content
-                for i, doc in enumerate(docs)
-            ]
+            [f"\n\n===== Document {str(i)} =====\n" + doc.page_content for i, doc in enumerate(docs)]
         )

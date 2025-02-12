@@ -37,9 +37,7 @@ class Pricing(BaseModel):
     Contains the cost in SOL and the agent wallet address for payments.
     """
 
-    cost: float = Field(
-        description="The cost of the task in SOL (Solana native currency)", gt=0
-    )
+    cost: float = Field(description="The cost of the task in SOL (Solana native currency)", gt=0)
     wallet_address: str = Field(
         description="The Solana wallet address where payment should be sent",
         min_length=32,

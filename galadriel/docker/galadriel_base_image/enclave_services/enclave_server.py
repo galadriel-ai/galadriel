@@ -1,6 +1,8 @@
 import logging
 import socket
 import threading
+
+# pylint: disable=E0401
 from attestation_manager import AttestationManager
 
 # Configure logging
@@ -26,9 +28,7 @@ class EnclaveServer:
                 while True:
                     try:
                         conn, _ = server.accept()
-                        threading.Thread(
-                            target=self._handle_client, args=(conn,)
-                        ).start()
+                        threading.Thread(target=self._handle_client, args=(conn,)).start()
                     except Exception as e:
                         logger.error(f"Error accepting connection: {e}")
         except Exception as e:

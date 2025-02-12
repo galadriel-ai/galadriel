@@ -22,9 +22,7 @@ logger = get_agent_logger()
 telegram_client = TelegramClient(token=os.getenv("TELEGRAM_TOKEN"), logger=logger)
 
 # Setup Composio weather tool
-composio_weather_tool = convert_action(
-    os.getenv("COMPOSIO_API_KEY"), "WEATHERMAP_WEATHER"
-)
+composio_weather_tool = convert_action(os.getenv("COMPOSIO_API_KEY"), "WEATHERMAP_WEATHER")
 
 # Add agent with GPT-4o model and tools helpful to answer Discord users' questions
 elon_musk_agent = CharacterAgent(
