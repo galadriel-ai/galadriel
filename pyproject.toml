@@ -67,15 +67,12 @@ lint.ignore = [
   "F403", # undefined-local-with-import-star
   "E501", # line-too-long
 ]
-lint.select = ["E", "F", "I"]
+lint.select = ["E", "F"]
 
 [tool.ruff.format]
 quote-style = "double"
 indent-style = "space"
 docstring-code-format = true
-
-[tool.ruff.lint.isort]
-combine-as-imports = false
 
 [tool.mypy]
 ignore_missing_imports = true

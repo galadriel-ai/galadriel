@@ -55,8 +55,7 @@ class TwitterPostTool(TwitterApiClient, Tool):
 
     name = TWITTER_POST_TOOL_NAME
     description = (
-        "This is a tool that posts a tweet to twitter. "
-        "It returns a boolean indicating if the posting was successful."
+        "This is a tool that posts a tweet to twitter. It returns a boolean indicating if the posting was successful."
     )
     inputs = {
         "tweet": {"type": "string", "description": "The tweet to post to twitter"},

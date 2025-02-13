@@ -98,7 +98,7 @@ def get_token_profile(task: str) -> str:  # pylint: disable=W0613
             d += ", tokenAddress: " + token["tokenAddress"]
             d += ", description: " + token["description"]
             for link in token["links"]:
-                d += f', {link["type"]}: {link["url"]}'
+                d += f", {link['type']}: {link['url']}"
             result += d + "\n"
         except Exception:
             pass

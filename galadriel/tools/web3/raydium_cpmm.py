@@ -191,7 +191,6 @@ AMM_CONFIG_LAYOUT = Struct(
 
 # pylint:disable=W0223
 class UInt128Adapter(Adapter):
-
     def _decode(self, obj, context, path):
         return (obj.high << 64) | obj.low
 

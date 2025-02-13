@@ -6,8 +6,6 @@ from dotenv import load_dotenv
 
 from galadriel import AgentRuntime, CodeAgent
 from galadriel.clients import SimpleMessageClient
-from galadriel.clients import TwitterMentionClient
-from galadriel.clients.twitter_mention_client import TwitterCredentials
 from galadriel.core_agent import LiteLLMModel
 from galadriel.entities import Pricing
 from galadriel.tools.web3 import dexscreener, coingecko

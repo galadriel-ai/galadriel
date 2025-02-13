@@ -58,7 +58,10 @@ class PerplexityClient:
         try:
             async with aiohttp.ClientSession() as session:
                 async with session.post(
-                    url, headers=headers, json=payload, timeout=timeout  # type: ignore
+                    url,
+                    headers=headers,
+                    json=payload,
+                    timeout=timeout,  # type: ignore
                 ) as response:
                     response.raise_for_status()
 
