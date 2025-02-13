@@ -1,5 +1,6 @@
 import base64
 from dataclasses import dataclass
+from enum import Enum
 import logging
 import os
 import struct
@@ -29,7 +30,6 @@ from spl.token.instructions import (
 )
 
 from construct import (
-    Enum,
     Struct,
     Int64ul,
     Bytes,
@@ -302,7 +302,7 @@ def buy(payer_keypair: Keypair, pair_address: str, sol_in: float = 0.1, slippage
         token_account_out=token_account,
         accounts=pool_keys,
         owner=payer_keypair.pubkey(),
-        action=DIRECTION.BUY,  # type: ignore
+        action=DIRECTION.BUY,
     )
 
     logger.info("Preparing to close WSOL account after swap...")
@@ -425,7 +425,7 @@ def sell(payer_keypair: Keypair, pair_address: str, percentage: int = 100, slipp
             token_account_out=wsol_token_account,
             accounts=pool_keys,
             owner=payer_keypair.pubkey(),
-            action=DIRECTION.SELL,  # type: ignore
+            action=DIRECTION.SELL,
         )
 
         logger.info("Preparing to close WSOL account after swap...")

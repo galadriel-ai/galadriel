@@ -38,7 +38,7 @@ class GetAdminWalletAddressTool(WalletTool):
     inputs = {"dummy": {"type": "string", "description": "Dummy input"}}
     output_type = "string"
 
-    # pylint:disable=W0221
+    # pylint:disable=W0221,W0613
     def forward(self, dummy: str) -> str:
         return self.wallet_repository.get_wallet_address()
 
