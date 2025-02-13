@@ -12,7 +12,7 @@ from dotenv import dotenv_values
 from dotenv import load_dotenv
 
 # pylint: disable=import-error
-from solders.keypair import Keypair
+from solders.keypair import Keypair  # type: ignore
 
 API_BASE_URL = "https://api.galadriel.com/v1"
 DEFAULT_SOLANA_KEY_PATH = os.path.expanduser("~/secret/.private_key.json")

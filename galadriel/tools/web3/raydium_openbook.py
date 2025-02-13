@@ -9,17 +9,17 @@ import logging
 from solana.rpc.api import Client
 from solana.rpc.commitment import Processed, Confirmed
 from solana.rpc.types import TokenAccountOpts, TxOpts
-from solders.compute_budget import set_compute_unit_limit, set_compute_unit_price  # pylint: disable=E0401
-from solders.message import MessageV0  # pylint: disable=E0401
-from solders.keypair import Keypair  # pylint: disable=E0401
-from solders.pubkey import Pubkey  # pylint: disable=E0401
-from solders.signature import Signature  # pylint: disable=E0401
-from solders.instruction import AccountMeta, Instruction  # pylint: disable=E0401
+from solders.compute_budget import set_compute_unit_limit, set_compute_unit_price  # type: ignore # pylint: disable=E0401
+from solders.message import MessageV0  # type: ignore # pylint: disable=E0401
+from solders.keypair import Keypair  # type: ignore # pylint: disable=E0401
+from solders.pubkey import Pubkey  # type: ignore # pylint: disable=E0401
+from solders.signature import Signature  # type: ignore # pylint: disable=E0401
+from solders.instruction import AccountMeta, Instruction  # type: ignore # pylint: disable=E0401
+from solders.transaction import VersionedTransaction  # type: ignore # pylint: disable=E0401
 from solders.system_program import (
     CreateAccountWithSeedParams,
     create_account_with_seed,
 )
-from solders.transaction import VersionedTransaction  # pylint: disable=E0401
 from spl.token.client import Token
 from spl.token.instructions import (
     CloseAccountParams,
@@ -485,9 +485,9 @@ def fetch_amm_v4_pool_keys(pair_address: str) -> Optional[AmmV4PoolKeys]:
         amm_id = Pubkey.from_string(pair_address)
         amm_data = client.get_account_info_json_parsed(amm_id, commitment=Processed).value.data  # type: ignore
         amm_data_decoded = LIQUIDITY_STATE_LAYOUT_V4.parse(amm_data)  # type: ignore
-        _market_id = Pubkey.from_bytes(amm_data_decoded.serumMarket)
-        _market_info = client.get_account_info_json_parsed(_market_id, commitment=Processed).value.data  # type: ignore
-        market_decoded = MARKET_STATE_LAYOUT_V3.parse(_market_info)  # type: ignore
+        market_id = Pubkey.from_bytes(amm_data_decoded.serumMarket)
+        market_info = client.get_account_info_json_parsed(_market_id, commitment=Processed).value.data  # type: ignore
+        market_decoded = MARKET_STATE_LAYOUT_V3.parse(market_info)  # type: ignore
         vault_signer_nonce = market_decoded.vault_signer_nonce
 
         pool_keys = AmmV4PoolKeys(
@@ -500,9 +500,9 @@ def fetch_amm_v4_pool_keys(pair_address: str) -> Optional[AmmV4PoolKeys]:
             target_orders=Pubkey.from_bytes(amm_data_decoded.ammTargetOrders),
             base_vault=Pubkey.from_bytes(amm_data_decoded.poolCoinTokenAccount),
             quote_vault=Pubkey.from_bytes(amm_data_decoded.poolPcTokenAccount),
-            market_id=_market_id,
+            market_id=market_id,
             market_authority=Pubkey.create_program_address(
-                seeds=[bytes(marketId), bytes_of(vault_signer_nonce)],
+                seeds=[bytes(market_id), bytes_of(vault_signer_nonce)],
                 program_id=OPENBOOK_MARKET,
             ),
             market_base_vault=Pubkey.from_bytes(market_decoded.base_vault),
