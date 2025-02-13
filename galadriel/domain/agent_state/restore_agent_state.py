@@ -13,12 +13,8 @@ from galadriel.entities import AgentState
 
 def execute(agent: MultiStepAgent, agent_state: AgentState):
     # restore steps from agent_state
-    assert (
-        agent_state.agent_id == agent.agent_id
-    ), "Agent ID in AgentState does not match the agent ID."
-    assert agent_state.type == str(
-        type(agent)
-    ), "Agent type in AgentState does not match the agent type."
+    assert agent_state.agent_id == agent.agent_id, "Agent ID in AgentState does not match the agent ID."
+    assert agent_state.type == str(type(agent)), "Agent type in AgentState does not match the agent type."
 
     memory_steps = []
     system_prompt_step = None

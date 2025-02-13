@@ -1,10 +1,5 @@
-import json
-import os
-
 import boto3
 from datetime import datetime
-from typing import Any
-from typing import Dict
 from typing import Optional
 from botocore.exceptions import ClientError
 
@@ -24,9 +19,7 @@ class AgentStateRepository:
         self.s3_client = boto3.client("s3")
         self.bucket_name = bucket_name
 
-    def download_agent_state(
-        self, agent_id: str, key: Optional[str] = None
-    ) -> Optional[AgentState]:
+    def download_agent_state(self, agent_id: str, key: Optional[str] = None) -> Optional[AgentState]:
         """Download agent state from S3. If key is None, the latest version will be fetched.
 
         Args:
@@ -44,9 +37,7 @@ class AgentStateRepository:
                 download_key = f"agents/{agent_id}/latest.json"  # Fetch latest version
 
             # Fetch the file from S3
-            response = self.s3_client.get_object(
-                Bucket=self.bucket_name, Key=download_key
-            )
+            response = self.s3_client.get_object(Bucket=self.bucket_name, Key=download_key)
 
             # Read and return JSON content as a string
             json_str = response["Body"].read().decode("utf-8")
@@ -55,9 +46,7 @@ class AgentStateRepository:
             logger.error(f"Failed to download JSON from S3: {str(e)}")
             return None
 
-    def upload_agent_state(
-        self, state: AgentState, key: Optional[str] = None
-    ) -> Optional[str]:
+    def upload_agent_state(self, state: AgentState, key: Optional[str] = None) -> Optional[str]:
         """Upload agent state as JSON to S3.
 
         Args:

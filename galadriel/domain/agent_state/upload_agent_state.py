@@ -5,9 +5,7 @@ from galadriel.errors import AgentStateError
 from galadriel.repository.agent_state_repository import AgentStateRepository
 
 
-def execute(
-    repository: AgentStateRepository, agent_state: AgentState, key: Optional[str]
-) -> str:
+def execute(repository: AgentStateRepository, agent_state: AgentState, key: Optional[str]) -> str:
     # Upload agent state to S3
     key = repository.upload_agent_state(agent_state, key)
 

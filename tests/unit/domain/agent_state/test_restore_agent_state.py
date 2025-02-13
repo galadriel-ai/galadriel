@@ -22,7 +22,7 @@ def test_restore_agent_state_with_valid_state():
     # Create test steps
     system_prompt_step = SystemPromptStep(system_prompt="I am a test system prompt")
     task_step = TaskStep(task="Sample task")
-    
+
     # Create agent state
     agent_state = AgentState(
         agent_id=agent_id,
@@ -30,7 +30,7 @@ def test_restore_agent_state_with_valid_state():
         steps=[
             system_prompt_step.dict(),
             task_step.dict(),
-        ]
+        ],
     )
 
     # Execute
@@ -57,9 +57,9 @@ def test_restore_different_step_types():
     planning_step = PlanningStep(
         facts=["fact1", "fact2"],
         plan=["step1", "step2"],
-        model_input_messages = "",
-        model_output_message_facts = "",
-        model_output_message_plan = "",
+        model_input_messages="",
+        model_output_message_facts="",
+        model_output_message_plan="",
     )
     task_step = TaskStep(task="Sample task")
 
@@ -71,7 +71,7 @@ def test_restore_different_step_types():
             action_step.dict(),
             planning_step.dict(),
             task_step.dict(),
-        ]
+        ],
     )
 
     print(action_step.dict())
@@ -93,9 +93,7 @@ def test_restore_agent_state_mismatched_agent_id():
 
     system_prompt_step = SystemPromptStep(system_prompt="Test system prompt")
     agent_state = AgentState(
-        agent_id="different_agent_id",
-        type=str(type(mock_agent)),
-        steps=[system_prompt_step.dict()]
+        agent_id="different_agent_id", type=str(type(mock_agent)), steps=[system_prompt_step.dict()]
     )
 
     with pytest.raises(AssertionError, match="Agent ID in AgentState does not match"):
@@ -109,11 +107,7 @@ def test_restore_agent_state_mismatched_type():
     mock_agent.agent_id = agent_id
 
     system_prompt_step = SystemPromptStep(system_prompt="Test system prompt")
-    agent_state = AgentState(
-        agent_id=agent_id,
-        type="DifferentAgentType",
-        steps=[system_prompt_step.dict()]
-    )
+    agent_state = AgentState(agent_id=agent_id, type="DifferentAgentType", steps=[system_prompt_step.dict()])
 
     with pytest.raises(AssertionError, match="Agent type in AgentState does not match"):
         restore_agent_state.execute(mock_agent, agent_state)
@@ -126,11 +120,7 @@ def test_restore_agent_state_missing_system_prompt():
     mock_agent.agent_id = agent_id
 
     task_step = TaskStep(task="Sample task")
-    agent_state = AgentState(
-        agent_id=agent_id,
-        type=str(type(mock_agent)),
-        steps=[task_step.dict()]
-    )
+    agent_state = AgentState(agent_id=agent_id, type=str(type(mock_agent)), steps=[task_step.dict()])
 
     with pytest.raises(AssertionError, match="SystemPromptStep is required"):
         restore_agent_state.execute(mock_agent, agent_state)
@@ -138,9 +128,7 @@ def test_restore_agent_state_missing_system_prompt():
 
 def test_restore_memory_step_unknown_type():
     """Test that restoration fails with unknown memory step type"""
-    unknown_step_data = {
-        "unknown_field": "some_value"
-    }
+    unknown_step_data = {"unknown_field": "some_value"}
 
     with pytest.raises(ValueError, match="Unknown MemoryStep type"):
         restore_agent_state._restore_memory_step(unknown_step_data)

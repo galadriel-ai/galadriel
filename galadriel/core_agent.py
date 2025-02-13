@@ -5,8 +5,8 @@ from smolagents import *
 from smolagents.agents import LogLevel  # noqa: F401
 from smolagents.tools import Tool, tool  # noqa: F401
 
-from smolagents.memory import ActionStep
-from smolagents.memory import MemoryStep
-from smolagents.memory import PlanningStep
-from smolagents.memory import TaskStep
-from smolagents.memory import SystemPromptStep
+from smolagents.memory import ActionStep  # noqa: F401
+from smolagents.memory import MemoryStep  # noqa: F401
+from smolagents.memory import PlanningStep  # noqa: F401
+from smolagents.memory import TaskStep  # noqa: F401
+from smolagents.memory import SystemPromptStep  # noqa: F401

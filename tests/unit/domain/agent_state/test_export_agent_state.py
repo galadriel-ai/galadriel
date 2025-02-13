@@ -71,13 +71,7 @@ def test_execute_preserves_step_order():
 
     # Create mock system prompt and steps
     system_prompt = SystemPromptStep(system_prompt="Test system prompt")
-    steps = [
-        TaskStep(
-            task=f"Task {i}",
-            task_images=None
-        )
-        for i in range(5)
-    ]
+    steps = [TaskStep(task=f"Task {i}", task_images=None) for i in range(5)]
 
     # Create mock agent
     mock_agent = MagicMock()
