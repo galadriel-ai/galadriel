@@ -7,7 +7,6 @@ from telebot.async_telebot import AsyncTeleBot
 
 from galadriel import AgentInput
 from galadriel import AgentOutput
-from galadriel.entities import HumanMessage
 from galadriel.entities import Message
 from galadriel.entities import PushOnlyQueue
 
@@ -74,7 +73,7 @@ class TelegramClient(AgentInput, AgentOutput):
             # Construct author name from available user information
             author = f"{user.first_name} {user.last_name}".strip() if user.first_name else user.username or str(user.id)
 
-            incoming = HumanMessage(
+            incoming = Message(
                 content=message.text,
                 conversation_id=str(message.chat.id),
                 additional_kwargs={

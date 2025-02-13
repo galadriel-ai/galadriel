@@ -7,7 +7,6 @@ from discord.ext import commands
 
 from galadriel import AgentInput
 from galadriel import AgentOutput
-from galadriel.entities import HumanMessage
 from galadriel.entities import Message
 from galadriel.entities import PushOnlyQueue
 
@@ -95,7 +94,7 @@ class DiscordClient(commands.Bot, AgentInput, AgentOutput):
 
         # Create Message object and add to queue
         try:
-            msg = HumanMessage(
+            msg = Message(
                 content=message.content,
                 conversation_id=f"{self.CONVERSATION_ID_PREFIX}{message.channel.id}",
                 additional_kwargs={
