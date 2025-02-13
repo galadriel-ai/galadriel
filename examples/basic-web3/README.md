@@ -6,7 +6,7 @@ This example demonstrates an agent which checks market data for a specific token
 It uses:
 
 - `gpt-4o` model from OpenAI
-- [CodeAgent](https://huggingface.co/docs/smolagents/reference/agents#smolagents.CodeAgent) from `smolagents` which performs a series of steps until it reaches the final result
+- [CodeAgent](https://github.com/galadriel-ai/galadriel/blob/main/galadriel/agent.py) which performs a series of steps until it reaches the final result
 - `SimpleMessageClient` which simulates user input in the form of market-related question
 - `AgentRuntime` which connects the client to agent and runs the agent execution
 - `dexscreener.fetch_market_data` Web3 tool which fetches market data for top tokens
