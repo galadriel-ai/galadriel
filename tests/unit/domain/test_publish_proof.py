@@ -1,4 +1,5 @@
 import json
+import os
 from unittest.mock import MagicMock
 
 from galadriel.domain import publish_proof

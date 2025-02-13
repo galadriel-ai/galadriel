@@ -1,6 +1,5 @@
-from datetime import datetime
-
 from galadriel.core_agent import tool
+from datetime import datetime
 
 
 @tool

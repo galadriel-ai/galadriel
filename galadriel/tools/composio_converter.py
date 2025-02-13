@@ -1,4 +1,5 @@
-from composio_langchain import App, ComposioToolSet
+from composio_langchain import App
+from composio_langchain import ComposioToolSet
 
 from galadriel.core_agent import Tool
 

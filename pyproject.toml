@@ -74,6 +74,9 @@ quote-style = "double"
 indent-style = "space"
 docstring-code-format = true
 
+[tool.ruff.lint.isort]
+combine-as-imports = false
+
 [tool.mypy]
 ignore_missing_imports = true
 

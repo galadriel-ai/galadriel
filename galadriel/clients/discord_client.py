@@ -5,8 +5,11 @@ from typing import Optional
 import discord
 from discord.ext import commands
 
-from galadriel import AgentInput, AgentOutput
-from galadriel.entities import HumanMessage, Message, PushOnlyQueue
+from galadriel import AgentInput
+from galadriel import AgentOutput
+from galadriel.entities import HumanMessage
+from galadriel.entities import Message
+from galadriel.entities import PushOnlyQueue
 
 
 class CommandsCog(commands.Cog):

@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 
 from galadriel import AgentRuntime, CodeAgent
 from galadriel.clients import SimpleMessageClient
-from galadriel.core_agent import DuckDuckGoSearchTool, LiteLLMModel
+from galadriel.core_agent import LiteLLMModel, DuckDuckGoSearchTool
 from galadriel.tools.web3 import dexscreener
 
 load_dotenv(dotenv_path=Path(".") / ".env", override=True)

@@ -1,16 +1,17 @@
-import asyncio
-import os
+from galadriel.clients.terminal_client import TerminalClient
+from galadriel.core_agent import LiteLLMModel
+from dotenv import load_dotenv
 from pathlib import Path
 
 from character_agent import CharacterAgent
-from dotenv import load_dotenv
+from galadriel.tools.composio_converter import convert_action
 from tools import get_time
-
 from galadriel import AgentRuntime
 from galadriel.clients import DiscordClient
-from galadriel.clients.terminal_client import TerminalClient
-from galadriel.core_agent import LiteLLMModel
+import os
+import asyncio
 from galadriel.logging_utils import get_agent_logger
+
 
 load_dotenv(dotenv_path=Path(".") / ".env", override=True)
 model = LiteLLMModel(model_id="gpt-4o", api_key=os.getenv("OPENAI_API_KEY"))

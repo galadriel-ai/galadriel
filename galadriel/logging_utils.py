@@ -1,6 +1,7 @@
 import logging
 import os
-from logging import DEBUG, INFO
+from logging import DEBUG
+from logging import INFO
 from typing import Optional
 
 from pythonjsonlogger import jsonlogger

@@ -1,6 +1,7 @@
 import asyncio
 import os
-from typing import Iterable, Optional
+from typing import Iterable
+from typing import Optional
 
 from openai import AsyncOpenAI
 from openai.types.chat.chat_completion import ChatCompletion

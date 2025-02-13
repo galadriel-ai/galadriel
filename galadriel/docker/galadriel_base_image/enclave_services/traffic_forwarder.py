@@ -1,7 +1,7 @@
-import logging
 import socket
 import struct
 import threading
+import logging
 from typing import Optional
 
 # Configure logging

@@ -3,11 +3,13 @@ import os
 import re
 import subprocess
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import Optional
+from typing import Tuple
 
 import click
 import requests
-from dotenv import dotenv_values, load_dotenv
+from dotenv import dotenv_values
+from dotenv import load_dotenv
 
 # pylint: disable=import-error
 from solders.keypair import Keypair  # type: ignore

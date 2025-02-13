@@ -4,6 +4,7 @@ from typing import Optional
 
 from solana.rpc.commitment import Confirmed
 from solders.pubkey import Pubkey  # type: ignore # pylint: disable=E0401
+
 from spl.token.async_client import AsyncToken
 from spl.token.constants import TOKEN_PROGRAM_ID
 from spl.token.instructions import get_associated_token_address

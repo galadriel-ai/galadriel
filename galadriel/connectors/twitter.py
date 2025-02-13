@@ -1,7 +1,10 @@
 import datetime
 import os
 from dataclasses import dataclass
-from typing import Dict, List, Literal, Optional
+from typing import Dict
+from typing import List
+from typing import Literal
+from typing import Optional
 
 from requests_oauthlib import OAuth1Session
 

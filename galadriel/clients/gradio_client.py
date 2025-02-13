@@ -1,12 +1,11 @@
 import asyncio
+from typing import Optional
 import logging
 from datetime import datetime
-from typing import Optional
-
 import gradio as gr
 
 from galadriel import AgentInput, AgentOutput
-from galadriel.entities import HumanMessage, Message, PushOnlyQueue
+from galadriel.entities import Message, PushOnlyQueue, HumanMessage
 
 
 class GradioClient(AgentInput, AgentOutput):
