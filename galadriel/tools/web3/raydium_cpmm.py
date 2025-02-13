@@ -52,9 +52,7 @@ UNIT_BUDGET = 150_000
 UNIT_PRICE = 1_000_000
 
 # Raydium AMM V4 devnet addresses
-RAYDIUM_CREATE_CPMM_POOL_PROGRAM = Pubkey.from_string(
-    "CPMDWBwJDtYax9qW7AyRuVC19Cc4L4Vcy4n2BHAbHkCW"
-)
+RAYDIUM_CREATE_CPMM_POOL_PROGRAM = Pubkey.from_string("CPMDWBwJDtYax9qW7AyRuVC19Cc4L4Vcy4n2BHAbHkCW")
 CREATE_CPMM_POOL_AUTHORITY = Pubkey.from_string("7rQ1QFNosMkUCuh7Z7fPbTHvh73b68sQYdirycEzJVuw")
 
 TOKEN_PROGRAM_ID = Pubkey.from_string("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA")
@@ -252,9 +250,7 @@ def buy(payer_keypair: Keypair, pair_address: str, sol_in: float = 0.1, slippage
     logger.info(f"Amount In: {amount_in} | Minimum Amount Out: {minimum_amount_out}")
 
     logger.info("Checking for existing token account...")
-    token_account_check = client.get_token_accounts_by_owner(
-        payer_keypair.pubkey(), TokenAccountOpts(mint), Processed
-    )
+    token_account_check = client.get_token_accounts_by_owner(payer_keypair.pubkey(), TokenAccountOpts(mint), Processed)
     if token_account_check.value:
         token_account = token_account_check.value[0].pubkey
         token_account_instruction = None
@@ -349,9 +345,7 @@ def buy(payer_keypair: Keypair, pair_address: str, sol_in: float = 0.1, slippage
     return confirmed
 
 
-def sell(
-    payer_keypair: Keypair, pair_address: str, percentage: int = 100, slippage: int = 1
-) -> bool:
+def sell(payer_keypair: Keypair, pair_address: str, percentage: int = 100, slippage: int = 1) -> bool:
     try:
         logger.info("Fetching pool keys...")
         pool_keys: Optional[CpmmPoolKeys] = fetch_cpmm_pool_keys(pair_address)
@@ -376,9 +370,7 @@ def sell(
             return False
 
         token_balance = token_balance * (percentage / 100)
-        logger.info(
-            f"Selling {percentage}% of the token balance, adjusted balance: {token_balance}"
-        )
+        logger.info(f"Selling {percentage}% of the token balance, adjusted balance: {token_balance}")
 
         logger.info("Calculating transaction amounts...")
         base_reserve, quote_reserve, token_decimal = get_cpmm_reserves(pool_keys)
@@ -490,9 +482,7 @@ def sell(
 def fetch_cpmm_pool_keys(pair_address: str) -> Optional[CpmmPoolKeys]:
     try:
         pool_state = Pubkey.from_string(pair_address)
-        pool_state_data = client.get_account_info_json_parsed(
-            pool_state, commitment=Processed
-        ).value.data
+        pool_state_data = client.get_account_info_json_parsed(pool_state, commitment=Processed).value.data
         parsed_data = CPMM_POOL_STATE_LAYOUT.parse(pool_state_data)
 
         pool_keys = CpmmPoolKeys(
@@ -596,9 +586,7 @@ def get_cpmm_reserves(pool_keys: CpmmPoolKeys):
     protocol_fees_token_1 = pool_keys.protocol_fees_token_1 / (10**base_decimal)
     fund_fees_token_1 = pool_keys.fund_fees_token_1 / (10**base_decimal)
 
-    balances_response = client.get_multiple_accounts_json_parsed(
-        [quote_vault, base_vault], Processed
-    )
+    balances_response = client.get_multiple_accounts_json_parsed([quote_vault, base_vault], Processed)
     balances = balances_response.value
 
     quote_account = balances[0]
@@ -620,9 +608,7 @@ def get_cpmm_reserves(pool_keys: CpmmPoolKeys):
         token_decimal = base_decimal
 
     logger.info(f"Base Mint: {base_mint} | Quote Mint: {quote_mint}")
-    logger.info(
-        f"Base Reserve: {base_reserve} | Quote Reserve: {quote_reserve} | Token Decimal: {token_decimal}"
-    )
+    logger.info(f"Base Reserve: {base_reserve} | Quote Reserve: {quote_reserve} | Token Decimal: {token_decimal}")
     return base_reserve, quote_reserve, token_decimal
 
 
