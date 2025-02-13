@@ -12,6 +12,7 @@ Key Features:
 - Price calculation with slippage protection
 - Automatic WSOL handling
 """
+
 import base64
 from dataclasses import dataclass
 from enum import Enum
@@ -109,6 +110,7 @@ class CpmmPoolKeys:
         fund_fees_token_1 (int): Fund fees in token 1
         open_time (int): Pool opening timestamp
     """
+
     pool_state: Pubkey
     raydium_vault_auth_2: Pubkey
     amm_config: Pubkey
@@ -141,6 +143,7 @@ class DIRECTION(Enum):
         BUY: Swap SOL for tokens
         SELL: Swap tokens for SOL
     """
+
     BUY = 0
     SELL = 1
 
@@ -228,6 +231,7 @@ class BuyTokenWithSolTool(WalletTool):
         inputs (dict): Schema for required input parameters
         output_type (str): Type of data returned by the tool
     """
+
     name = "buy_token_with_sol_cpmm"
     description = "Buy a token with SOL using the Raydium CPMM."
     inputs = {
@@ -279,6 +283,7 @@ class SellTokenForSolTool(WalletTool):
         inputs (dict): Schema for required input parameters
         output_type (str): Type of data returned by the tool
     """
+
     name = "sell_token_for_sol_cpmm"
     description = "Sell a token for SOL using the Raydium CPMM."
     inputs = {

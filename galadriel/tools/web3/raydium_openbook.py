@@ -10,6 +10,7 @@ Key Features:
 - AMM pool interaction
 - Price calculation with slippage protection
 """
+
 # pylint: disable=R0801
 import base64
 from dataclasses import dataclass
