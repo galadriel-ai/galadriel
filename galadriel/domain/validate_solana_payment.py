@@ -18,9 +18,16 @@ class TaskAndPaymentSignature:
     signature: str
 
 
-def execute(pricing: Pricing, existing_payments: Set[str], request: Message) -> TaskAndPaymentSignature:
+@dataclass
+class TaskAndPaymentSignatureResponse(TaskAndPaymentSignature):
+    amount_transferred_lamport: int
+
+
+def execute(pricing: Pricing, existing_payments: Set[str], request: Message) -> TaskAndPaymentSignatureResponse:
     """Validate the payment for the request.
     Args:
+        pricing: Pricing configuration, containing the wallet address and payment amount required
+        existing_payments: Already validated payments to avoid duplications
         request: The message containing the transaction signature
     Returns:
         The task to be executed
@@ -36,16 +43,21 @@ def execute(pricing: Pricing, existing_payments: Set[str], request: Message) -> 
         raise PaymentValidationError(
             f"Transaction {task_and_payment.signature} has already been used. Please submit a new payment."
         )
-    if not _validate_solana_payment(pricing, task_and_payment.signature):
+    sol_transferred_lamport = _get_sol_amount_transferred(pricing, task_and_payment.signature)
+    if sol_transferred_lamport < pricing.cost * 10**9:
         raise PaymentValidationError(
             f"Payment validation failed for transaction {task_and_payment.signature}. "
             f"Please ensure you've sent {pricing.cost} SOL to {pricing.wallet_address}"
         )
     existing_payments.add(task_and_payment.signature)
-    return task_and_payment
+    return TaskAndPaymentSignatureResponse(
+        task=task_and_payment.task,
+        signature=task_and_payment.signature,
+        amount_transferred_lamport=sol_transferred_lamport,
+    )
 
 
-def _validate_solana_payment(pricing: Pricing, tx_signature: str) -> bool:
+def _get_sol_amount_transferred(pricing: Pricing, tx_signature: str) -> int:
     http_client = Client("https://api.mainnet-beta.solana.com")
     tx_sig = Signature.from_string(tx_signature)
     tx_info = http_client.get_transaction(tx_sig=tx_sig, max_supported_transaction_version=10)
@@ -64,9 +76,7 @@ def _validate_solana_payment(pricing: Pricing, tx_signature: str) -> bool:
     pre_balance = meta.pre_balances[index]  # type: ignore
     post_balance = meta.post_balances[index]  # type: ignore
     amount_sent = post_balance - pre_balance
-    if amount_sent >= pricing.cost * 10**9:
-        return True
-    return False
+    return amount_sent
 
 
 def _get_key_index(account_keys: List[Pubkey], wallet_address: str) -> int:

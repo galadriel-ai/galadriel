@@ -1,12 +1,14 @@
-import pytest
 from unittest.mock import MagicMock
+
+import pytest
 
 from galadriel.domain import validate_solana_payment
 from galadriel.domain.validate_solana_payment import (
-    TaskAndPaymentSignature,
     PaymentValidationError,
 )
-from galadriel.entities import Message, Pricing
+from galadriel.domain.validate_solana_payment import TaskAndPaymentSignatureResponse
+from galadriel.entities import Message
+from galadriel.entities import Pricing
 
 
 @pytest.fixture
@@ -18,8 +20,8 @@ def test_successful_payment_validation(monkeypatch, pricing):
     """Test successful payment validation with valid signature."""
     monkeypatch.setattr(
         validate_solana_payment,
-        "_validate_solana_payment",
-        MagicMock(return_value=True),
+        "_get_sol_amount_transferred",
+        MagicMock(return_value=pricing.cost * 10**9),
     )
 
     spent_payments = set()
@@ -27,7 +29,7 @@ def test_successful_payment_validation(monkeypatch, pricing):
 
     result = validate_solana_payment.execute(pricing, spent_payments, message)
 
-    assert isinstance(result, TaskAndPaymentSignature)
+    assert isinstance(result, TaskAndPaymentSignatureResponse)
     assert result.task == "My task"
     assert result.signature == "valid_signature123"
     assert "valid_signature123" in spent_payments
@@ -59,8 +61,8 @@ def test_invalid_payment(monkeypatch, pricing):
     """Test validation fails when payment amount is incorrect."""
     monkeypatch.setattr(
         validate_solana_payment,
-        "_validate_solana_payment",
-        MagicMock(return_value=False),
+        "_get_sol_amount_transferred",
+        MagicMock(return_value=pricing.cost * 10**9 - 1),
     )
 
     spent_payments = set()
@@ -83,15 +85,15 @@ def test_signature_extraction_formats(monkeypatch, pricing):
     ]
     monkeypatch.setattr(
         validate_solana_payment,
-        "_validate_solana_payment",
-        MagicMock(return_value=True),
+        "_get_sol_amount_transferred",
+        MagicMock(return_value=pricing.cost * 10**9),
     )
     for test_case in test_cases:
         spent_payments = set()
         message = Message(content=test_case)
 
         result = validate_solana_payment.execute(pricing, spent_payments, message)
-        assert isinstance(result, TaskAndPaymentSignature)
+        assert isinstance(result, TaskAndPaymentSignatureResponse)
         assert (
             "2pcaEXQGhg9fRcMxQ3bj1La31em3fNynnTF5y1WodE56zxcvcqK3SnBjok8eYHajCJ6DxsjfrpEqtCdrEk2cxQ1Z"
             in result.signature
