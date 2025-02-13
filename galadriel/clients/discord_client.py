@@ -121,7 +121,6 @@ class DiscordClient(commands.Bot, AgentInput, AgentOutput):
         await self.ensure_bot_is_started()
         self.message_queue = queue
 
-
     # TODO Enable some way of setting up "default output channel" for Discord (i.e based on input from other clients, always post to this channel))
     async def send(self, request: Message, response: Message) -> None:
         """Send a response message to the appropriate Discord channel.
@@ -136,15 +135,13 @@ class DiscordClient(commands.Bot, AgentInput, AgentOutput):
         """
         await self.ensure_bot_is_started()
 
-        should_respond = (
-                response.conversation_id
-                and response.conversation_id.startswith(self.CONVERSATION_ID_PREFIX)
-        )
+        conversation_id = response.conversation_id
+        should_respond = conversation_id and conversation_id.startswith(self.CONVERSATION_ID_PREFIX)
         if not should_respond:
             self.logger.info(f"This isn't Discord conversation: {response.conversation_id}. Ignoring...")
             return
 
-        channel_id = response.conversation_id.split(self.CONVERSATION_ID_PREFIX)[1]
+        channel_id = conversation_id.split(self.CONVERSATION_ID_PREFIX)[1]
         try:
             channel = self.get_channel(int(channel_id))
             await channel.send(response.content)
