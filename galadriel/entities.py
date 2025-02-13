@@ -1,9 +1,7 @@
 import asyncio
-from typing import Dict
-from typing import Optional
+from typing import Dict, Optional
 
-from pydantic import BaseModel
-from pydantic import Field
+from pydantic import BaseModel, Field
 
 GALADRIEL_API_BASE_URL = "https://api.galadriel.com/v1"
 

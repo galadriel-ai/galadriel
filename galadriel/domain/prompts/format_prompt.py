@@ -1,6 +1,6 @@
-from typing import Dict
 import json
 import random
+from typing import Dict
 
 
 def execute(prompt_template: str, prompt_state: Dict) -> str:

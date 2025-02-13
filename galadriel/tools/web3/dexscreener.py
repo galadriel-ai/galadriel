@@ -1,5 +1,7 @@
 import json
+
 import requests
+
 from galadriel.core_agent import tool
 
 
@@ -35,7 +37,10 @@ def fetch_market_data(dummy: dict) -> str:  # pylint: disable=W0613
     token_list = get_token_list()
     market_data = []
     for token in token_list:
-        response = requests.get(f"https://api.dexscreener.com/tokens/v1/solana/{token['address']}", timeout=30)
+        response = requests.get(
+            f"https://api.dexscreener.com/tokens/v1/solana/{token['address']}",
+            timeout=30,
+        )
         if response.status_code == 200:
             _data = response.json()
             # Remove unrelated data to fit the context limit
@@ -69,7 +74,7 @@ def get_token_profile(task: str) -> str:  # pylint: disable=W0613
             d += ", tokenAddress: " + token["tokenAddress"]
             d += ", description: " + token["description"]
             for link in token["links"]:
-                d += f', {link["type"]}: {link["url"]}'
+                d += f", {link['type']}: {link['url']}"
             result += d + "\n"
         except Exception:
             pass

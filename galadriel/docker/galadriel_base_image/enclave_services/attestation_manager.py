@@ -1,7 +1,8 @@
-import os
 import base64
-from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+import os
+
 from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
 # pylint: disable=E0401
 from nsm_util import NSMUtil

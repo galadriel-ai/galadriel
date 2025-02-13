@@ -1,9 +1,7 @@
 import asyncio
 from dataclasses import dataclass
-from datetime import datetime
-from datetime import timezone
-from typing import Literal
-from typing import Optional
+from datetime import datetime, timezone
+from typing import Literal, Optional
 
 import aiohttp
 
@@ -58,7 +56,10 @@ class PerplexityClient:
         try:
             async with aiohttp.ClientSession() as session:
                 async with session.post(
-                    url, headers=headers, json=payload, timeout=timeout  # type: ignore
+                    url,
+                    headers=headers,
+                    json=payload,
+                    timeout=timeout,  # type: ignore
                 ) as response:
                     response.raise_for_status()
 

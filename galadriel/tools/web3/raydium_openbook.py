@@ -1,26 +1,42 @@
 # pylint: disable=R0801
 import base64
-from dataclasses import dataclass
 import json
+import logging
 import os
 import struct
 import time
+from dataclasses import dataclass
 from typing import Optional
-import logging
+
+from construct import (
+    BitsInteger,
+    BitsSwapped,
+    BitStruct,
+    Bytes,
+    BytesInteger,
+    Const,
+    Flag,
+    Int64ul,
+    Padding,
+)
+from construct import Struct as cStruct
 from solana.rpc.api import Client
-from solana.rpc.commitment import Processed, Confirmed
+from solana.rpc.commitment import Confirmed, Processed
 from solana.rpc.types import TokenAccountOpts, TxOpts
-from solders.compute_budget import set_compute_unit_limit, set_compute_unit_price  # type: ignore # pylint: disable=E0401
-from solders.message import MessageV0  # type: ignore # pylint: disable=E0401
+from solders.compute_budget import (  # type: ignore # pylint: disable=E0401
+    set_compute_unit_limit,
+    set_compute_unit_price,
+)
+from solders.instruction import AccountMeta, Instruction  # type: ignore # pylint: disable=E0401
 from solders.keypair import Keypair  # type: ignore # pylint: disable=E0401
+from solders.message import MessageV0  # type: ignore # pylint: disable=E0401
 from solders.pubkey import Pubkey  # type: ignore # pylint: disable=E0401
 from solders.signature import Signature  # type: ignore # pylint: disable=E0401
-from solders.instruction import AccountMeta, Instruction  # type: ignore # pylint: disable=E0401
-from solders.transaction import VersionedTransaction  # type: ignore # pylint: disable=E0401
 from solders.system_program import (
     CreateAccountWithSeedParams,
     create_account_with_seed,
 )
+from solders.transaction import VersionedTransaction  # type: ignore # pylint: disable=E0401
 from spl.token.client import Token
 from spl.token.instructions import (
     CloseAccountParams,
@@ -31,21 +47,7 @@ from spl.token.instructions import (
     initialize_account,
 )
 
-from construct import (
-    Bytes,
-    Int64ul,
-    Padding,
-    BitsInteger,
-    BitsSwapped,
-    BitStruct,
-    Const,
-    Flag,
-    BytesInteger,
-)
-from construct import Struct as cStruct
-
 from galadriel.tools.web3.wallet_tool import WalletTool
-
 
 logger = logging.getLogger(__name__)
 
@@ -474,7 +476,6 @@ def tokens_for_sol(token_amount, base_vault_balance, quote_vault_balance, swap_f
 
 
 def fetch_amm_v4_pool_keys(pair_address: str) -> Optional[AmmV4PoolKeys]:
-
     def bytes_of(value):
         if not 0 <= value < 2**64:
             raise ValueError("Value must be in the range of a u64 (0 to 2^64 - 1).")
@@ -571,7 +572,6 @@ def make_amm_v4_swap_instruction(
     owner: Pubkey,
 ) -> Optional[Instruction]:
     try:
-
         keys = [
             AccountMeta(pubkey=accounts.token_program_id, is_signer=False, is_writable=False),
             AccountMeta(pubkey=accounts.amm_id, is_signer=False, is_writable=True),
@@ -607,7 +607,6 @@ def make_amm_v4_swap_instruction(
 
 
 def get_token_balance(pubkey: Pubkey, mint_str: str) -> float | None:
-
     mint = Pubkey.from_string(mint_str)
     response = client.get_token_accounts_by_owner_json_parsed(pubkey, TokenAccountOpts(mint=mint), commitment=Processed)
 

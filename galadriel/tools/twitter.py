@@ -1,12 +1,9 @@
 import json
 import os
-from typing import Dict
-from typing import Optional
+from typing import Dict, Optional
 
+from galadriel.connectors.twitter import TwitterApiClient, TwitterCredentials
 from galadriel.core_agent import Tool
-
-from galadriel.connectors.twitter import TwitterApiClient
-from galadriel.connectors.twitter import TwitterCredentials
 from galadriel.logging_utils import get_agent_logger
 
 logger = get_agent_logger()
@@ -24,8 +21,7 @@ class CredentialsException(Exception):
 class TwitterPostTool(TwitterApiClient, Tool):
     name = TWITTER_POST_TOOL_NAME
     description = (
-        "This is a tool that posts a tweet to twitter. "
-        "It returns a boolean indicating if the posting was successful."
+        "This is a tool that posts a tweet to twitter. It returns a boolean indicating if the posting was successful."
     )
     inputs = {
         "tweet": {"type": "string", "description": "The tweet to post to twitter"},

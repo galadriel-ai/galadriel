@@ -1,28 +1,18 @@
 import asyncio
-from abc import ABC
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Dict, List
-from typing import Optional
-from typing import Set
-
 from pprint import pformat
+from typing import Dict, List, Optional, Set
 
 from dotenv import load_dotenv as _load_dotenv
-
 from smolagents import CodeAgent as InternalCodeAgent
 from smolagents import ToolCallingAgent as InternalToolCallingAgent
 
-from galadriel.domain import generate_proof
-from galadriel.domain import publish_proof
-from galadriel.domain import validate_solana_payment
+from galadriel.domain import generate_proof, publish_proof, validate_solana_payment
 from galadriel.domain.prompts import format_prompt
-from galadriel.entities import Message
-from galadriel.entities import Pricing
-from galadriel.entities import PushOnlyQueue
+from galadriel.entities import Message, Pricing, PushOnlyQueue
 from galadriel.errors import PaymentValidationError
-from galadriel.logging_utils import init_logging
-from galadriel.logging_utils import get_agent_logger
+from galadriel.logging_utils import get_agent_logger, init_logging
 
 logger = get_agent_logger()
 
@@ -52,7 +42,6 @@ class AgentState:
 
 # pylint:disable=E0102
 class CodeAgent(Agent, InternalCodeAgent):
-
     def __init__(
         self,
         prompt_template: Optional[str] = None,
@@ -79,7 +68,6 @@ class CodeAgent(Agent, InternalCodeAgent):
 
 # pylint:disable=E0102
 class ToolCallingAgent(Agent, InternalToolCallingAgent):
-
     def __init__(
         self,
         prompt_template: Optional[str] = None,

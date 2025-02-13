@@ -6,8 +6,7 @@ from rich.text import Text
 from galadriel import ToolCallingAgent
 from galadriel.core_agent import LogLevel
 from galadriel.domain.prompts.format_prompt import load_agent_template
-from galadriel.entities import AgentMessage
-from galadriel.entities import Message
+from galadriel.entities import AgentMessage, Message
 
 DISCORD_SYSTEM_PROMPT = """
 {{system}}

@@ -1,6 +1,5 @@
 import asyncio
-from typing import List
-from typing import Optional
+from typing import List, Optional
 
 from galadriel import AgentInput, AgentOutput
 from galadriel.entities import Message, PushOnlyQueue

@@ -1,14 +1,11 @@
 from dataclasses import dataclass
-from typing import List
-from typing import Optional
-from typing import Set
+from typing import List, Optional, Set
 
 from solana.rpc.api import Client
 from solders.pubkey import Pubkey  # pylint: disable=E0401
 from solders.signature import Signature  # pylint: disable=E0401
 
-from galadriel.entities import Message
-from galadriel.entities import Pricing
+from galadriel.entities import Message, Pricing
 from galadriel.errors import PaymentValidationError
 
 

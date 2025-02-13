@@ -3,11 +3,8 @@ import logging
 import os
 import threading
 import time
-from datetime import datetime
-from datetime import timezone
-from typing import Dict
-from typing import List
-from typing import Optional
+from datetime import datetime, timezone
+from typing import Dict, List, Optional
 from urllib.parse import urljoin
 
 import requests

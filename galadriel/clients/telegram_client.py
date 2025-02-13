@@ -5,11 +5,8 @@ from typing import Optional
 from telebot import types
 from telebot.async_telebot import AsyncTeleBot
 
-from galadriel import AgentInput
-from galadriel import AgentOutput
-from galadriel.entities import HumanMessage
-from galadriel.entities import Message
-from galadriel.entities import PushOnlyQueue
+from galadriel import AgentInput, AgentOutput
+from galadriel.entities import HumanMessage, Message, PushOnlyQueue
 
 
 class TelegramClient(AgentInput, AgentOutput):

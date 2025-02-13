@@ -1,13 +1,11 @@
-from typing import Dict
-from typing import List
+from typing import Dict, List
 from unittest.mock import MagicMock
 
 import pytest
 
-from galadriel import AgentRuntime, Agent, AgentInput, AgentOutput
-from galadriel import agent
+from galadriel import Agent, AgentInput, AgentOutput, AgentRuntime, agent
 from galadriel.domain import validate_solana_payment
-from galadriel.entities import Message, PushOnlyQueue, Pricing
+from galadriel.entities import Message, Pricing, PushOnlyQueue
 from galadriel.errors import PaymentValidationError
 
 CONVERSATION_ID = "ci1"

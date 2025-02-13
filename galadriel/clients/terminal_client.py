@@ -1,10 +1,10 @@
 import asyncio
-from typing import Optional
 import logging
 from datetime import datetime
+from typing import Optional
 
 from galadriel import AgentInput, AgentOutput
-from galadriel.entities import Message, PushOnlyQueue, HumanMessage
+from galadriel.entities import HumanMessage, Message, PushOnlyQueue
 
 
 class TerminalClient(AgentInput, AgentOutput):

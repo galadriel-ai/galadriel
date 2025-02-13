@@ -6,11 +6,9 @@ from dotenv import load_dotenv
 
 from galadriel import AgentRuntime
 from galadriel.agent import CodeAgent
-from galadriel.core_agent import LiteLLMModel
 from galadriel.clients import Cron
+from galadriel.core_agent import LiteLLMModel
 from galadriel.tools.web3 import dexscreener, raydium_cpmm
-from galadriel.tools.web3 import coingecko
-from galadriel.tools.web3 import jupiter
 from galadriel.tools.web3 import solana_tools as solana
 
 TRADING_INTERVAL_SECONDS = 300

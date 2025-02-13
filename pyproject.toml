@@ -62,6 +62,19 @@ build-backend = "poetry.core.masonry.api"
 [tool.poetry.scripts]
 galadriel = "galadriel.cli:galadriel"
 
+[tool.ruff]
+line-length = 120
+lint.ignore = [
+  "F403", # undefined-local-with-import-star
+  "E501", # line-too-long
+]
+lint.select = ["E", "F", "I"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+docstring-code-format = true
+
 [tool.black]
 line-length = 120
 
