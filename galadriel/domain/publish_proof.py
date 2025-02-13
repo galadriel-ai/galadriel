@@ -1,33 +1,30 @@
 import json
 import os
 from typing import Optional
-
+from logging import Logger
 import requests
 
-from galadriel.entities import Message
-from galadriel.logging_utils import get_agent_logger
-
-logger = get_agent_logger()
+from galadriel.entities import Message, Proof
 
 
-def execute(request: Message, response: Message, hashed_data: str) -> bool:
+async def publish_proof(request: Message, response: Message, proof: Proof, logger: Logger) -> bool:
     # TODO: url = "https://api.galadriel.com/v1/verified/chat/log"
     url = "http://localhost:5000/v1/verified/chat/log"
     headers = {
         "accept": "application/json",
         "Content-Type": "application/json",
-        "Authorization": _get_authorization(),
+        "Authorization": _get_authorization(logger),
     }
     data = {
-        "attestation": "TODO:",  # TODO
-        "hash": hashed_data,
-        "public_key": "TODO:",  # TODO
+        "attestation": proof.attestation,
+        "hash": proof.hash,
+        "public_key": proof.public_key,
         "request": request.model_dump(),
         "response": response.model_dump(),
-        "signature": "TODO:",  # TODO
+        "signature": proof.signature,
     }
     try:
-        result = requests.post(url, headers=headers, data=json.dumps(data), timeout=30)
+        result = requests.post(url, headers=headers, data=json.dumps(data))
         if result.status_code == 200:
             return True
     except Exception:
@@ -35,9 +32,9 @@ def execute(request: Message, response: Message, hashed_data: str) -> bool:
     return False
 
 
-def _get_authorization() -> Optional[str]:
+def _get_authorization(logger: Logger) -> Optional[str]:
     api_key = os.getenv("GALADRIEL_API_KEY")
     if api_key:
         return "Bearer " + api_key
-    logger.debug("GALADRIEL_API_KEY env variable missing skipping proof publishing.")
+    logger.info("GALADRIEL_API_KEY missing, set this as export GALADRIEL_API_KEY=<key>")
     return None

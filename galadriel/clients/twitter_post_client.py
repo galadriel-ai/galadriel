@@ -1,5 +1,5 @@
 from galadriel import AgentOutput
-from galadriel.entities import Message
+from galadriel.entities import Message, Proof
 from galadriel.tools.twitter import TwitterPostTool
 
 
@@ -25,7 +25,7 @@ class TwitterPostClient(AgentOutput):
     def __init__(self):
         self.twitter_post_tool = TwitterPostTool()
 
-    async def send(self, request: Message, response: Message) -> None:
+    async def send(self, request: Message, response: Message, proof: Proof) -> None:
         self.twitter_post_tool(
             response.content,
             in_reply_to_id=(response.additional_kwargs or {}).get("in_reply_to_id"),

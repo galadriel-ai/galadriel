@@ -3,7 +3,7 @@ from typing import List
 from typing import Optional
 
 from galadriel import AgentInput, AgentOutput
-from galadriel.entities import Message, PushOnlyQueue
+from galadriel.entities import Message, PushOnlyQueue, Proof
 
 
 # Implementation of agent input and output which pushes simple input for agent at specific interval
@@ -30,7 +30,7 @@ class SimpleMessageClient(AgentInput, AgentOutput):
             except asyncio.CancelledError:
                 break
 
-    async def send(self, request: Message, response: Message):
+    async def send(self, request: Message, response: Message, proof: Proof):
         print("\n======== simple_message_client.post_output ========")
         print("request:", request)
         print("response:", response)

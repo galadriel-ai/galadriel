@@ -13,11 +13,11 @@ from dotenv import load_dotenv as _load_dotenv
 from smolagents import CodeAgent as InternalCodeAgent
 from smolagents import ToolCallingAgent as InternalToolCallingAgent
 
-from galadriel.domain import generate_proof
-from galadriel.domain import publish_proof
+from galadriel.domain.generate_proof import generate_proof
+from galadriel.domain.publish_proof import publish_proof
 from galadriel.domain import validate_solana_payment
 from galadriel.domain.prompts import format_prompt
-from galadriel.entities import Message
+from galadriel.entities import Message, Proof
 from galadriel.entities import Pricing
 from galadriel.entities import PushOnlyQueue
 from galadriel.errors import PaymentValidationError
@@ -41,7 +41,7 @@ class AgentInput:
 
 
 class AgentOutput:
-    async def send(self, request: Message, response: Message) -> None:
+    async def send(self, request: Message, response: Message, proof: Proof) -> None:
         pass
 
 
@@ -156,16 +156,10 @@ class AgentRuntime:
                 memory = await self._get_memory()
                 logger.info(f"Current agent memory: {pformat(memory)}")
         if response:
-            # proof = await self._generate_proof(request, response)
-            # await self._publish_proof(request, response, proof)
+            proof: Proof = await generate_proof(request, response, logger)
+            await publish_proof(request, response, proof, logger)
             for output in self.outputs:
                 await output.send(request, response)
 
     async def _get_memory(self) -> List[Dict[str, str]]:
         return self.agent.write_memory_to_messages(summary_mode=True)  # type: ignore
-
-    async def _generate_proof(self, request: Message, response: Message) -> str:
-        return generate_proof.execute(request, response)
-
-    async def _publish_proof(self, request: Message, response: Message, proof: str):
-        publish_proof.execute(request, response, proof)

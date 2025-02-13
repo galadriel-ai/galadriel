@@ -7,7 +7,7 @@ from telebot.async_telebot import AsyncTeleBot
 
 from galadriel import AgentInput
 from galadriel import AgentOutput
-from galadriel.entities import HumanMessage
+from galadriel.entities import HumanMessage, Proof
 from galadriel.entities import Message
 from galadriel.entities import PushOnlyQueue
 
@@ -44,7 +44,7 @@ class TelegramClient(AgentInput, AgentOutput):
         self.logger.info("Starting AsyncTeleBot polling...")
         await self.bot.infinity_polling()
 
-    async def send(self, request: Message, response: Message):
+    async def send(self, request: Message, response: Message, proof: Proof):
         if not response.conversation_id:
             self.logger.warning("No conversation_id found in request; cannot respond.")
             return

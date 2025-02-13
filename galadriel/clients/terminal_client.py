@@ -4,7 +4,7 @@ import logging
 from datetime import datetime
 
 from galadriel import AgentInput, AgentOutput
-from galadriel.entities import Message, PushOnlyQueue, HumanMessage
+from galadriel.entities import Message, PushOnlyQueue, HumanMessage, Proof
 
 
 class TerminalClient(AgentInput, AgentOutput):
@@ -51,5 +51,5 @@ class TerminalClient(AgentInput, AgentOutput):
                 self.logger.error(f"Error processing input: {e}")
                 break
 
-    async def send(self, request: Message, response: Message) -> None:
+    async def send(self, request: Message, response: Message, proof: Proof) -> None:
         print(f"\nAgent: {response.content}")

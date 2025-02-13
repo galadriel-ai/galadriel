@@ -5,7 +5,7 @@ from datetime import datetime
 import gradio as gr
 
 from galadriel import AgentInput, AgentOutput
-from galadriel.entities import Message, PushOnlyQueue, HumanMessage
+from galadriel.entities import Message, PushOnlyQueue, HumanMessage, Proof
 
 
 class GradioClient(AgentInput, AgentOutput):
@@ -90,7 +90,7 @@ class GradioClient(AgentInput, AgentOutput):
 
             await asyncio.sleep(0.1)
 
-    async def send(self, request: Message, response: Message) -> None:
+    async def send(self, request: Message, response: Message, proof: Proof) -> None:
         """Update the Gradio chat interface with the response"""
         message = response.content
         if not message:
