@@ -46,10 +46,3 @@ def _restore_memory_step(data: Dict[str, Any]) -> MemoryStep:
         return SystemPromptStep(**data)
     else:
         raise ValueError("Unknown MemoryStep type based on dictionary keys.")
-
-
-if __name__ == "__main__":
-    execute(
-        MultiStepAgent(tools=[], model="gpt-4o-mini"),
-        AgentState(steps=[{"task": "hello"}]),
-    )
