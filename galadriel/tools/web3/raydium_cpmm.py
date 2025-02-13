@@ -488,9 +488,7 @@ def sell(payer_keypair: Keypair, pair_address: str, percentage: int = 100, slipp
 def fetch_cpmm_pool_keys(pair_address: str) -> Optional[CpmmPoolKeys]:
     try:
         pool_state = Pubkey.from_string(pair_address)
-        pool_state_account = client.get_account_info_json_parsed(
-            pool_state, commitment=Processed
-        ).value
+        pool_state_account = client.get_account_info_json_parsed(pool_state, commitment=Processed).value
         if not pool_state_account:
             logger.error("Pool state account not found.")
             return None
