@@ -12,17 +12,20 @@ Key Features:
 """
 
 import asyncio
-import json
-from typing import Dict, Optional
+import logging
+from typing import Optional
 
 from solana.rpc.commitment import Confirmed
-from solders.pubkey import Pubkey  # pylint: disable=E0401
+from solders.pubkey import Pubkey  # type: ignore # pylint: disable=E0401
 
 from spl.token.async_client import AsyncToken
 from spl.token.constants import TOKEN_PROGRAM_ID
 from spl.token.instructions import get_associated_token_address
 
 from galadriel.core_agent import tool
+from galadriel.tools.web3.wallet_tool import WalletTool
+
+logger = logging.getLogger(__name__)
 
 # Constants
 LAMPORTS_PER_SOL = 1_000_000_000  # Number of lamports in 1 SOL
@@ -35,7 +38,7 @@ user_portfolios: Dict[str, Portfolio] = {}  # Maps user addresses to their portf
 
 
 @tool
-def update_user_balance(user_address: str, token: str) -> str:
+def update_user_balance(user_address: str, token: str) -> Optional[float]:
     """Update a user's token balance in the local storage.
 
     Fetches the current balance from the blockchain and updates the local
@@ -46,7 +49,7 @@ def update_user_balance(user_address: str, token: str) -> str:
         token (str): The token's mint address
 
     Returns:
-        str: Success message
+        float: The balance of the user for the specified token, or None if the balance is not available.
 
     Note:
         - Creates new portfolio entry if user doesn't exist
@@ -117,9 +120,18 @@ async def get_user_balance(user_address: str, token: str) -> float:
     Note:
         Returns 0.0 if either the user or token is not found
     """
-    if user_address in user_portfolios:
-        return user_portfolios[user_address].get(token, 0.0)  # Return 0 if token not found
-    return 0.0
+    return asyncio.run(get_user_token_balance(user_address, token))
+
+
+class GetAdminWalletAddressTool(WalletTool):
+    name = "get_admin_wallet_address"
+    description = "This tool returns the wallet address of the admin."
+    inputs = {"dummy": {"type": "string", "description": "Dummy input"}}
+    output_type = "string"
+
+    # pylint:disable=W0221,W0613
+    def forward(self, dummy: str) -> str:
+        return self.wallet_repository.get_wallet_address()
 
 
 async def get_user_token_balance(self, user_address: str, token_address: Optional[str] = None) -> Optional[float]:
@@ -168,7 +180,7 @@ async def get_user_token_balance(self, user_address: str, token_address: Optiona
             return None
 
         response = response.value.ui_amount
-        print(f"Balance response: {response}")
+        logger.info(f"Balance response: {response}")
 
         return float(response)
 
