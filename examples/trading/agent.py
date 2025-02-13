@@ -8,7 +8,7 @@ from galadriel import AgentRuntime
 from galadriel.agent import CodeAgent
 from galadriel.core_agent import LiteLLMModel
 from galadriel.clients import Cron
-from galadriel.tools.web3 import dexscreener, raydium_cpmm
+from galadriel.tools.web3 import market_data_devnet, raydium_cpmm
 from galadriel.tools.web3 import solana_tools as solana
 
 TRADING_INTERVAL_SECONDS = 300
@@ -40,7 +40,7 @@ model = LiteLLMModel(
 
 # Prepare a Web3 specific toolkit, relevant for the trading agent
 tools = [
-    dexscreener.fetch_market_data_devnet,
+    market_data_devnet.fetch_market_data,
     raydium_cpmm.BuyTokenWithSolTool(),
     solana.GetAdminWalletAddressTool(),
     solana.get_user_balance,

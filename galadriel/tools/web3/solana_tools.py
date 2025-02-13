@@ -13,12 +13,14 @@ Key Features:
 
 import asyncio
 import logging
+import os
 from typing import Optional
 
+from solana.rpc.api import Client
 from solana.rpc.commitment import Confirmed
 from solders.pubkey import Pubkey  # type: ignore # pylint: disable=E0401
 
-from spl.token.async_client import AsyncToken
+from spl.token.client import Token
 from spl.token.constants import TOKEN_PROGRAM_ID
 from spl.token.instructions import get_associated_token_address
 
@@ -28,6 +30,11 @@ from galadriel.tools.web3.wallet_tool import WalletTool
 logger = logging.getLogger(__name__)
 
 LAMPORTS_PER_SOL = 1_000_000_000
+
+if os.getenv("SOLANA_NETWORK") == "devnet":
+    client = Client("https://api.devnet.solana.com")
+else:
+    client = Client("https://api.mainnet-beta.solana.com")
 
 
 @tool
@@ -56,7 +63,7 @@ class GetAdminWalletAddressTool(WalletTool):
         return self.wallet_repository.get_wallet_address()
 
 
-async def get_user_token_balance(self, user_address: str, token_address: Optional[str] = None) -> Optional[float]:
+def get_user_token_balance(user_address: str, token_address: Optional[str] = None) -> Optional[float]:
     """Query a user's token balance from the Solana blockchain.
 
     Fetches the current balance of either SOL or an SPL token for
@@ -83,21 +90,21 @@ async def get_user_token_balance(self, user_address: str, token_address: Optiona
 
         # Handle SOL balance query
         if not token_address:
-            response = await self.async_client.get_balance(user_pubkey, commitment=Confirmed)
+            response = client.get_balance(user_pubkey, commitment=Confirmed)
             return response.value / LAMPORTS_PER_SOL
 
         # Handle SPL token balance query
         token_address = Pubkey.from_string(token_address)  # type: ignore
-        spl_client = AsyncToken(self.async_client, token_address, TOKEN_PROGRAM_ID, user_pubkey)  # type: ignore
+        spl_client = Token(client, token_address, TOKEN_PROGRAM_ID, user_pubkey)  # type: ignore
 
         # Verify token mint is initialized
-        mint = await spl_client.get_mint_info()
+        mint = spl_client.get_mint_info()
         if not mint.is_initialized:
             raise ValueError("Token mint is not initialized.")
 
         # Get balance from Associated Token Account
         wallet_ata = get_associated_token_address(user_pubkey, token_address)  # type: ignore
-        response = await self.async_client.get_token_account_balance(wallet_ata)
+        response = client.get_token_account_balance(wallet_ata)
         if response.value is None:
             return None
 
@@ -108,3 +115,12 @@ async def get_user_token_balance(self, user_address: str, token_address: Optiona
 
     except Exception as error:
         raise Exception(f"Failed to get balance: {str(error)}") from error  # pylint: disable=W0719
+
+
+if __name__ == "__main__":
+    os.environ["SOLANA_NETWORK"] = "devnet"
+    data = get_user_token_balance(
+        "4kbGbZtfkfkRVGunkbKX4M7dGPm9MghJZodjbnRZbmug",
+        "ELJKW7qz3DA93K919agEk398kgeY1eGvs2u3GAfV3FLn",
+    )
+    print(data)

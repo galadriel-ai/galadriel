@@ -66,16 +66,25 @@ logger = logging.getLogger(__name__)
 UNIT_BUDGET = 150_000
 UNIT_PRICE = 1_000_000
 
-# Raydium AMM V4 devnet addresses
-RAYDIUM_CREATE_CPMM_POOL_PROGRAM = Pubkey.from_string("CPMDWBwJDtYax9qW7AyRuVC19Cc4L4Vcy4n2BHAbHkCW")
-CREATE_CPMM_POOL_AUTHORITY = Pubkey.from_string("7rQ1QFNosMkUCuh7Z7fPbTHvh73b68sQYdirycEzJVuw")
+# Raydium CPMM program addresses
+# https://docs.raydium.io/raydium/protocol/developers/addresses
+# https://github.com/raydium-io/raydium-sdk-V2/blob/master/src/common/programId.ts
+if os.getenv("SOLANA_NETWORK") == "devnet":
+    RAYDIUM_CREATE_CPMM_POOL_PROGRAM = Pubkey.from_string("CPMDWBwJDtYax9qW7AyRuVC19Cc4L4Vcy4n2BHAbHkCW")
+    CREATE_CPMM_POOL_AUTHORITY = Pubkey.from_string("7rQ1QFNosMkUCuh7Z7fPbTHvh73b68sQYdirycEzJVuw")
+
+    client = Client("https://api.devnet.solana.com")  # type: ignore
+else:
+    RAYDIUM_CREATE_CPMM_POOL_PROGRAM = Pubkey.from_string("CPMMoo8L3F4NbTegBCKVNunggL7H1ZpdTHKxQB5qKP1C")
+    CREATE_CPMM_POOL_AUTHORITY = Pubkey.from_string("GpMZbSM2GgvTKHJirzeGfMFoaZ8UR2X7F4v8vHTvxFbL")
+
+    client = Client("https://api.mainnet-beta.solana.com")  # type: ignore
+
 
 TOKEN_PROGRAM_ID = Pubkey.from_string("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA")
 ACCOUNT_LAYOUT_LEN = 165
 WSOL = Pubkey.from_string("So11111111111111111111111111111111111111112")
 SOL_DECIMAL = 1e9
-
-client = Client("https://api.devnet.solana.com")  # type: ignore
 
 
 @dataclass

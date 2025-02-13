@@ -1,14 +1,15 @@
 import asyncio
 import base64
 import json
+import os
 
 from solana.rpc.async_api import AsyncClient
 from solana.rpc.commitment import Processed, Confirmed
 from solana.rpc.types import TxOpts
 from solders import message
-from solders.keypair import Keypair  # pylint: disable=E0401
-from solders.pubkey import Pubkey  # pylint: disable=E0401
-from solders.transaction import VersionedTransaction  # pylint: disable=E0401
+from solders.keypair import Keypair  # pylint: disable=E0401 # type: ignore
+from solders.pubkey import Pubkey  # pylint: disable=E0401 # type: ignore
+from solders.transaction import VersionedTransaction  # pylint: disable=E0401 # type: ignore
 
 from spl.token.async_client import AsyncToken
 from spl.token.constants import TOKEN_PROGRAM_ID
@@ -54,6 +55,11 @@ class SwapTokenTool(WalletTool):
         "amount": {"type": "number", "description": "The amount of token1 to swap"},
     }
     output_type = "string"
+
+    def __init__(self, *args, **kwargs):
+        if os.getenv("SOLANA_NETWORK") == "devnet":
+            raise NotImplementedError("Jupiter tool is not available on devnet")
+        super().__init__(*args, **kwargs)
 
     def forward(self, user_address: str, token1: str, token2: str, amount: float) -> str:  # pylint: disable=W0221
         """Execute a token swap transaction.

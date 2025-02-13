@@ -65,18 +65,29 @@ logger = logging.getLogger(__name__)
 UNIT_BUDGET = 150_000
 UNIT_PRICE = 1_000_000
 
-# Raydium AMM V4 devnet addresses
-RAYDIUM_AMM_V4 = Pubkey.from_string("HWy1jotHpo6UqeQxx49dpYYdQB8wj9Qk9MdxwjLvDHB8")
-OPENBOOK_MARKET = Pubkey.from_string("EoTcMgcDRTJVZDMZWBoU6rhYHZfkNTVEAfz3uUJRcYGj")
-RAYDIUM_AUTHORITY = Pubkey.from_string("DbQqP6ehDYmeYjcBaMRuA8tAJY1EjDUz9DpwSLjaQqfC")
-FEE_DESTINATION_ID = Pubkey.from_string("3XMrhbv989VxAMi3DErLV9eJht1pHppW5LbKxe9fkEFR")
+
+# Raydium AMM V4 program addresses
+# https://docs.raydium.io/raydium/protocol/developers/addresses
+# https://github.com/raydium-io/raydium-sdk-V2/blob/master/src/common/programId.ts
+if os.getenv("SOLANA_NETWORK") == "devnet":
+    RAYDIUM_AMM_V4 = Pubkey.from_string("HWy1jotHpo6UqeQxx49dpYYdQB8wj9Qk9MdxwjLvDHB8")
+    OPENBOOK_MARKET = Pubkey.from_string("EoTcMgcDRTJVZDMZWBoU6rhYHZfkNTVEAfz3uUJRcYGj")
+    RAYDIUM_AUTHORITY = Pubkey.from_string("DbQqP6ehDYmeYjcBaMRuA8tAJY1EjDUz9DpwSLjaQqfC")
+    FEE_DESTINATION_ID = Pubkey.from_string("3XMrhbv989VxAMi3DErLV9eJht1pHppW5LbKxe9fkEFR")
+    client = Client("https://api.devnet.solana.com")  # type: ignore
+else:
+    RAYDIUM_AMM_V4 = Pubkey.from_string("675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8")
+    OPENBOOK_MARKET = Pubkey.from_string("srmqPvymJeFKQ4zGQed1GFppgkRHL9kaELCbyksJtPX")
+    RAYDIUM_AUTHORITY = Pubkey.from_string("5Q544fKrFoe6tsEbD7S8EmxGTJYAKtTVhAW5Q5pge4j1")
+    FEE_DESTINATION_ID = Pubkey.from_string("7YttLkHDoNj9wyDur5pM1ejNaAvT9X4eqaYcHQqtj2G5")
+    client = Client("https://api.mainnet-beta.solana.com")  # type: ignore
+
 
 TOKEN_PROGRAM_ID = Pubkey.from_string("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA")
 ACCOUNT_LAYOUT_LEN = 165
 WSOL = Pubkey.from_string("So11111111111111111111111111111111111111112")
 SOL_DECIMAL = 1e9
 
-client = Client("https://api.devnet.solana.com")  # type: ignore
 
 LIQUIDITY_STATE_LAYOUT_V4 = cStruct(
     "status" / Int64ul,
