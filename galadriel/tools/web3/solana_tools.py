@@ -49,7 +49,7 @@ def get_user_balance(user_address: str, token: str) -> Optional[float]:
     Returns:
         The balance of the user for the specified token, or None if the balance is not available.
     """
-    return asyncio.run(get_user_token_balance(user_address, token))
+    return get_user_token_balance(user_address, token)
 
 
 class GetAdminWalletAddressTool(WalletTool):
@@ -90,8 +90,8 @@ def get_user_token_balance(user_address: str, token_address: Optional[str] = Non
 
         # Handle SOL balance query
         if not token_address:
-            response = client.get_balance(user_pubkey, commitment=Confirmed)
-            return response.value / LAMPORTS_PER_SOL
+            response_sol = client.get_balance(user_pubkey, commitment=Confirmed)
+            return response_sol.value / LAMPORTS_PER_SOL
 
         # Handle SPL token balance query
         token_address = Pubkey.from_string(token_address)  # type: ignore
@@ -108,10 +108,10 @@ def get_user_token_balance(user_address: str, token_address: Optional[str] = Non
         if response.value is None:
             return None
 
-        response = response.value.ui_amount
-        logger.info(f"Balance response: {response}")
+        response_amount = response.value.ui_amount
+        logger.info(f"Balance response: {response_amount}")
 
-        return float(response)
+        return response_amount
 
     except Exception as error:
         raise Exception(f"Failed to get balance: {str(error)}") from error  # pylint: disable=W0719
