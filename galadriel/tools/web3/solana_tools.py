@@ -27,98 +27,20 @@ from galadriel.tools.web3.wallet_tool import WalletTool
 
 logger = logging.getLogger(__name__)
 
-# Constants
-LAMPORTS_PER_SOL = 1_000_000_000  # Number of lamports in 1 SOL
-
-# Type Aliases
-Portfolio = Dict[str, float]  # Maps token addresses to balances
-
-# Global state
-user_portfolios: Dict[str, Portfolio] = {}  # Maps user addresses to their portfolios
+LAMPORTS_PER_SOL = 1_000_000_000
 
 
 @tool
-def update_user_balance(user_address: str, token: str) -> Optional[float]:
-    """Update a user's token balance in the local storage.
-
-    Fetches the current balance from the blockchain and updates the local
-    portfolio storage for the specified user and token.
+def get_user_balance(user_address: str, token: str) -> Optional[float]:
+    """
+    Retrieves the user's balance for a specific token from the blockchain.
 
     Args:
-        user_address (str): The Solana address of the user
-        token (str): The token's mint address
+        user_address: The address of the user.
+        token: The token address in solana.
 
     Returns:
-        float: The balance of the user for the specified token, or None if the balance is not available.
-
-    Note:
-        - Creates new portfolio entry if user doesn't exist
-        - Initializes token balance to 0 if not present
-        - Uses asyncio to handle blockchain queries
-    """
-    if user_address not in user_portfolios:
-        user_portfolios[user_address] = {}  # Initialize portfolio if user is new
-
-    if token not in user_portfolios[user_address]:
-        user_portfolios[user_address][token] = 0.0  # Initialize token balance if needed
-
-    balance = asyncio.run(get_user_token_balance(user_address, token))
-    user_portfolios[user_address][token] = balance  # type: ignore
-    return "User balance updated successfully."
-
-
-@tool
-def get_all_users() -> str:
-    """Retrieve a list of all users with portfolios.
-
-    Returns a JSON string containing addresses of all users who have
-    deposited funds or had their balances tracked.
-
-    Returns:
-        str: JSON string containing list of user addresses
-
-    Note:
-        Returns an empty list if no users are tracked
-    """
-    users = list(user_portfolios.keys())
-    return json.dumps(users)
-
-
-@tool
-def get_all_portfolios(dummy: dict) -> str:  # pylint: disable=W0613
-    """Retrieve all user portfolios.
-
-    Returns a JSON string containing the complete portfolio data
-    for all tracked users.
-
-    Args:
-        dummy (dict): Unused parameter required by tool decorator
-
-    Returns:
-        str: JSON string containing all user portfolios
-
-    Note:
-        Format: {user_address: {token_address: balance}}
-    """
-    return json.dumps(user_portfolios)
-
-
-@tool
-async def get_user_balance(user_address: str, token: str) -> float:
-    """Get a user's token balance from local storage.
-
-    Retrieves the stored balance for a specific token from the user's
-    portfolio, without querying the blockchain.
-
-    Args:
-        user_address (str): The Solana address of the user
-        token (str): The token's mint address
-
-    Returns:
-        float: The stored token balance, or 0.0 if not found
-
-    Note:
-        Returns 0.0 if either the user or token is not found
+        The balance of the user for the specified token, or None if the balance is not available.
     """
     return asyncio.run(get_user_token_balance(user_address, token))
 
