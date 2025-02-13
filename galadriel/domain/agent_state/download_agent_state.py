@@ -1,4 +1,3 @@
-import json
 from typing import Optional
 
 from galadriel.entities import AgentState

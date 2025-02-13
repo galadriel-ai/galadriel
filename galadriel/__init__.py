@@ -6,6 +6,7 @@ from .agent import (
     AgentInput,
     AgentOutput,
 )
+from .entities import AgentState
 
 __all__ = [
     "Agent",

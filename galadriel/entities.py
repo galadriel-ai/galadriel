@@ -1,4 +1,5 @@
 import asyncio
+from typing import Any
 from typing import Dict
 from typing import List
 from typing import Optional
@@ -27,7 +28,7 @@ class AgentMessage(Message):
 class AgentState(BaseModel):
     agent_id: str
     type: str
-    steps: List[Dict[str, str]]
+    steps: List[Dict[str, Any]]
 
 
 class PushOnlyQueue:

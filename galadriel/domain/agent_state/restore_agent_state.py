@@ -31,14 +31,16 @@ def execute(agent: MultiStepAgent, agent_state: AgentState):
 
     assert system_prompt_step is not None, "SystemPromptStep is required in AgentState."
 
-    memory = AgentMemory(system_prompt_step.system_prompt, memory_steps)
+    memory = AgentMemory(system_prompt_step.system_prompt)
     memory.steps = memory_steps
     agent.memory = memory
 
 
 def _restore_memory_step(data: Dict[str, Any]) -> MemoryStep:
     """Detects the correct MemoryStep subclass based on the dictionary keys and restores it."""
-    if "tool_calls" in data and "model_output" in data:
+    if "tool_calls" in data:
+        data["step_number"] = data.get("step")
+        del data["step"]
         return ActionStep(**data)
     elif "facts" in data and "plan" in data:
         return PlanningStep(**data)
