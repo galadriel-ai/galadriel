@@ -1,3 +1,17 @@
+"""
+Raydium Constant Product Market Maker (CPMM) Module
+
+This module provides tools for interacting with Raydium's CPMM pools on the
+Solana blockchain. It enables token swaps using SOL as the base currency
+through Raydium's AMM protocol.
+
+Key Features:
+- Buy tokens with SOL
+- Sell tokens for SOL
+- Pool state management
+- Price calculation with slippage protection
+- Automatic WSOL handling
+"""
 import base64
 from dataclasses import dataclass
 from enum import Enum
@@ -65,6 +79,36 @@ client = Client("https://api.devnet.solana.com")  # type: ignore
 
 @dataclass
 class CpmmPoolKeys:
+    """Data structure for Raydium CPMM pool configuration.
+
+    Contains all necessary public keys and parameters for interacting
+    with a Raydium CPMM pool.
+
+    Attributes:
+        pool_state (Pubkey): Pool state account address
+        raydium_vault_auth_2 (Pubkey): Raydium vault authority
+        amm_config (Pubkey): AMM configuration account
+        pool_creator (Pubkey): Pool creator's address
+        token_0_vault (Pubkey): Token 0 vault address
+        token_1_vault (Pubkey): Token 1 vault address
+        lp_mint (Pubkey): LP token mint address
+        token_0_mint (Pubkey): Token 0 mint address
+        token_1_mint (Pubkey): Token 1 mint address
+        token_0_program (Pubkey): Token 0 program ID
+        token_1_program (Pubkey): Token 1 program ID
+        observation_key (Pubkey): Price observation account
+        auth_bump (int): Authority bump seed
+        status (int): Pool status
+        lp_mint_decimals (int): LP token decimals
+        mint_0_decimals (int): Token 0 decimals
+        mint_1_decimals (int): Token 1 decimals
+        lp_supply (int): Total LP token supply
+        protocol_fees_token_0 (int): Protocol fees in token 0
+        protocol_fees_token_1 (int): Protocol fees in token 1
+        fund_fees_token_0 (int): Fund fees in token 0
+        fund_fees_token_1 (int): Fund fees in token 1
+        open_time (int): Pool opening timestamp
+    """
     pool_state: Pubkey
     raydium_vault_auth_2: Pubkey
     amm_config: Pubkey
@@ -91,6 +135,12 @@ class CpmmPoolKeys:
 
 
 class DIRECTION(Enum):
+    """Enum for swap direction in CPMM pools.
+
+    Values:
+        BUY: Swap SOL for tokens
+        SELL: Swap tokens for SOL
+    """
     BUY = 0
     SELL = 1
 
@@ -167,6 +217,17 @@ OBSERVATION_STATE = Struct(
 
 
 class BuyTokenWithSolTool(WalletTool):
+    """Tool for buying tokens with SOL using Raydium CPMM.
+
+    Enables swapping SOL for any token available in Raydium CPMM pools.
+    Handles WSOL wrapping/unwrapping automatically.
+
+    Attributes:
+        name (str): Tool identifier
+        description (str): Description of the tool's functionality
+        inputs (dict): Schema for required input parameters
+        output_type (str): Type of data returned by the tool
+    """
     name = "buy_token_with_sol_cpmm"
     description = "Buy a token with SOL using the Raydium CPMM."
     inputs = {
@@ -191,12 +252,33 @@ class BuyTokenWithSolTool(WalletTool):
 
     # pylint:disable=W0221
     def forward(self, pair_address: str, sol_in: float = 0.01, slippage: int = 5) -> str:
+        """Execute a SOL to token swap.
+
+        Args:
+            pair_address (str): The Raydium CPMM pair address
+            sol_in (float, optional): Amount of SOL to swap. Defaults to 0.01
+            slippage (int, optional): Slippage tolerance percentage. Defaults to 5
+
+        Returns:
+            str: Transaction result message
+        """
         payer_keypair = self.wallet_repository.get_wallet()
         result = buy(payer_keypair, pair_address, sol_in, slippage)
         return "Transaction successful" if result else "Transaction failed"
 
 
 class SellTokenForSolTool(WalletTool):
+    """Tool for selling tokens for SOL using Raydium CPMM.
+
+    Enables swapping any token for SOL using Raydium CPMM pools.
+    Handles WSOL wrapping/unwrapping automatically.
+
+    Attributes:
+        name (str): Tool identifier
+        description (str): Description of the tool's functionality
+        inputs (dict): Schema for required input parameters
+        output_type (str): Type of data returned by the tool
+    """
     name = "sell_token_for_sol_cpmm"
     description = "Sell a token for SOL using the Raydium CPMM."
     inputs = {
@@ -219,6 +301,16 @@ class SellTokenForSolTool(WalletTool):
 
     # pylint:disable=W0221
     def forward(self, pair_address: str, percentage: int = 100, slippage: int = 5) -> str:
+        """Execute a token to SOL swap.
+
+        Args:
+            pair_address (str): The Raydium CPMM pair address
+            percentage (int, optional): Percentage of token to sell. Defaults to 100
+            slippage (int, optional): Slippage tolerance percentage. Defaults to 5
+
+        Returns:
+            str: Transaction result message
+        """
         payer_keypair = self.wallet_repository.get_wallet()
         result = sell(payer_keypair, pair_address, percentage, slippage)
         return "Transaction successful" if result else "Transaction failed"
@@ -226,6 +318,26 @@ class SellTokenForSolTool(WalletTool):
 
 # pylint:disable=R0914, R0915
 def buy(payer_keypair: Keypair, pair_address: str, sol_in: float = 0.1, slippage: int = 1) -> bool:
+    """Buy tokens with SOL using Raydium CPMM.
+
+    Creates necessary token accounts, executes the swap, and handles cleanup
+    of temporary accounts.
+
+    Args:
+        payer_keypair (Keypair): The transaction signer's keypair
+        pair_address (str): The Raydium CPMM pair address
+        sol_in (float, optional): Amount of SOL to swap. Defaults to 0.1
+        slippage (int, optional): Slippage tolerance percentage. Defaults to 1
+
+    Returns:
+        bool: True if transaction succeeds, False otherwise
+
+    Note:
+        - Creates temporary WSOL account for swap
+        - Creates token account if needed
+        - Handles account cleanup after swap
+        - Includes slippage protection
+    """
     logger.info(f"Starting buy transaction for pair address: {pair_address}")
 
     logger.info("Fetching pool keys...")
@@ -352,6 +464,24 @@ def buy(payer_keypair: Keypair, pair_address: str, sol_in: float = 0.1, slippage
 
 # pylint:disable=R0914
 def sell(payer_keypair: Keypair, pair_address: str, percentage: int = 100, slippage: int = 1) -> bool:
+    """Sell tokens for SOL using Raydium CPMM.
+
+    Swaps specified percentage of token balance for SOL with slippage protection.
+
+    Args:
+        payer_keypair (Keypair): The transaction signer's keypair
+        pair_address (str): The Raydium CPMM pair address
+        percentage (int, optional): Percentage of token balance to sell. Defaults to 100
+        slippage (int, optional): Slippage tolerance percentage. Defaults to 1
+
+    Returns:
+        bool: True if transaction succeeds, False otherwise
+
+    Note:
+        - Creates temporary WSOL account for swap
+        - Optionally closes token account if selling 100%
+        - Includes slippage protection
+    """
     try:
         logger.info("Fetching pool keys...")
         pool_keys: Optional[CpmmPoolKeys] = fetch_cpmm_pool_keys(pair_address)
@@ -486,6 +616,14 @@ def sell(payer_keypair: Keypair, pair_address: str, percentage: int = 100, slipp
 
 
 def fetch_cpmm_pool_keys(pair_address: str) -> Optional[CpmmPoolKeys]:
+    """Fetch the pool keys for a given Raydium CPMM pair address.
+
+    Args:
+        pair_address (str): The Raydium CPMM pair address
+
+    Returns:
+        Optional[CpmmPoolKeys]: The pool keys if found, None otherwise
+    """
     try:
         pool_state = Pubkey.from_string(pair_address)
         pool_state_account = client.get_account_info_json_parsed(pool_state, commitment=Processed).value
@@ -540,6 +678,20 @@ def make_cpmm_swap_instruction(
     owner: Pubkey,
     action: DIRECTION,
 ) -> Instruction:
+    """Create a swap instruction for a Raydium CPMM pool.
+
+    Args:
+        amount_in (int): The amount of input token to swap
+        minimum_amount_out (int): The minimum amount of output token to receive
+        token_account_in (Pubkey): The input token account
+        token_account_out (Pubkey): The output token account
+        accounts (CpmmPoolKeys): The pool keys
+        owner (Pubkey): The transaction signer's keypair
+        action (DIRECTION): The swap direction
+
+    Returns:
+        Instruction: The swap instruction
+    """
     try:
         # Initialize variables with default values
         input_vault = None
@@ -595,6 +747,14 @@ def make_cpmm_swap_instruction(
 
 
 def get_cpmm_reserves(pool_keys: CpmmPoolKeys):
+    """Get the reserves for a given Raydium CPMM pool.
+
+    Args:
+        pool_keys (CpmmPoolKeys): The pool keys
+
+    Returns:
+        tuple: The base reserve, quote reserve, and token decimal
+    """
     quote_vault = pool_keys.token_0_vault
     quote_decimal = pool_keys.mint_0_decimals
     quote_mint = pool_keys.token_0_mint
@@ -635,6 +795,17 @@ def get_cpmm_reserves(pool_keys: CpmmPoolKeys):
 
 
 def sol_for_tokens(sol_amount, base_vault_balance, quote_vault_balance, swap_fee=0.25):
+    """Calculate the amount of tokens received for a given amount of SOL.
+
+    Args:
+        sol_amount (float): The amount of SOL to swap
+        base_vault_balance (float): The balance of the base token in the pool
+        quote_vault_balance (float): The balance of the quote token in the pool
+        swap_fee (float, optional): The swap fee. Defaults to 0.25
+
+    Returns:
+        float: The amount of tokens received
+    """
     effective_sol_used = sol_amount - (sol_amount * (swap_fee / 100))
     constant_product = base_vault_balance * quote_vault_balance
     updated_base_vault_balance = constant_product / (quote_vault_balance + effective_sol_used)
@@ -643,6 +814,17 @@ def sol_for_tokens(sol_amount, base_vault_balance, quote_vault_balance, swap_fee
 
 
 def tokens_for_sol(token_amount, base_vault_balance, quote_vault_balance, swap_fee=0.25):
+    """Calculate the amount of SOL received for a given amount of tokens.
+
+    Args:
+        token_amount (float): The amount of tokens to swap
+        base_vault_balance (float): The balance of the base token in the pool
+        quote_vault_balance (float): The balance of the quote token in the pool
+        swap_fee (float, optional): The swap fee. Defaults to 0.25
+
+    Returns:
+        float: The amount of SOL received
+    """
     effective_tokens_sold = token_amount * (1 - (swap_fee / 100))
     constant_product = base_vault_balance * quote_vault_balance
     updated_quote_vault_balance = constant_product / (base_vault_balance + effective_tokens_sold)
