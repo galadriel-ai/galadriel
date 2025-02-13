@@ -1,3 +1,16 @@
+"""
+Solana Tools Module
+
+This module provides tools for interacting with the Solana blockchain,
+specifically for managing user token balances and portfolios.
+
+Key Features:
+- User balance tracking
+- Portfolio management
+- Token balance queries
+- Multi-user support
+"""
+
 import asyncio
 import logging
 from typing import Optional
@@ -44,33 +57,50 @@ class GetAdminWalletAddressTool(WalletTool):
 
 
 async def get_user_token_balance(self, user_address: str, token_address: Optional[str] = None) -> Optional[float]:
-    """
-    Get the token balance for a given wallet.
+    """Query a user's token balance from the Solana blockchain.
+
+    Fetches the current balance of either SOL or an SPL token for
+    a given wallet address directly from the blockchain.
 
     Args:
-        user_address (str): The user wallet address.
-        token_address (Option[str]): The mint address of the token,
-            if it is set to None, the balance of SOL is returned.
+        user_address (str): The user's Solana wallet address
+        token_address (Optional[str]): The token's mint address, or None for SOL
 
     Returns:
-        float: The token balance.
+        Optional[float]: The token balance, or None if the query fails
+
+    Raises:
+        Exception: If the balance query fails
+
+    Note:
+        - For SOL balance, uses RPC getBalance
+        - For SPL tokens, uses Associated Token Account (ATA)
+        - Handles token decimal conversion
+        - Returns None if token account doesn't exist
     """
     try:
         user_pubkey = Pubkey.from_string(user_address)
+
+        # Handle SOL balance query
         if not token_address:
             response = await self.async_client.get_balance(user_pubkey, commitment=Confirmed)
             return response.value / LAMPORTS_PER_SOL
+
+        # Handle SPL token balance query
         token_address = Pubkey.from_string(token_address)  # type: ignore
         spl_client = AsyncToken(self.async_client, token_address, TOKEN_PROGRAM_ID, user_pubkey)  # type: ignore
 
+        # Verify token mint is initialized
         mint = await spl_client.get_mint_info()
         if not mint.is_initialized:
             raise ValueError("Token mint is not initialized.")
 
+        # Get balance from Associated Token Account
         wallet_ata = get_associated_token_address(user_pubkey, token_address)  # type: ignore
         response = await self.async_client.get_token_account_balance(wallet_ata)
         if response.value is None:
             return None
+
         response = response.value.ui_amount
         logger.info(f"Balance response: {response}")
 

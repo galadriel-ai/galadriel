@@ -1,4 +1,3 @@
-from galadriel.clients.terminal_client import TerminalClient
 from galadriel.core_agent import LiteLLMModel
 from dotenv import load_dotenv
 from pathlib import Path
@@ -25,7 +24,7 @@ logger = get_agent_logger()
 discord_client = DiscordClient(guild_id=os.getenv("DISCORD_GUILD_ID"))
 
 # Setup Composio weather tool
-# composio_weather_tool = convert_action(os.getenv("COMPOSIO_API_KEY"), "WEATHERMAP_WEATHER")
+composio_weather_tool = convert_action(os.getenv("COMPOSIO_API_KEY"), "WEATHERMAP_WEATHER")
 
 # Add agent with GPT-4o model and tools helpful to answer Discord users' questions
 elon_musk_agent = CharacterAgent(
@@ -37,8 +36,8 @@ elon_musk_agent = CharacterAgent(
 
 # Set up the runtime
 runtime = AgentRuntime(
-    inputs=[TerminalClient()],
-    outputs=[discord_client, TerminalClient()],
+    inputs=[discord_client],
+    outputs=[discord_client],
     agent=elon_musk_agent,
 )
 

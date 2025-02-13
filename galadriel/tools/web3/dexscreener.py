@@ -4,11 +4,19 @@ from galadriel.core_agent import tool
 
 
 def get_token_list() -> list:
-    """
-    Returns a JSON string containing the list of tokens with their addresses.
+    """Fetch a list of top tokens from DexScreener.
+
+    Retrieves a list of top tokens from DexScreener's token-boosts endpoint
+    and extracts their addresses.
 
     Returns:
-        A JSON string with token names and addresses.
+        list: A list of dictionaries containing token addresses
+              Limited to the first 4 tokens for performance
+
+    Note:
+        The endpoint used is DexScreener's token-boosts/top/v1
+        Each dictionary in the returned list has the format:
+        {"address": "token_address"}
     """
     token_list = []
     response = requests.get("https://api.dexscreener.com/token-boosts/top/v1", timeout=30)
@@ -17,20 +25,27 @@ def get_token_list() -> list:
         _data = response.json()
         for token in _data:
             token_list.append({"address": token["tokenAddress"]})
-    # return the first 5 tokens
+    # return the first 4 tokens
     return token_list[:4]
 
 
 @tool
 def fetch_market_data(dummy: dict) -> str:  # pylint: disable=W0613
-    """
-    Fetches market data.
+    """Fetch detailed market data for top tokens on Solana.
+
+    Retrieves market data for the top tokens from DexScreener and formats
+    it as a JSON string. Removes unnecessary data to fit context limits.
 
     Args:
-        dummy: A dummy argument to match the required function signature.
+        dummy (dict): Unused parameter required by tool decorator
 
     Returns:
-        A JSON string containing market data.
+        str: JSON string containing market data for top tokens
+
+    Note:
+        - Uses get_token_list() to determine which tokens to fetch
+        - Removes 'info' and 'url' fields from the response to reduce size
+        - Data is fetched from DexScreener's tokens/v1/solana endpoint
     """
     token_list = get_token_list()
     market_data = []
@@ -49,11 +64,25 @@ def fetch_market_data(dummy: dict) -> str:  # pylint: disable=W0613
 
 @tool
 def get_token_profile(task: str) -> str:  # pylint: disable=W0613
-    """
-    Get the latest token profiles. Returns the results as a big chunk of text with
-    the chain, token address and the description of the Token.
+    """Fetch the latest token profiles from DexScreener.
+
+    Retrieves detailed profile information for tokens, including chain,
+    address, description, and associated links.
+
     Args:
-         task: empty
+        task (str): Unused parameter required by tool decorator
+
+    Returns:
+        str: A formatted string containing token profile information
+
+    Note:
+        - Data is fetched from DexScreener's token-profiles/latest/v1 endpoint
+        - Each token profile includes:
+            * Chain ID
+            * Token address
+            * Description
+            * Associated links (with type and URL)
+        - Invalid or incomplete profiles are skipped
     """
 
     response = requests.get(
