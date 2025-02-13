@@ -1,3 +1,16 @@
+"""
+Raydium AMM V4 Integration Module
+
+This module provides tools for interacting with Raydium's Automated Market Maker (AMM) V4
+on the Solana blockchain. It enables token swaps using SOL as the base currency.
+
+Key Features:
+- Buy tokens with SOL
+- Sell tokens for SOL
+- AMM pool interaction
+- Price calculation with slippage protection
+"""
+
 import base64
 from dataclasses import dataclass
 import json
@@ -154,6 +167,33 @@ MARKET_STATE_LAYOUT_V3 = cStruct(
 
 @dataclass
 class AmmV4PoolKeys:
+    """Data structure for Raydium AMM V4 pool configuration.
+
+    Contains all necessary public keys and parameters for interacting
+    with a Raydium AMM V4 pool.
+
+    Attributes:
+        amm_id (Pubkey): The AMM pool's public key
+        base_mint (Pubkey): Base token mint address
+        quote_mint (Pubkey): Quote token mint address
+        base_decimals (int): Base token decimal places
+        quote_decimals (int): Quote token decimal places
+        open_orders (Pubkey): OpenBook open orders account
+        target_orders (Pubkey): Target orders account
+        base_vault (Pubkey): Base token vault
+        quote_vault (Pubkey): Quote token vault
+        market_id (Pubkey): OpenBook market ID
+        market_authority (Pubkey): Market authority account
+        market_base_vault (Pubkey): Market base token vault
+        market_quote_vault (Pubkey): Market quote token vault
+        bids (Pubkey): Market bids account
+        asks (Pubkey): Market asks account
+        event_queue (Pubkey): Market event queue
+        ray_authority_v4 (Pubkey): Raydium authority account
+        open_book_program (Pubkey): OpenBook program ID
+        token_program_id (Pubkey): Token program ID
+    """
+
     amm_id: Pubkey
     base_mint: Pubkey
     quote_mint: Pubkey
@@ -176,6 +216,18 @@ class AmmV4PoolKeys:
 
 
 class BuyTokenWithSolTool(WalletTool):
+    """Tool for buying tokens using SOL on Raydium AMM V4.
+
+    Enables users to swap SOL for any token available on Raydium AMM V4.
+    Handles account creation, token swaps, and cleanup of temporary accounts.
+
+    Attributes:
+        name (str): Tool identifier
+        description (str): Description of the tool's functionality
+        inputs (dict): Schema for required input parameters
+        output_type (str): Type of data returned by the tool
+    """
+
     name = "buy_token_with_sol"
     description = "Buy a token with SOL using the Raydium AMM V4."
     inputs = {
@@ -197,12 +249,34 @@ class BuyTokenWithSolTool(WalletTool):
     output_type = "string"
 
     def forward(self, pair_address: str, sol_in: float = 0.01, slippage: int = 5) -> str:  # pylint: disable=W0221
+        """Execute a SOL to token swap transaction.
+
+        Args:
+            pair_address (str): The Raydium AMM V4 pair address
+            sol_in (float, optional): Amount of SOL to swap. Defaults to 0.01
+            slippage (int, optional): Slippage tolerance percentage. Defaults to 5
+
+        Returns:
+            str: Transaction result message with signature
+        """
         payer_keypair = self.wallet_repository.get_wallet()
         result = buy(payer_keypair, pair_address, sol_in, slippage)
         return result
 
 
 class SellTokenForSolTool(WalletTool):
+    """Tool for selling tokens for SOL on Raydium AMM V4.
+
+    Enables users to swap any token for SOL using Raydium AMM V4.
+    Handles account management and token swaps with slippage protection.
+
+    Attributes:
+        name (str): Tool identifier
+        description (str): Description of the tool's functionality
+        inputs (dict): Schema for required input parameters
+        output_type (str): Type of data returned by the tool
+    """
+
     name = "sell_token_for_sol"
     description = "Sell a token for SOL using the Raydium AMM V4."
     inputs = {
@@ -224,6 +298,16 @@ class SellTokenForSolTool(WalletTool):
     output_type = "string"
 
     def forward(self, pair_address: str, percentage: int = 100, slippage: int = 5) -> str:  # pylint: disable=W0221
+        """Execute a token to SOL swap transaction.
+
+        Args:
+            pair_address (str): The Raydium AMM V4 pair address
+            percentage (int, optional): Percentage of token balance to sell. Defaults to 100
+            slippage (int, optional): Slippage tolerance percentage. Defaults to 5
+
+        Returns:
+            str: Transaction result message with signature
+        """
         payer_keypair = self.wallet_repository.get_wallet()
         result = sell(payer_keypair, pair_address, percentage, slippage)
         return result
@@ -231,6 +315,26 @@ class SellTokenForSolTool(WalletTool):
 
 # pylint: disable=R0914
 def buy(payer_keypair: Keypair, pair_address: str, sol_in: float = 0.01, slippage: int = 5) -> str:
+    """Buy tokens with SOL using Raydium AMM V4.
+
+    Creates necessary token accounts, executes the swap, and handles cleanup
+    of temporary accounts.
+
+    Args:
+        payer_keypair (Keypair): The transaction signer's keypair
+        pair_address (str): The Raydium AMM V4 pair address
+        sol_in (float, optional): Amount of SOL to swap. Defaults to 0.01
+        slippage (int, optional): Slippage tolerance percentage. Defaults to 5
+
+    Returns:
+        str: Transaction result message
+
+    Note:
+        - Creates temporary WSOL account for swap
+        - Creates token account if needed
+        - Handles account cleanup after swap
+        - Includes slippage protection
+    """
     try:
         pool_keys: Optional[AmmV4PoolKeys] = fetch_amm_v4_pool_keys(pair_address)
         if pool_keys is None:
@@ -337,6 +441,24 @@ def buy(payer_keypair: Keypair, pair_address: str, sol_in: float = 0.01, slippag
 
 
 def sell(payer_keypair: Keypair, pair_address: str, percentage: int = 100, slippage: int = 5) -> str:
+    """Sell tokens for SOL using Raydium AMM V4.
+
+    Swaps specified percentage of token balance for SOL with slippage protection.
+
+    Args:
+        payer_keypair (Keypair): The transaction signer's keypair
+        pair_address (str): The Raydium AMM V4 pair address
+        percentage (int, optional): Percentage of token balance to sell. Defaults to 100
+        slippage (int, optional): Slippage tolerance percentage. Defaults to 5
+
+    Returns:
+        str: Transaction result message
+
+    Note:
+        - Creates temporary WSOL account for swap
+        - Optionally closes token account if selling 100%
+        - Includes slippage protection
+    """
     try:
         if not 1 <= percentage <= 100:
             return "Percentage must be between 1 and 100."
@@ -466,6 +588,19 @@ def tokens_for_sol(token_amount, base_vault_balance, quote_vault_balance, swap_f
 
 
 def fetch_amm_v4_pool_keys(pair_address: str) -> Optional[AmmV4PoolKeys]:
+    """Fetch pool configuration for a Raydium AMM V4 pair.
+
+    Retrieves and parses pool configuration data from the Solana blockchain.
+
+    Args:
+        pair_address (str): The Raydium AMM V4 pair address
+
+    Returns:
+        Optional[AmmV4PoolKeys]: Pool configuration if successful, None otherwise
+
+    Note:
+        Includes market data from OpenBook integration
+    """
 
     def bytes_of(value):
         if not 0 <= value < 2**64:
@@ -516,6 +651,19 @@ def fetch_amm_v4_pool_keys(pair_address: str) -> Optional[AmmV4PoolKeys]:
 
 
 def get_amm_v4_reserves(pool_keys: AmmV4PoolKeys) -> tuple:
+    """Get current token reserves from AMM pool.
+
+    Fetches current balances of both tokens in the pool.
+
+    Args:
+        pool_keys (AmmV4PoolKeys): Pool configuration data
+
+    Returns:
+        tuple: (base_reserve, quote_reserve, token_decimal)
+
+    Note:
+        Handles WSOL wrapping/unwrapping automatically
+    """
     try:
         quote_vault = pool_keys.quote_vault
         quote_decimal = pool_keys.quote_decimals
@@ -565,6 +713,24 @@ def make_amm_v4_swap_instruction(
     accounts: AmmV4PoolKeys,
     owner: Pubkey,
 ) -> Optional[Instruction]:
+    """Create swap instruction for Raydium AMM V4.
+
+    Constructs the instruction for executing a token swap.
+
+    Args:
+        amount_in (int): Input token amount in raw units
+        minimum_amount_out (int): Minimum acceptable output amount
+        token_account_in (Pubkey): Source token account
+        token_account_out (Pubkey): Destination token account
+        accounts (AmmV4PoolKeys): Pool configuration
+        owner (Pubkey): Transaction signer's public key
+
+    Returns:
+        Optional[Instruction]: Swap instruction if successful, None otherwise
+
+    Note:
+        Includes all necessary account metas for the swap
+    """
     try:
 
         keys = [
@@ -602,7 +768,15 @@ def make_amm_v4_swap_instruction(
 
 
 def get_token_balance(pubkey: Pubkey, mint_str: str) -> float | None:
+    """Get the balance of a token for a given address.
 
+    Args:
+        pubkey (Pubkey): The address to get the token balance for
+        mint_str (str): The mint address of the token
+
+    Returns:
+        float | None: The balance of the token if successful, None otherwise
+    """
     mint = Pubkey.from_string(mint_str)
     response = client.get_token_accounts_by_owner_json_parsed(pubkey, TokenAccountOpts(mint=mint), commitment=Processed)
 
@@ -620,8 +794,17 @@ def get_token_balance(pubkey: Pubkey, mint_str: str) -> float | None:
 
 
 def confirm_txn(txn_sig: Signature, max_retries: int = 20, retry_interval: int = 3) -> bool:
-    retries = 1
+    """Confirm a transaction.
 
+    Args:
+        txn_sig (Signature): The signature of the transaction
+        max_retries (int, optional): Maximum number of retries. Defaults to 20
+        retry_interval (int, optional): Interval between retries in seconds. Defaults to 3
+
+    Returns:
+        bool: True if transaction is confirmed, False otherwise
+    """
+    retries = 1
     while retries < max_retries:
         try:
             txn_res = client.get_transaction(
