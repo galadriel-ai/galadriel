@@ -1,12 +1,10 @@
 import json
-import os
 from pathlib import Path
 
 from rich.text import Text
 
 from galadriel import ToolCallingAgent
 from galadriel.core_agent import LogLevel
-from galadriel.core_agent import Tool
 from galadriel.domain.prompts.format_prompt import load_agent_template
 from galadriel.entities import AgentMessage
 from galadriel.entities import Message
@@ -38,23 +36,17 @@ class CharacterAgent(ToolCallingAgent):
         try:
             self.character_json_path = character_json_path
             # validate content of character_json_path
-            _ = load_agent_template(
-                TELEGRAM_SYSTEM_PROMPT, Path(self.character_json_path)
-            )
+            _ = load_agent_template(TELEGRAM_SYSTEM_PROMPT, Path(self.character_json_path))
         except Exception as e:
-            self.logger.log(
-                Text(f"Error validating character file: {e}"), level=LogLevel.ERROR
-            )
+            self.logger.log(Text(f"Error validating character file: {e}"), level=LogLevel.ERROR)
             raise e
 
     async def execute(self, message: Message) -> Message:
         try:
-            character_prompt = load_agent_template(
-                TELEGRAM_SYSTEM_PROMPT, Path(self.character_json_path)
+            character_prompt = load_agent_template(TELEGRAM_SYSTEM_PROMPT, Path(self.character_json_path))
+            task_message = character_prompt.replace("{{message}}", message.content).replace(
+                "{{user_name}}", message.additional_kwargs["author"]
             )
-            task_message = character_prompt.replace(
-                "{{message}}", message.content
-            ).replace("{{user_name}}", message.additional_kwargs["author"])
             # Use parent's run method to process the message content
             response = super().run(
                 task=task_message,
@@ -76,7 +68,5 @@ class CharacterAgent(ToolCallingAgent):
                 conversation_id=message.conversation_id,
             )
         except Exception as e:
-            self.logger.log(
-                Text(f"Error processing message: {e}"), level=LogLevel.ERROR
-            )
+            self.logger.log(Text(f"Error processing message: {e}"), level=LogLevel.ERROR)
             return None

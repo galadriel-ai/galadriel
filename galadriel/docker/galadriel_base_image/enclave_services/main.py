@@ -3,6 +3,7 @@ import signal
 import sys
 import threading
 
+# pylint: disable=E0401
 from dns_forwarder import DNSForwarder
 from enclave_server import EnclaveServer
 from traffic_forwarder import TrafficForwarder
@@ -16,7 +17,7 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(message)s")
 logger = logging.getLogger()
 
 
-def signal_handler(sig, frame):
+def signal_handler():
     """Handle termination signals."""
     logger.info("Shutting down server gracefully...")
     sys.exit(0)

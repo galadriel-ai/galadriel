@@ -24,14 +24,12 @@ logger = get_agent_logger()
 discord_client = DiscordClient(guild_id=os.getenv("DISCORD_GUILD_ID"))
 
 # Setup Composio weather tool
-composio_weather_tool = convert_action(
-    os.getenv("COMPOSIO_API_KEY"), "WEATHERMAP_WEATHER"
-)
+composio_weather_tool = convert_action(os.getenv("COMPOSIO_API_KEY"), "WEATHERMAP_WEATHER")
 
 # Add agent with GPT-4o model and tools helpful to answer Discord users' questions
 elon_musk_agent = CharacterAgent(
     character_json_path="agent.json",
-    tools=[composio_weather_tool, get_time],
+    tools=[get_time],
     model=model,
     max_steps=6,
 )

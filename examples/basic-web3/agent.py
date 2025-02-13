@@ -20,9 +20,7 @@ agent = CodeAgent(
 )
 
 # Add basic client which sends two messages to the agent and prints agent's result
-client = SimpleMessageClient(
-    "What are top tokens on the market today?", "Should I buy ETH?"
-)
+client = SimpleMessageClient("What are top tokens on the market today?", "Should I buy ETH?")
 
 # Set up the runtime
 runtime = AgentRuntime(

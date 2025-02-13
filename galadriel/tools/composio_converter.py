@@ -37,6 +37,4 @@ def convert_app(api_key: str, app: App) -> list[Tool]:
         list[Tool]: List of converted Galadriel Tools
     """
     composio_toolset = ComposioToolSet(api_key=api_key)
-    return [
-        Tool.from_langchain(tool) for tool in composio_toolset.get_tools(apps=[app])
-    ]
+    return [Tool.from_langchain(tool) for tool in composio_toolset.get_tools(apps=[app])]

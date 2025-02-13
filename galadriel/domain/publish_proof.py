@@ -1,6 +1,5 @@
 import json
 import os
-from typing import Dict
 from typing import Optional
 
 import requests
@@ -28,7 +27,7 @@ def execute(request: Message, response: Message, hashed_data: str) -> bool:
         "signature": "TODO:",  # TODO
     }
     try:
-        result = requests.post(url, headers=headers, data=json.dumps(data))
+        result = requests.post(url, headers=headers, data=json.dumps(data), timeout=30)
         if result.status_code == 200:
             return True
     except Exception:

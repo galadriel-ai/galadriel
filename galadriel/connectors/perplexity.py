@@ -58,19 +58,17 @@ class PerplexityClient:
         try:
             async with aiohttp.ClientSession() as session:
                 async with session.post(
-                    url, headers=headers, json=payload, timeout=timeout  # type: ignore
+                    url,
+                    headers=headers,
+                    json=payload,
+                    timeout=timeout,  # type: ignore
                 ) as response:
                     response.raise_for_status()
 
                     response_json = await response.json()
                     content = response_json["choices"][0]["message"]["content"]
                     sources = "\n".join(
-                        [
-                            f"[{index + 1}] {url}"
-                            for index, url in enumerate(
-                                response_json.get("citations", [])
-                            )
-                        ]
+                        [f"[{index + 1}] {url}" for index, url in enumerate(response_json.get("citations", []))]
                     )
 
                     result = PerplexitySources(

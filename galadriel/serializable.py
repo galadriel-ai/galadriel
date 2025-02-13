@@ -87,13 +87,13 @@ def _try_neq_default(value: Any, field: FieldInfo) -> bool:
     # Pandas DataFrames).
     try:
         return bool(field.get_default() != value)
-    except Exception as _:
+    except Exception:
         try:
             return all(field.get_default() != value)
-        except Exception as _:
+        except Exception:
             try:
                 return value is not field.default
-            except Exception as _:
+            except Exception:
                 return False
 
 
@@ -120,6 +120,7 @@ class Serializable(BaseModel, ABC):
     """
 
     # Remove default BaseModel init docstring.
+    # pylint: disable=W0246
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         """"""
         super().__init__(*args, **kwargs)
@@ -174,10 +175,7 @@ class Serializable(BaseModel, ABC):
         ["langchain", "llms", "openai", "OpenAI"].
         """
         # Pydantic generics change the class name. So we need to do the following
-        if (
-            "origin" in cls.__pydantic_generic_metadata__
-            and cls.__pydantic_generic_metadata__["origin"] is not None
-        ):
+        if "origin" in cls.__pydantic_generic_metadata__ and cls.__pydantic_generic_metadata__["origin"] is not None:
             original_name = cls.__pydantic_generic_metadata__["origin"].__name__
         else:
             original_name = cls.__name__
@@ -189,11 +187,10 @@ class Serializable(BaseModel, ABC):
 
     def __repr_args__(self) -> Any:
         return [
-            (k, v)
-            for k, v in super().__repr_args__()
-            if (k not in self.model_fields or try_neq_default(v, k, self))
+            (k, v) for k, v in super().__repr_args__() if (k not in self.model_fields or try_neq_default(v, k, self))
         ]
 
+    # pylint: disable=R0912
     def to_json(self) -> Union[SerializedConstructor, SerializedNotImplemented]:
         """Serialize the object to JSON.
 
@@ -263,9 +260,7 @@ class Serializable(BaseModel, ABC):
             "lc": 1,
             "type": "constructor",
             "id": self.lc_id(),
-            "kwargs": (
-                lc_kwargs if not secrets else _replace_secrets(lc_kwargs, secrets)
-            ),
+            "kwargs": (lc_kwargs if not secrets else _replace_secrets(lc_kwargs, secrets)),
         }
 
     def to_json_not_implemented(self) -> SerializedNotImplemented:
@@ -317,9 +312,7 @@ def _is_field_useful(inst: Serializable, key: str, value: Any) -> bool:
     return value_is_truthy or value_neq_default
 
 
-def _replace_secrets(
-    root: dict[Any, Any], secrets_map: dict[str, str]
-) -> dict[Any, Any]:
+def _replace_secrets(root: dict[Any, Any], secrets_map: dict[str, str]) -> dict[Any, Any]:
     result = root.copy()
     for path, secret_id in secrets_map.items():
         [*parts, last] = path.split(".")

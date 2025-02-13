@@ -14,7 +14,7 @@ from galadriel.entities import AgentState
 logger = get_agent_logger()
 
 
-class S3Repository:
+class AgentStateRepository:
     def __init__(self, bucket_name: str):
         """Initialize S3 client with bucket name.
 

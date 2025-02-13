@@ -8,9 +8,7 @@ from galadriel import AgentRuntime
 from galadriel.agent import CodeAgent
 from galadriel.core_agent import LiteLLMModel
 from galadriel.clients import Cron
-from galadriel.tools.web3 import dexscreener
-from galadriel.tools.web3 import coingecko
-from galadriel.tools.web3 import jupiter
+from galadriel.tools.web3 import dexscreener, raydium_cpmm
 from galadriel.tools.web3 import solana_tools as solana
 
 TRADING_INTERVAL_SECONDS = 300
@@ -29,7 +27,7 @@ TRADING_PROMPT = """
            - Recommend Sell if the price has significantly increased, or there are signs of weakening demand.
            - Recommend Hold if the token's market position is stable or no clear trend is observed.
         4. Based on the analysis, provide a decision for each token in the user's portfolio.
-        5. Execute the trade: Use the 'swap_token' tool to perform the recommended action (Buy or Sell) for each token.
+        5. Execute the trade: Use the relevant tools to perform the recommended action (Buy or Sell) for each token.
         """
 
 load_dotenv(dotenv_path=Path(".") / ".env", override=True)
@@ -42,14 +40,10 @@ model = LiteLLMModel(
 
 # Prepare a Web3 specific toolkit, relevant for the trading agent
 tools = [
-    dexscreener.fetch_market_data,
-    coingecko.GetCoinPriceTool(),
-    coingecko.GetCoinHistoricalDataTool(),
-    coingecko.FetchTrendingCoinsTool(),
-    jupiter.SwapTokenTool(),
-    solana.get_all_portfolios,
+    dexscreener.fetch_market_data_devnet,
+    raydium_cpmm.BuyTokenWithSolTool(),
+    solana.GetAdminWalletAddressTool(),
     solana.get_user_balance,
-    solana.update_user_balance,
 ]
 
 # Create a trading agent
@@ -59,6 +53,7 @@ trading_agent = CodeAgent(
     tools=tools,
     add_base_tools=True,
     additional_authorized_imports=["json"],
+    max_steps=8,
 )
 
 # Set up the runtime

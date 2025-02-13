@@ -54,9 +54,7 @@ class LogsExportHandler(logging.Handler):
         while True:
             time.sleep(self.export_interval_seconds)
             formatted_logs = self._format_logs()
-            is_export_success = self._export_logs(
-                api_key, agent_instance_id, formatted_logs
-            )
+            is_export_success = self._export_logs(api_key, agent_instance_id, formatted_logs)
             if is_export_success:
                 self.log_records = self.log_records[len(formatted_logs) :]
 
@@ -71,25 +69,19 @@ class LogsExportHandler(logging.Handler):
                         {
                             "text": log_line["message"],
                             "level": str(log_line.get("levelname", "info")).lower(),
-                            "timestamp": self._format_timestamp(
-                                log_line.get("asctime")
-                            ),
+                            "timestamp": self._format_timestamp(log_line.get("asctime")),
                         }
                     )
             except Exception:
                 pass
         return formatted_logs[:LOG_EXPORT_BATCH_SIZE]
 
-    def _export_logs(
-        self, api_key: str, agent_instance_id: str, formatted_logs: List[Dict]
-    ) -> bool:
+    def _export_logs(self, api_key: str, agent_instance_id: str, formatted_logs: List[Dict]) -> bool:
         is_export_success = False
         if formatted_logs:
             try:
                 response = requests.post(
-                    urljoin(
-                        GALADRIEL_API_BASE_URL, f"v1/agents/logs/{agent_instance_id}"
-                    ),
+                    urljoin(GALADRIEL_API_BASE_URL, f"v1/agents/logs/{agent_instance_id}"),
                     timeout=60,
                     headers={
                         "Content-Type": "application/json",
@@ -107,9 +99,7 @@ class LogsExportHandler(logging.Handler):
         if not asctime:
             return 0
         try:
-            dt_obj = datetime.strptime(asctime, "%Y-%m-%d %H:%M:%S,%f").replace(
-                tzinfo=timezone.utc
-            )
+            dt_obj = datetime.strptime(asctime, "%Y-%m-%d %H:%M:%S,%f").replace(tzinfo=timezone.utc)
             return int(dt_obj.timestamp())
         except Exception:
             return 0

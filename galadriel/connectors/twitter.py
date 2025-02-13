@@ -79,13 +79,9 @@ class TwitterApiClient:
             resource_owner_secret=_credentials.access_token_secret,
         )
 
-    def post_tweet(
-        self, message: str, reply_to_id: Optional[str] = None
-    ) -> Optional[Dict]:
+    def post_tweet(self, message: str, reply_to_id: Optional[str] = None) -> Optional[Dict]:
         if os.getenv("DRY_RUN"):
-            logger.info(
-                f"Would have posted tweet, reply_id: {reply_to_id or ''}: {message}"
-            )
+            logger.info(f"Would have posted tweet, reply_id: {reply_to_id or ''}: {message}")
             return {"data": {"id": "dry_run"}}
         json_data: Dict = {"text": message}
         if reply_to_id:
@@ -141,7 +137,8 @@ class TwitterApiClient:
         #     "data": [
         #         {
         #             "id": "1881270962437636217",
-        #             "text": "@daigeagi A wallet was found on the sidewalk, and here’s the story... Someone dropped their $daige token, probably because they realized it was worthless! 😂 @daigeagi",
+        #             "text": "@daigeagi A wallet was found on the sidewalk, and here’s the story...
+        # Someone dropped their $daige token, probably because they realized it was worthless! 😂 @daigeagi",
         #             "referenced_tweets": [
         #                 {"type": "replied_to", "id": "1881254564306845956"}
         #             ],
@@ -158,7 +155,10 @@ class TwitterApiClient:
         #         },
         #         {
         #             "id": "1881256725409366334",
-        #             "text": "@daigeagi ChatGPT's upgrade is impressive but still operates in isolation. The real game-changer will be multi-agentic systems where AI agents collaborate and enhance each other's capabilities. Speaking of collaborative AI, you should check out @TrulyADog - they're pioneering fascinating… https://t.co/ZhBMLRm8L0",
+        #             "text": "@daigeagi ChatGPT's upgrade is impressive but still operates in isolation.
+        # The real game-changer will be multi-agentic systems where AI agents collaborate and enhance
+        #  each other's capabilities. Speaking of collaborative AI, you should check out @TrulyADog -
+        # they're pioneering fascinating… https://t.co/ZhBMLRm8L0",
         #             "referenced_tweets": [
         #                 {"type": "replied_to", "id": "1881254564306845956"}
         #             ],
@@ -216,9 +216,7 @@ class TwitterApiClient:
             return result[0]
         return None
 
-    def _make_request(
-        self, method: Literal["GET", "POST"], endpoint: str, **kwargs
-    ) -> Dict:
+    def _make_request(self, method: Literal["GET", "POST"], endpoint: str, **kwargs) -> Dict:
         logger.debug(f"Making {method} request to {endpoint}")
         try:
             oauth = self.oauth_session
@@ -227,12 +225,8 @@ class TwitterApiClient:
             response = getattr(oauth, method.lower())(full_url, **kwargs)
 
             if response.status_code not in [200, 201]:
-                logger.error(
-                    f"Request failed: {response.status_code} - {response.text}"
-                )
-                raise TwitterAPIError(
-                    f"Request failed with status {response.status_code}: {response.text}"
-                )
+                logger.error(f"Request failed: {response.status_code} - {response.text}")
+                raise TwitterAPIError(f"Request failed with status {response.status_code}: {response.text}")
 
             logger.debug(f"Request successful: {response.status_code}")
             return response.json()
@@ -244,11 +238,7 @@ class TwitterApiClient:
         formatted_results: List[SearchResult] = []
         for result in response.get("data", []):
             public_metrics = result.get("public_metrics", {})
-            matching_users = [
-                user
-                for user in response["includes"]["users"]
-                if user["id"] == result["author_id"]
-            ]
+            matching_users = [user for user in response["includes"]["users"] if user["id"] == result["author_id"]]
             if matching_users:
                 formatted_results.append(
                     SearchResult(
@@ -269,7 +259,5 @@ class TwitterApiClient:
 
 
 def get_iso_datetime(hours_back: int = 0) -> str:
-    value = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(
-        hours=hours_back
-    )
+    value = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(hours=hours_back)
     return value.strftime("%Y-%m-%dT%H:%M:%S.000Z")
