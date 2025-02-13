@@ -102,9 +102,19 @@ class CodeAgent(Agent, InternalCodeAgent):
         """Initialize the CodeAgent.
 
         Args:
-            prompt_template (Optional[str]): Template used to format input requests
-            flush_memory (Optional[bool]): If True, clears memory between requests
+            prompt_template (Optional[str]): Template used to format input requests.
+                The template should contain {{request}} where the input message should be inserted.
+                Example: "Answer the following question: {{request}}"
+                If not provided, defaults to "{{request}}"
+            flush_memory (Optional[bool]): If True, clears memory between requests. Defaults to False.
             **kwargs: Additional arguments passed to InternalCodeAgent
+
+        Example:
+            agent = CodeAgent(
+                prompt_template="You are a helpful assistant. Please answer: {{request}}",
+                model="gpt-4",
+            )
+            response = await agent.execute(Message(content="What is Python?"))
         """
         InternalCodeAgent.__init__(self, **kwargs)
         self.prompt_template = prompt_template or DEFAULT_PROMPT_TEMPLATE
@@ -142,9 +152,19 @@ class ToolCallingAgent(Agent, InternalToolCallingAgent):
         Initialize the ToolCallingAgent.
 
         Args:
-            prompt_template (Optional[str]): The template used to format prompts.
-            flush_memory (Optional[bool]): Flag to determine whether to reset the internal memory.
-            **kwargs: Additional keyword arguments passed to the internal agent.
+            prompt_template (Optional[str]): Template used to format input requests.
+                The template should contain {{request}} where the input message should be inserted.
+                Example: "Use available tools to answer: {{request}}"
+                If not provided, defaults to "{{request}}"
+            flush_memory (Optional[bool]): If True, clears memory between requests. Defaults to False.
+            **kwargs: Additional arguments passed to InternalToolCallingAgent including available tools
+
+        Example:
+            agent = ToolCallingAgent(
+                prompt_template="You have access to tools. Please help with: {{request}}",
+                model="gpt-4",
+            )
+            response = await agent.execute(Message(content="What's the weather in Paris?"))
         """
         InternalToolCallingAgent.__init__(self, **kwargs)
         self.prompt_template = prompt_template or DEFAULT_PROMPT_TEMPLATE
