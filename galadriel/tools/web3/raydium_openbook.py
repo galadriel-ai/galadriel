@@ -1,3 +1,4 @@
+# pylint: disable=R0801
 import base64
 from dataclasses import dataclass
 import json
@@ -29,8 +30,6 @@ from spl.token.instructions import (
     get_associated_token_address,
     initialize_account,
 )
-
-from galadriel.tools.web3.wallet_tool import WalletTool
 
 from construct import (
     Bytes,
@@ -486,7 +485,7 @@ def fetch_amm_v4_pool_keys(pair_address: str) -> Optional[AmmV4PoolKeys]:
         amm_data = client.get_account_info_json_parsed(amm_id, commitment=Processed).value.data  # type: ignore
         amm_data_decoded = LIQUIDITY_STATE_LAYOUT_V4.parse(amm_data)  # type: ignore
         market_id = Pubkey.from_bytes(amm_data_decoded.serumMarket)
-        market_info = client.get_account_info_json_parsed(_market_id, commitment=Processed).value.data  # type: ignore
+        market_info = client.get_account_info_json_parsed(market_id, commitment=Processed).value.data  # type: ignore
         market_decoded = MARKET_STATE_LAYOUT_V3.parse(market_info)  # type: ignore
         vault_signer_nonce = market_decoded.vault_signer_nonce
 

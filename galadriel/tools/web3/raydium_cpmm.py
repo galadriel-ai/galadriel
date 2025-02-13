@@ -7,16 +7,17 @@ from typing import Optional
 from solana.rpc.commitment import Processed
 from solana.rpc.types import TokenAccountOpts, TxOpts
 from solana.rpc.api import Client
-from solders.compute_budget import set_compute_unit_limit, set_compute_unit_price  # type: ignore
-from solders.message import MessageV0  # type: ignore
-from solders.instruction import AccountMeta, Instruction  # type: ignore
-from solders.keypair import Keypair  # type: ignore
-from solders.pubkey import Pubkey  # type: ignore
-from solders.system_program import (
+from solders.compute_budget import set_compute_unit_limit, set_compute_unit_price  # type: ignore # pylint: disable=E0401
+from solders.message import MessageV0  # type: ignore # pylint: disable=E0401
+from solders.instruction import AccountMeta, Instruction  # type: ignore # pylint: disable=E0401
+from solders.keypair import Keypair  # type: ignore # pylint: disable=E0401
+from solders.pubkey import Pubkey  # type: ignore # pylint: disable=E0401
+from solders.system_program import (  # type: ignore # pylint: disable=E0401
     CreateAccountWithSeedParams,
     create_account_with_seed,
 )
-from solders.transaction import VersionedTransaction  # type: ignore
+from solders.transaction import VersionedTransaction  # type: ignore # pylint: disable=E0401
+from solders.account_decoder import ParsedAccount  # type: ignore # pylint: disable=E0401
 from spl.token.client import Token
 from spl.token.instructions import (
     CloseAccountParams,
@@ -31,7 +32,6 @@ from construct import (
     Enum,
     Struct,
     Int64ul,
-    Int8ul,
     Bytes,
     Array,
     Padding,
@@ -136,14 +136,16 @@ AMM_CONFIG_LAYOUT = Struct(
 )
 
 
+# pylint:disable=W0223
 class UInt128Adapter(Adapter):
+
     def _decode(self, obj, context, path):
         return (obj.high << 64) | obj.low
 
     def _encode(self, obj, context, path):
         high = (obj >> 64) & ((1 << 64) - 1)
         low = obj & ((1 << 64) - 1)
-        return dict(high=high, low=low)
+        return {"high": high, "low": low}
 
 
 UInt128ul = UInt128Adapter(Struct("low" / Int64ul, "high" / Int64ul))
@@ -187,6 +189,7 @@ class BuyTokenWithSolTool(WalletTool):
     }
     output_type = "string"
 
+    # pylint:disable=W0221
     def forward(self, pair_address: str, sol_in: float = 0.01, slippage: int = 5) -> str:
         payer_keypair = self.wallet_repository.get_wallet()
         result = buy(payer_keypair, pair_address, sol_in, slippage)
@@ -214,12 +217,14 @@ class SellTokenForSolTool(WalletTool):
     }
     output_type = "string"
 
+    # pylint:disable=W0221
     def forward(self, pair_address: str, percentage: int = 100, slippage: int = 5) -> str:
         payer_keypair = self.wallet_repository.get_wallet()
         result = sell(payer_keypair, pair_address, percentage, slippage)
         return "Transaction successful" if result else "Transaction failed"
 
 
+# pylint:disable=R0914, R0915
 def buy(payer_keypair: Keypair, pair_address: str, sol_in: float = 0.1, slippage: int = 1) -> bool:
     logger.info(f"Starting buy transaction for pair address: {pair_address}")
 
@@ -297,7 +302,7 @@ def buy(payer_keypair: Keypair, pair_address: str, sol_in: float = 0.1, slippage
         token_account_out=token_account,
         accounts=pool_keys,
         owner=payer_keypair.pubkey(),
-        action=DIRECTION.BUY,
+        action=DIRECTION.BUY,  # type: ignore
     )
 
     logger.info("Preparing to close WSOL account after swap...")
@@ -345,6 +350,7 @@ def buy(payer_keypair: Keypair, pair_address: str, sol_in: float = 0.1, slippage
     return confirmed
 
 
+# pylint:disable=R0914
 def sell(payer_keypair: Keypair, pair_address: str, percentage: int = 100, slippage: int = 1) -> bool:
     try:
         logger.info("Fetching pool keys...")
@@ -362,7 +368,7 @@ def sell(payer_keypair: Keypair, pair_address: str, percentage: int = 100, slipp
             token_program_id = pool_keys.token_0_program
 
         logger.info("Retrieving token balance...")
-        token_balance = get_token_balance(str(mint))
+        token_balance = get_token_balance(payer_keypair.pubkey(), str(mint))
         logger.info(f"Token Balance: {token_balance}")
 
         if token_balance == 0 or token_balance is None:
@@ -419,7 +425,7 @@ def sell(payer_keypair: Keypair, pair_address: str, percentage: int = 100, slipp
             token_account_out=wsol_token_account,
             accounts=pool_keys,
             owner=payer_keypair.pubkey(),
-            action=DIRECTION.SELL,
+            action=DIRECTION.SELL,  # type: ignore
         )
 
         logger.info("Preparing to close WSOL account after swap...")
@@ -482,7 +488,15 @@ def sell(payer_keypair: Keypair, pair_address: str, percentage: int = 100, slipp
 def fetch_cpmm_pool_keys(pair_address: str) -> Optional[CpmmPoolKeys]:
     try:
         pool_state = Pubkey.from_string(pair_address)
-        pool_state_data = client.get_account_info_json_parsed(pool_state, commitment=Processed).value.data
+        pool_state_account = client.get_account_info_json_parsed(
+            pool_state, commitment=Processed
+        ).value
+        if not pool_state_account:
+            logger.error("Pool state account not found.")
+            return None
+        pool_state_data = pool_state_account.data
+        if isinstance(pool_state_data, ParsedAccount):
+            pool_state_data = bytes(pool_state_data)
         parsed_data = CPMM_POOL_STATE_LAYOUT.parse(pool_state_data)
 
         pool_keys = CpmmPoolKeys(
@@ -518,6 +532,7 @@ def fetch_cpmm_pool_keys(pair_address: str) -> Optional[CpmmPoolKeys]:
         return None
 
 
+# pylint:disable=R0917
 def make_cpmm_swap_instruction(
     amount_in: int,
     minimum_amount_out: int,
@@ -528,6 +543,13 @@ def make_cpmm_swap_instruction(
     action: DIRECTION,
 ) -> Instruction:
     try:
+        # Initialize variables with default values
+        input_vault = None
+        output_vault = None
+        input_token_program = None
+        output_token_program = None
+        input_token_mint = None
+        output_token_mint = None
 
         if action == DIRECTION.BUY:
             input_vault = accounts.token_0_vault
@@ -543,6 +565,8 @@ def make_cpmm_swap_instruction(
             output_token_program = accounts.token_0_program
             input_token_mint = accounts.token_1_mint
             output_token_mint = accounts.token_0_mint
+        else:
+            raise ValueError("Invalid action")
 
         keys = [
             AccountMeta(pubkey=owner, is_signer=True, is_writable=True),
@@ -569,7 +593,7 @@ def make_cpmm_swap_instruction(
         return swap_instruction
     except Exception as e:
         logger.error(f"Error occurred: {e}")
-        return None
+        raise e
 
 
 def get_cpmm_reserves(pool_keys: CpmmPoolKeys):
@@ -591,8 +615,8 @@ def get_cpmm_reserves(pool_keys: CpmmPoolKeys):
 
     quote_account = balances[0]
     base_account = balances[1]
-    quote_account_balance = quote_account.data.parsed["info"]["tokenAmount"]["uiAmount"]
-    base_account_balance = base_account.data.parsed["info"]["tokenAmount"]["uiAmount"]
+    quote_account_balance = quote_account.data.parsed["info"]["tokenAmount"]["uiAmount"]  # type: ignore
+    base_account_balance = base_account.data.parsed["info"]["tokenAmount"]["uiAmount"]  # type: ignore
 
     if quote_account_balance is None or base_account_balance is None:
         logger.error("Error: One of the account balances is None.")

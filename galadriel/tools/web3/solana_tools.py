@@ -1,7 +1,6 @@
 import asyncio
-import json
 import logging
-from typing import Dict, Optional
+from typing import Optional
 
 from solana.rpc.commitment import Confirmed
 from solders.pubkey import Pubkey  # type: ignore # pylint: disable=E0401
@@ -19,7 +18,7 @@ LAMPORTS_PER_SOL = 1_000_000_000
 
 
 @tool
-def get_user_balance(user_address: str, token: str) -> float:
+def get_user_balance(user_address: str, token: str) -> Optional[float]:
     """
     Retrieves the user's balance for a specific token from the blockchain.
 
@@ -28,7 +27,7 @@ def get_user_balance(user_address: str, token: str) -> float:
         token: The token address in solana.
 
     Returns:
-        The user's balance for the specified token.
+        The balance of the user for the specified token, or None if the balance is not available.
     """
     return asyncio.run(get_user_token_balance(user_address, token))
 
@@ -36,10 +35,11 @@ def get_user_balance(user_address: str, token: str) -> float:
 class GetAdminWalletAddressTool(WalletTool):
     name = "get_admin_wallet_address"
     description = "This tool returns the wallet address of the admin."
-    inputs = {}
+    inputs = {"dummy": {"type": "string", "description": "Dummy input"}}
     output_type = "string"
 
-    def forward(self) -> str:
+    # pylint:disable=W0221
+    def forward(self, dummy: str) -> str:
         return self.wallet_repository.get_wallet_address()
 
 
