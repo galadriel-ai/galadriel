@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import Optional
 from botocore.exceptions import ClientError
 
-from galadriel_agent.logging_utils import get_agent_logger
+from galadriel.logging_utils import get_agent_logger
 from galadriel.entities import AgentState
 
 logger = get_agent_logger()
