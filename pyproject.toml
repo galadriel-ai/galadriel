@@ -39,10 +39,9 @@ jupiter-python-sdk =  "^0.0.2.0"
 litellm = {version = "^1.58.2"}
 gradio = "^5.15.0"
 audioop-lts = { version = "^0.2.1", python = "^3.13" }
-black = { version = "^24.8.0", optional = true }
+ruff = { version = "^0.9.6", optional = true }
 mypy = { version = "^1.11.2", optional = true }
 py = { version = "^1.11.0", optional = true }
-pylint = { version = "^3.2.7", optional = true }
 pytest = { version = "^8.3.2", optional = true }
 pytest-asyncio = { version = "0.24.0", optional = true }
 pytest-mock = { version = "^3.14.0", optional = true }
@@ -53,7 +52,7 @@ build = { version = "^1.2.2", optional = true }
 types-requests = { version = "^2.32.0.20241016", optional = true }
 
 [tool.poetry.extras]
-dev = ["black", "mypy", "pylint", "pytest", "pytest-asyncio", "pytest-mock", "pytest-xprocess", "twine", "build", "types-requests"]
+dev = ["ruff", "mypy", "pytest", "pytest-asyncio", "pytest-mock", "pytest-xprocess", "twine", "build", "types-requests"]
 
 [build-system]
 requires = ["poetry-core"]
@@ -62,31 +61,21 @@ build-backend = "poetry.core.masonry.api"
 [tool.poetry.scripts]
 galadriel = "galadriel.cli:galadriel"
 
-[tool.black]
+[tool.ruff]
 line-length = 120
+lint.ignore = [
+  "F403", # undefined-local-with-import-star
+  "E501", # line-too-long
+]
+lint.select = ["E", "F"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+docstring-code-format = true
 
 [tool.mypy]
 ignore_missing_imports = true
-
-[tool.pylint]
-max-line-length = 120
-ignore = ["docker-compose.yml", "*.yaml", "*.json", "*.md"]
-ignore-patterns = ["^\\."]  # Ignore hidden files/directories
-disable = [
-    "missing-docstring",
-    "missing-module-docstring",
-    "missing-class-docstring",
-    "too-many-instance-attributes",
-    "raise-missing-from",
-    "fixme",
-    "broad-exception-caught",
-    "logging-fstring-interpolation",
-    "too-few-public-methods",
-    "logging-too-many-args",
-    "no-member"
-]
-max-args = 7
-const-rgx = "([A-Z_][A-Z0-9_]*)$"
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

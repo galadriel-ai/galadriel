@@ -45,8 +45,7 @@ class RetrieverTool(Tool):
 
     name = "retriever"
     description = (
-        "Uses semantic search to retrieve the parts of documentation "
-        "that could be most relevant to answer your query."
+        "Uses semantic search to retrieve the parts of documentation that could be most relevant to answer your query."
     )
     inputs = {
         "query": {

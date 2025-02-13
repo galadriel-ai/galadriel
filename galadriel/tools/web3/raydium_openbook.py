@@ -737,7 +737,6 @@ def make_amm_v4_swap_instruction(
         Includes all necessary account metas for the swap
     """
     try:
-
         keys = [
             AccountMeta(pubkey=accounts.token_program_id, is_signer=False, is_writable=False),
             AccountMeta(pubkey=accounts.amm_id, is_signer=False, is_writable=True),
