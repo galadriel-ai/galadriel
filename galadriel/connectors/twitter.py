@@ -1,8 +1,7 @@
 import datetime
 import os
 from dataclasses import dataclass
-from typing import Dict, List, Literal
-from typing import Optional
+from typing import Dict, List, Literal, Optional
 
 from requests_oauthlib import OAuth1Session
 
@@ -37,7 +36,8 @@ class SearchResult:
     @staticmethod
     def from_dict(data: Dict) -> "SearchResult":
         return SearchResult(
-            id=data["id"], username=data["username"],
+            id=data["id"],
+            username=data["username"],
             text=data["text"],
             retweet_count=data["retweet_count"],
             reply_count=data["reply_count"],
