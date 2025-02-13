@@ -4,6 +4,7 @@ from typing import Optional
 
 import discord
 from discord.ext import commands
+from discord.abc import Messageable
 
 from galadriel import AgentInput
 from galadriel import AgentOutput
@@ -136,14 +137,21 @@ class DiscordClient(commands.Bot, AgentInput, AgentOutput):
         await self.ensure_bot_is_started()
 
         conversation_id = response.conversation_id
-        should_respond = conversation_id and conversation_id.startswith(self.CONVERSATION_ID_PREFIX)
+        should_respond = conversation_id is not None and conversation_id.startswith(self.CONVERSATION_ID_PREFIX)
         if not should_respond:
             self.logger.info(f"This isn't Discord conversation: {response.conversation_id}. Ignoring...")
             return
 
+        assert conversation_id is not None
         channel_id = conversation_id.split(self.CONVERSATION_ID_PREFIX)[1]
         try:
             channel = self.get_channel(int(channel_id))
+            if channel is None:
+                self.logger.error(f"Channel with ID {channel_id} not found.")
+                return
+            if not isinstance(channel, Messageable):
+                self.logger.error(f"Channel with ID {channel_id} does not support sending messages.")
+                return
             await channel.send(response.content)
         except Exception as e:
             self.logger.error(f"Failed to post output: {e}")
