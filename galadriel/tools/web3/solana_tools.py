@@ -11,7 +11,6 @@ Key Features:
 - Multi-user support
 """
 
-import asyncio
 import logging
 import os
 from typing import Optional
