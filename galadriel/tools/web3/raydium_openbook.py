@@ -1,3 +1,4 @@
+# pylint: disable=R0801
 import base64
 from dataclasses import dataclass
 import json
@@ -9,17 +10,17 @@ import logging
 from solana.rpc.api import Client
 from solana.rpc.commitment import Processed, Confirmed
 from solana.rpc.types import TokenAccountOpts, TxOpts
-from solders.compute_budget import set_compute_unit_limit, set_compute_unit_price  # pylint: disable=E0401
-from solders.message import MessageV0  # pylint: disable=E0401
-from solders.keypair import Keypair  # pylint: disable=E0401
-from solders.pubkey import Pubkey  # pylint: disable=E0401
-from solders.signature import Signature  # pylint: disable=E0401
-from solders.instruction import AccountMeta, Instruction  # pylint: disable=E0401
+from solders.compute_budget import set_compute_unit_limit, set_compute_unit_price  # type: ignore # pylint: disable=E0401
+from solders.message import MessageV0  # type: ignore # pylint: disable=E0401
+from solders.keypair import Keypair  # type: ignore # pylint: disable=E0401
+from solders.pubkey import Pubkey  # type: ignore # pylint: disable=E0401
+from solders.signature import Signature  # type: ignore # pylint: disable=E0401
+from solders.instruction import AccountMeta, Instruction  # type: ignore # pylint: disable=E0401
+from solders.transaction import VersionedTransaction  # type: ignore # pylint: disable=E0401
 from solders.system_program import (
     CreateAccountWithSeedParams,
     create_account_with_seed,
 )
-from solders.transaction import VersionedTransaction  # pylint: disable=E0401
 from spl.token.client import Token
 from spl.token.instructions import (
     CloseAccountParams,
@@ -51,7 +52,12 @@ logger = logging.getLogger(__name__)
 UNIT_BUDGET = 150_000
 UNIT_PRICE = 1_000_000
 
+# Raydium AMM V4 devnet addresses
 RAYDIUM_AMM_V4 = Pubkey.from_string("HWy1jotHpo6UqeQxx49dpYYdQB8wj9Qk9MdxwjLvDHB8")
+OPENBOOK_MARKET = Pubkey.from_string("EoTcMgcDRTJVZDMZWBoU6rhYHZfkNTVEAfz3uUJRcYGj")
+RAYDIUM_AUTHORITY = Pubkey.from_string("DbQqP6ehDYmeYjcBaMRuA8tAJY1EjDUz9DpwSLjaQqfC")
+FEE_DESTINATION_ID = Pubkey.from_string("3XMrhbv989VxAMi3DErLV9eJht1pHppW5LbKxe9fkEFR")
+
 TOKEN_PROGRAM_ID = Pubkey.from_string("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA")
 ACCOUNT_LAYOUT_LEN = 165
 WSOL = Pubkey.from_string("So11111111111111111111111111111111111111112")
@@ -187,11 +193,13 @@ class BuyTokenWithSolTool(WalletTool):
             "type": "number",
             "description": "The amount of SOL to swap",
             "default": 0.01,
+            "nullable": True,
         },
         "slippage": {
             "type": "integer",
             "description": "The slippage tolerance percentage",
             "default": 5,
+            "nullable": True,
         },
     }
     output_type = "string"
@@ -323,7 +331,7 @@ def buy(payer_keypair: Keypair, pair_address: str, sol_in: float = 0.01, slippag
 
         txn_sig = client.send_transaction(
             txn=VersionedTransaction(compiled_message, [payer_keypair]),
-            opts=TxOpts(skip_preflight=True),
+            opts=TxOpts(skip_preflight=False),
         ).value
 
         confirmed = confirm_txn(txn_sig)
@@ -436,7 +444,7 @@ def sell(payer_keypair: Keypair, pair_address: str, percentage: int = 100, slipp
 
         txn_sig = client.send_transaction(
             txn=VersionedTransaction(compiled_message, [payer_keypair]),
-            opts=TxOpts(skip_preflight=True),
+            opts=TxOpts(skip_preflight=False),
         ).value
 
         confirmed = confirm_txn(txn_sig)
@@ -476,13 +484,10 @@ def fetch_amm_v4_pool_keys(pair_address: str) -> Optional[AmmV4PoolKeys]:
         amm_id = Pubkey.from_string(pair_address)
         amm_data = client.get_account_info_json_parsed(amm_id, commitment=Processed).value.data  # type: ignore
         amm_data_decoded = LIQUIDITY_STATE_LAYOUT_V4.parse(amm_data)  # type: ignore
-        _market_id = Pubkey.from_bytes(amm_data_decoded.serumMarket)
-        _market_info = client.get_account_info_json_parsed(_market_id, commitment=Processed).value.data  # type: ignore
-        market_decoded = MARKET_STATE_LAYOUT_V3.parse(_market_info)  # type: ignore
+        market_id = Pubkey.from_bytes(amm_data_decoded.serumMarket)
+        market_info = client.get_account_info_json_parsed(market_id, commitment=Processed).value.data  # type: ignore
+        market_decoded = MARKET_STATE_LAYOUT_V3.parse(market_info)  # type: ignore
         vault_signer_nonce = market_decoded.vault_signer_nonce
-
-        ray_authority_v4 = Pubkey.from_string("5Q544fKrFoe6tsEbD7S8EmxGTJYAKtTVhAW5Q5pge4j1")
-        open_book_program = Pubkey.from_string("srmqPvymJeFKQ4zGQed1GFppgkRHL9kaELCbyksJtPX")
 
         pool_keys = AmmV4PoolKeys(
             amm_id=amm_id,
@@ -494,18 +499,18 @@ def fetch_amm_v4_pool_keys(pair_address: str) -> Optional[AmmV4PoolKeys]:
             target_orders=Pubkey.from_bytes(amm_data_decoded.ammTargetOrders),
             base_vault=Pubkey.from_bytes(amm_data_decoded.poolCoinTokenAccount),
             quote_vault=Pubkey.from_bytes(amm_data_decoded.poolPcTokenAccount),
-            market_id=_market_id,
+            market_id=market_id,
             market_authority=Pubkey.create_program_address(
-                seeds=[bytes(_market_id), bytes_of(vault_signer_nonce)],
-                program_id=open_book_program,
+                seeds=[bytes(market_id), bytes_of(vault_signer_nonce)],
+                program_id=OPENBOOK_MARKET,
             ),
             market_base_vault=Pubkey.from_bytes(market_decoded.base_vault),
             market_quote_vault=Pubkey.from_bytes(market_decoded.quote_vault),
             bids=Pubkey.from_bytes(market_decoded.bids),
             asks=Pubkey.from_bytes(market_decoded.asks),
             event_queue=Pubkey.from_bytes(market_decoded.event_queue),
-            ray_authority_v4=ray_authority_v4,
-            open_book_program=open_book_program,
+            ray_authority_v4=RAYDIUM_AUTHORITY,
+            open_book_program=OPENBOOK_MARKET,
             token_program_id=TOKEN_PROGRAM_ID,
         )
 
@@ -656,4 +661,4 @@ def confirm_txn(txn_sig: Signature, max_retries: int = 20, retry_interval: int =
 if __name__ == "__main__":
     # buy_token
     buy_token_with_sol_tool = BuyTokenWithSolTool()
-    buy_token_with_sol_tool.forward("HWy1jotHpo6UqeQxx49dpYYdQB8wj9Qk9MdxwjLvDHB8", 0.01, 5)
+    buy_token_with_sol_tool.forward("FFBvVfBcZ8abyt9dgQ1dS9F49mzNTCQbEpppwE9mcReB", 0.05, 5)
