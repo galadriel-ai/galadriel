@@ -17,7 +17,7 @@ class GradioClient(AgentInput, AgentOutput):
 
     Attributes:
         message_queue (Optional[PushOnlyQueue]): Queue for storing messages to be processed
-        public_url (bool): Whether to share the Gradio interface publicly
+        is_public (bool): Whether to share the Gradio interface publicly
         logger (logging.Logger): Logger instance for tracking client activities
         conversation_id (str): Identifier for the chat conversation
         input_queue (asyncio.Queue[str]): Queue for storing user inputs
@@ -26,7 +26,7 @@ class GradioClient(AgentInput, AgentOutput):
         chatbot (gr.Chatbot): The chat interface component
     """
 
-    def __init__(self, logger: Optional[logging.Logger] = None, public_url: Optional[bool] = False):
+    def __init__(self, logger: Optional[logging.Logger] = None, is_public: Optional[bool] = False):
         """Initialize the Gradio client interface.
 
         Args:
@@ -34,7 +34,7 @@ class GradioClient(AgentInput, AgentOutput):
                                              creates a default logger
         """
         self.message_queue: Optional[PushOnlyQueue] = None
-        self.public_url = public_url
+        self.is_public = is_public
         self.logger = logger or logging.getLogger("gradio_client")
         self.conversation_id = "gradio"
         self.input_queue: asyncio.Queue[str] = asyncio.Queue()
@@ -116,9 +116,9 @@ class GradioClient(AgentInput, AgentOutput):
 
         # Launch Gradio interface in a background thread
         self.interface.queue()
-        self.interface.launch(server_name="0.0.0.0", server_port=7860, share=self.public_url, prevent_thread_lock=True)
+        self.interface.launch(server_name="0.0.0.0", server_port=7860, share=self.is_public, prevent_thread_lock=True)
         # Log the local URL for accessing the Gradio interface
-        if not self.public_url:
+        if not self.is_public:
             self.logger.info("Gradio interface available at: http://0.0.0.0:7860")
 
         # Process messages from input queue
