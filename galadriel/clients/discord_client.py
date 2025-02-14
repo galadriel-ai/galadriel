@@ -4,10 +4,10 @@ from typing import Optional
 
 import discord
 from discord.ext import commands
+from discord.abc import Messageable
 
 from galadriel import AgentInput
 from galadriel import AgentOutput
-from galadriel.entities import HumanMessage
 from galadriel.entities import Message
 from galadriel.entities import PushOnlyQueue
 
@@ -24,6 +24,9 @@ class DiscordClient(commands.Bot, AgentInput, AgentOutput):
         guild_id: ID of the Discord server the bot is connected to
         logger: Logger instance for tracking bot activities
     """
+
+    CONVERSATION_ID_PREFIX = "discord_"
+    _is_bot_started = False
 
     def __init__(self, guild_id: str, logger: Optional[logging.Logger] = None):
         """Initialize the Discord client.
@@ -42,6 +45,11 @@ class DiscordClient(commands.Bot, AgentInput, AgentOutput):
         self.message_queue: Optional[PushOnlyQueue] = None
         self.guild_id = guild_id
         self.logger = logger or logging.getLogger("discord_client")
+
+    async def ensure_bot_is_started(self) -> None:
+        if not self._is_bot_started:
+            await super().start(os.getenv("DISCORD_TOKEN", ""))
+            self._is_bot_started = True
 
     async def on_ready(self):
         """Event handler called when the bot successfully connects to Discord.
@@ -87,9 +95,9 @@ class DiscordClient(commands.Bot, AgentInput, AgentOutput):
 
         # Create Message object and add to queue
         try:
-            msg = HumanMessage(
+            msg = Message(
                 content=message.content,
-                conversation_id=str(message.channel.id),
+                conversation_id=f"{self.CONVERSATION_ID_PREFIX}{message.channel.id}",
                 additional_kwargs={
                     "author": message.author.name,
                     "message_id": message.id,
@@ -111,9 +119,10 @@ class DiscordClient(commands.Bot, AgentInput, AgentOutput):
         Note:
             Requires DISCORD_TOKEN environment variable to be set
         """
+        await self.ensure_bot_is_started()
         self.message_queue = queue
-        await super().start(os.getenv("DISCORD_TOKEN", ""))
 
+    # TODO Enable some way of setting up "default output channel" for Discord (i.e based on input from other clients, always post to this channel))
     async def send(self, request: Message, response: Message) -> None:
         """Send a response message to the appropriate Discord channel.
 
@@ -125,11 +134,25 @@ class DiscordClient(commands.Bot, AgentInput, AgentOutput):
             ValueError: If the response's conversation_id is None
             Exception: If message sending fails
         """
+        await self.ensure_bot_is_started()
+
+        conversation_id = response.conversation_id
+        should_respond = conversation_id is not None and conversation_id.startswith(self.CONVERSATION_ID_PREFIX)
+        if not should_respond:
+            self.logger.info(f"This isn't Discord conversation: {response.conversation_id}. Ignoring...")
+            return
+
+        assert conversation_id is not None
+        channel_id = conversation_id.split(self.CONVERSATION_ID_PREFIX)[1]
         try:
-            if response.conversation_id is None:
-                raise ValueError("conversation_id cannot be None")
-            channel = self.get_channel(int(response.conversation_id))
-            await channel.send(response.content)  # type: ignore[union-attr]
+            channel = self.get_channel(int(channel_id))
+            if channel is None:
+                self.logger.error(f"Channel with ID {channel_id} not found.")
+                return
+            if not isinstance(channel, Messageable):
+                self.logger.error(f"Channel with ID {channel_id} does not support sending messages.")
+                return
+            await channel.send(response.content)
         except Exception as e:
             self.logger.error(f"Failed to post output: {e}")
             raise e

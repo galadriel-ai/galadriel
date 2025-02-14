@@ -7,7 +7,6 @@ from galadriel.agent import AgentInput
 from galadriel.agent import AgentOutput
 from galadriel.connectors.twitter import TwitterApiClient
 from galadriel.connectors.twitter import TwitterCredentials
-from galadriel.entities import HumanMessage
 from galadriel.entities import Message
 from galadriel.entities import PushOnlyQueue
 
@@ -58,7 +57,7 @@ class TwitterMentionClient(TwitterApiClient, AgentInput, AgentOutput):
         """
         mentions = await self._fetch_mentions(self.user_id)
         for mention in mentions:
-            message = HumanMessage(
+            message = Message(
                 content=mention["text"],
                 conversation_id=mention["conversation_id"],
                 additional_kwargs={

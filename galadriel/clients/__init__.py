@@ -5,6 +5,7 @@ from .simple_message_client import SimpleMessageClient
 from .twitter_mention_client import TwitterMentionClient
 from .terminal_client import TerminalClient
 from .gradio_client import GradioClient
+from .shutdown_after import ShutdownAfter
 
 __all__ = [
     "DiscordClient",
@@ -14,4 +15,5 @@ __all__ = [
     "TwitterMentionClient",
     "TerminalClient",
     "GradioClient",
+    "ShutdownAfter",
 ]

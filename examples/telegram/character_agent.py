@@ -6,7 +6,6 @@ from rich.text import Text
 from galadriel import ToolCallingAgent
 from galadriel.core_agent import LogLevel
 from galadriel.domain.prompts.format_prompt import load_agent_template
-from galadriel.entities import AgentMessage
 from galadriel.entities import Message
 
 TELEGRAM_SYSTEM_PROMPT = """
@@ -63,7 +62,7 @@ class CharacterAgent(ToolCallingAgent):
             except json.JSONDecodeError:
                 pass  # Not JSON format, use original response
 
-            return AgentMessage(
+            return Message(
                 content=response_text,
                 conversation_id=message.conversation_id,
             )

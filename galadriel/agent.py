@@ -191,6 +191,8 @@ class AgentRuntime:
     payment validation, response generation, and output delivery.
     """
 
+    SHUTDOWN_MESSAGE = "__SHUTDOWN__"
+
     def __init__(
         # pylint:disable=R0917
         self,
@@ -237,6 +239,10 @@ class AgentRuntime:
 
         while True:
             request = await input_queue.get()
+            # TODO Add check that this runtime isn't running in prod
+            if request.content == self.SHUTDOWN_MESSAGE:
+                logger.info("Received shutdown message. Stopping runtime...")
+                break
             await self.run_request(request)
             # await self.upload_state()
 
