@@ -31,7 +31,6 @@ elon_musk_agent = CharacterAgent(
     character_json_path="agent.json",
     tools=[get_time],
     model=model,
-    max_steps=6,
 )
 
 # Set up the runtime

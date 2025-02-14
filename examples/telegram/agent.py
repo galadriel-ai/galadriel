@@ -29,7 +29,6 @@ elon_musk_agent = CharacterAgent(
     character_json_path="agent.json",
     tools=[composio_weather_tool, get_time],
     model=model,
-    max_steps=6,
 )
 
 # Set up the runtime
