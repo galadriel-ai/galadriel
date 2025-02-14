@@ -55,57 +55,5 @@ def _hash_data(request: Message, response: Message) -> bytes:
     return hashlib.sha256(combined_str.encode("utf-8")).digest()
 
 
-if __name__ == "__main__":
-    from dotenv import load_dotenv
-    from pathlib import Path
-    from galadriel.logging_utils import get_agent_logger
-    import asyncio
-
-    def get_ssh_public_key(name: str) -> str:
-        """Read the SSH public key from the default location."""
-        try:
-            ssh_path = Path.home() / ".ssh" / name
-            if not ssh_path.exists():
-                raise FileNotFoundError(f"SSH public key not found at {ssh_path}")
-                
-            with open(ssh_path, "r", encoding="utf-8") as f:
-                return f.read().strip()
-                
-        except Exception as e:
-            raise RuntimeError(f"Failed to read SSH public key: {e}") from e
-
-
-    def set_ssh_key_env() -> None:
-        """Set the SSH public key as an environment variable."""
-        try:
-            public_key = get_ssh_public_key("id_ed25519.pub")
-            private_key = get_ssh_public_key("id_ed25519")
-            os.environ["s_PUBLIC_KEY"] = public_key
-            os.environ["s_PRIVATE_KEY"] = private_key
-        except Exception as e:
-            raise RuntimeError(f"Failed to set SSH public key environment variable: {e}") from e
-        
-
-    logger = get_agent_logger()
-    load_dotenv(dotenv_path=Path(".") / ".env", override=True)
-    #set_ssh_key_env()
-    
-    request = Message(content="Hello, world!")
-    response = Message(content="Hello, world!")
-
-    async def main():
-        proof = await generate_proof(request, response, logger)
-        print(proof)
-
-    asyncio.run(main())
-
-message = Message(additional_kwargs={"discord": "channel_id_123",
-                                        "twitter": "tweet_id_456"})
-## discord client - send message
-if not message.additional_kwargs.get("discord"):
-    "not for discord"
-## twitter client - send message
-if not message.additional_kwargs.get("twitter"):
-    "not for twitter"
     
     
