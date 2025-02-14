@@ -424,6 +424,7 @@ def _build_image(docker_username: str) -> None:
     subprocess.run(["docker-compose", "build"], check=True)
     click.echo("Successfully built Docker image!")
 
+
 def _get_image_layer_hashes(image_name: str) -> List[str]:
     """Get the layer hashes of the Docker image and parse its output as JSON."""
     result = subprocess.run(
@@ -450,11 +451,12 @@ def _get_image_layer_hashes(image_name: str) -> List[str]:
         click.echo(error_msg, err=True)
         raise ValueError(error_msg)
 
+
 def _get_image_hash(image_name: str) -> str:
     """Get a combined hash of all the Docker image layers.
 
     This function first retrieves all the layer hashes using `_get_image_layer_hashes()`.
-    It then concatenates them (preserving the order) and computes a SHA-256 hash 
+    It then concatenates them (preserving the order) and computes a SHA-256 hash
     over the resulting string.
 
     Args:
@@ -466,10 +468,10 @@ def _get_image_hash(image_name: str) -> str:
     layers = _get_image_layer_hashes(image_name)
     if not layers:
         raise click.ClickException("No layer hashes found for the Docker image.")
-    
+
     # Concatenate all layer hashes into one single string.
     combined_str = "".join(layers)
-    
+
     # Compute SHA-256 hash of the concatenated string.
     combined_hash = hashlib.sha256(combined_str.encode("utf-8")).hexdigest()
     return combined_hash
@@ -528,11 +530,12 @@ def _galadriel_deploy(image_name: str, docker_username: str) -> Optional[str]:
     if not api_key:
         raise click.ClickException("GALADRIEL_API_KEY not found in environment")
 
-    image_hash = _get_image_hash(f"{docker_username}/{image_name}:latest")
+    docker_image = f"{docker_username}/{image_name}:latest"
+    image_hash = _get_image_hash(docker_image)
 
     payload = {
         "name": image_name,
-        "docker_image": f"{docker_username}/{image_name}:latest",
+        "docker_image": docker_image,
         "docker_image_hash": image_hash,
         "env_vars": env_vars,
     }
@@ -576,11 +579,12 @@ def _galadriel_update(image_name: str, docker_username: str, agent_id: str) -> b
     if not api_key:
         raise click.ClickException("GALADRIEL_API_KEY not found in environment")
 
-    image_hash = _get_image_hash(f"{docker_username}/{image_name}:latest")
+    docker_image = f"{docker_username}/{image_name}:latest"
+    image_hash = _get_image_hash(docker_image)
 
     payload = {
         "name": image_name,
-        "docker_image": f"{docker_username}/{image_name}:latest",
+        "docker_image": docker_image,
         "docker_image_hash": image_hash,
         "env_vars": env_vars,
     }
@@ -666,8 +670,3 @@ def _create_solana_wallet(path: str) -> str:
         file.write(private_key_json)
 
     return str(keypair.pubkey())
-
-
-
-if __name__ == "__main__":
-    print(_get_image_hash("kgrofelnik/y1"))

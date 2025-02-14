@@ -37,7 +37,8 @@ class Agent(ABC):
 
     @abstractmethod
     async def execute(self, request: Message) -> Message:
-        """Process a request and generate a response.
+        """Process a single request and generate a response.
+        The processing can be a single LLM call or involve multiple agentic steps, like CodeAgent.
 
         Args:
             request (Message): The input message to be processed
@@ -228,19 +229,24 @@ class AgentRuntime:
     async def run(self):
         """Start the agent runtime loop.
 
-        Creates an input queue and continuously processes incoming requests.
+        Creates an single queue and continuously processes incoming requests.
+        Al agent inputs receive the same instance of the queue and append requests to it.
         """
         input_queue = asyncio.Queue()
         push_only_queue = PushOnlyQueue(input_queue)
+
         for agent_input in self.inputs:
+            # Each agent input receives a queue it can push messages to
             asyncio.create_task(agent_input.start(push_only_queue))
 
         while True:
+            # Get the next request from the queue
             request = await input_queue.get()
-            await self.run_request(request)
+            # Process the request
+            await self._run_request(request)
             # await self.upload_state()
 
-    async def run_request(self, request: Message):
+    async def _run_request(self, request: Message):
         """Process a single request through the agent pipeline.
 
         Handles payment validation, agent execution, and response delivery.

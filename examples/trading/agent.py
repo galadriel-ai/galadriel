@@ -53,7 +53,7 @@ trading_agent = CodeAgent(
     tools=tools,
     add_base_tools=True,
     additional_authorized_imports=["json"],
-    max_steps=8,
+    max_steps=8,  # Make the trading agent more reliable by increasing the number of steps he can take to complete the task
 )
 
 # Set up the runtime
