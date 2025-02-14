@@ -267,9 +267,7 @@ class BuyTokenWithSolTool(SolanaBaseTool):
     def __init__(self, *args, **kwargs):
         super().__init__(is_wallet_required=True, is_async_client=False, *args, **kwargs)
 
-    def forward(
-        self, pair_address: str, sol_in: float = 0.01, slippage: int = 5
-    ) -> str:  # pylint: disable=W0221
+    def forward(self, pair_address: str, sol_in: float = 0.01, slippage: int = 5) -> str:  # pylint: disable=W0221
         """Execute a SOL to token swap transaction.
 
         Args:
@@ -321,9 +319,7 @@ class SellTokenForSolTool(SolanaBaseTool):
     def __init__(self, *args, **kwargs):
         super().__init__(is_wallet_required=True, is_async_client=False, *args, **kwargs)
 
-    def forward(
-        self, pair_address: str, percentage: int = 100, slippage: int = 5
-    ) -> str:  # pylint: disable=W0221
+    def forward(self, pair_address: str, percentage: int = 100, slippage: int = 5) -> str:  # pylint: disable=W0221
         """Execute a token to SOL swap transaction.
 
         Args:
@@ -337,6 +333,7 @@ class SellTokenForSolTool(SolanaBaseTool):
         payer_keypair = self.wallet_manager.get_wallet()
         result = sell(self.client, payer_keypair, pair_address, percentage, slippage)
         return result
+
 
 # pylint: disable=R0914
 def buy(
@@ -470,7 +467,6 @@ def buy(
 
     except Exception as e:
         return f"Error occurred during transaction: {e}"
-
 
 
 def sell(
@@ -712,9 +708,7 @@ def get_amm_v4_reserves(client: Client, pool_keys: AmmV4PoolKeys) -> tuple:
         base_decimal = pool_keys.base_decimals
         base_mint = pool_keys.base_mint
 
-        balances_response = client.get_multiple_accounts_json_parsed(
-            [quote_vault, base_vault], Processed
-        )
+        balances_response = client.get_multiple_accounts_json_parsed([quote_vault, base_vault], Processed)
         balances = balances_response.value
 
         quote_account = balances[0]
@@ -737,9 +731,7 @@ def get_amm_v4_reserves(client: Client, pool_keys: AmmV4PoolKeys) -> tuple:
             token_decimal = base_decimal
 
         logger.info(f"Base Mint: {base_mint} | Quote Mint: {quote_mint}")
-        logger.info(
-            f"Base Reserve: {base_reserve} | Quote Reserve: {quote_reserve} | Token Decimal: {token_decimal}"
-        )
+        logger.info(f"Base Reserve: {base_reserve} | Quote Reserve: {quote_reserve} | Token Decimal: {token_decimal}")
         return base_reserve, quote_reserve, token_decimal
 
     except Exception as e:
@@ -821,9 +813,7 @@ def get_token_balance(client: Client, pubkey: Pubkey, mint_str: str) -> float | 
         float | None: The balance of the token if successful, None otherwise
     """
     mint = Pubkey.from_string(mint_str)
-    response = client.get_token_accounts_by_owner_json_parsed(
-        pubkey, TokenAccountOpts(mint=mint), commitment=Processed
-    )
+    response = client.get_token_accounts_by_owner_json_parsed(pubkey, TokenAccountOpts(mint=mint), commitment=Processed)
 
     if response.value:
         accounts = response.value
@@ -838,9 +828,7 @@ def get_token_balance(client: Client, pubkey: Pubkey, mint_str: str) -> float | 
     return None
 
 
-def confirm_txn(
-    client: Client, txn_sig: Signature, max_retries: int = 20, retry_interval: int = 3
-) -> bool:
+def confirm_txn(client: Client, txn_sig: Signature, max_retries: int = 20, retry_interval: int = 3) -> bool:
     """Confirm a transaction.
 
     Args:

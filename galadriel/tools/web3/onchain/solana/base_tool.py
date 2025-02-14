@@ -1,8 +1,8 @@
 from enum import Enum
 import os
 
-from httpx import AsyncClient
 from solana.rpc.api import Client
+from solana.rpc.async_api import AsyncClient
 from galadriel.core_agent import Tool
 from galadriel.keystore.wallet_manager import KeyType, WalletManager
 

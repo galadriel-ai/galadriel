@@ -60,11 +60,10 @@ class SwapTokenTool(SolanaBaseTool):
         if self.network is not Network.MAINNET:
             raise NotImplementedError("Jupiter tool is not available on devnet")
 
-    def forward(self, user_address: str, token1: str, token2: str, amount: float, slippage_bps: int) -> str:  # pylint: disable=W0221
+    def forward(self, token1: str, token2: str, amount: float, slippage_bps: int) -> str:  # pylint: disable=W0221
         """Execute a token swap transaction.
 
         Args:
-            user_address (str): The Solana address of the user
             token1 (str): The address of the token to sell
             token2 (str): The address of the token to buy
             amount (float): The amount of token1 to swap
@@ -78,7 +77,7 @@ class SwapTokenTool(SolanaBaseTool):
         """
         wallet = self.wallet_manager.get_wallet()
 
-        result = asyncio.run(swap(self.async_client, wallet, user_address, token1, token2, amount, slippage_bps))
+        result = asyncio.run(swap(self.async_client, wallet, token1, token2, amount, slippage_bps))
 
         return f"Successfully swapped {amount} {token1} for {token2}, tx sig: {result}."
 

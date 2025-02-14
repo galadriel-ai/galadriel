@@ -1,8 +1,8 @@
 import json
 import os
 from typing import Optional
+from enum import Enum
 
-from construct import Enum
 from solders.keypair import Keypair  # type: ignore # pylint: disable=E0401
 
 
@@ -10,13 +10,13 @@ class KeyType(Enum):
     """
     Enumeration of the key types.
     """
+
     SOLANA = "solana"
     ETHEREUM = "ethereum"
 
 
 class WalletManager:
     def __init__(self, key_type: KeyType, key_path: str):
-
         if key_type != KeyType.SOLANA:
             raise ValueError("Unsupported key type. Only Solana keys are supported currently.")
 

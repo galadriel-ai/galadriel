@@ -36,7 +36,7 @@ class GetUserBalanceTool(SolanaBaseTool):
     description = "Retrieves the user's balance for a specific token from the blockchain."
     inputs = {
         "user_address": {"type": "string", "description": "The address of the user."},
-        "token": {"type": "string", "description": "The token address in Solana."}
+        "token": {"type": "string", "description": "The token address in Solana."},
     }
     output_type = "number"
 
@@ -62,9 +62,7 @@ class GetAdminWalletAddressTool(SolanaBaseTool):
         return self.wallet_manager.get_wallet_address()
 
 
-def get_user_token_balance(
-    client: Client, user_address: str, token_address: Optional[str] = None
-) -> Optional[float]:
+def get_user_token_balance(client: Client, user_address: str, token_address: Optional[str] = None) -> Optional[float]:
     """Query a user's token balance from the Solana blockchain.
 
     Fetches the current balance of either SOL or an SPL token for
@@ -119,8 +117,9 @@ def get_user_token_balance(
 
 
 if __name__ == "__main__":
-    os.environ["SOLANA_NETWORK"] = "devnet"
+    client = Client("https://api.devnet.solana.com")
     data = get_user_token_balance(
+        client,
         "4kbGbZtfkfkRVGunkbKX4M7dGPm9MghJZodjbnRZbmug",
         "ELJKW7qz3DA93K919agEk398kgeY1eGvs2u3GAfV3FLn",
     )
