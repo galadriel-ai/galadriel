@@ -26,8 +26,7 @@ class GradioClient(AgentInput, AgentOutput):
         chatbot (gr.Chatbot): The chat interface component
     """
 
-    def __init__(self, logger: Optional[logging.Logger] = None, 
-                 public_url: Optional[bool] = False):
+    def __init__(self, logger: Optional[logging.Logger] = None, public_url: Optional[bool] = False):
         """Initialize the Gradio client interface.
 
         Args:
@@ -117,10 +116,7 @@ class GradioClient(AgentInput, AgentOutput):
 
         # Launch Gradio interface in a background thread
         self.interface.queue()
-        self.interface.launch(server_name="0.0.0.0",
-                              server_port=7860,
-                              share=self.public_url,
-                              prevent_thread_lock=True)
+        self.interface.launch(server_name="0.0.0.0", server_port=7860, share=self.public_url, prevent_thread_lock=True)
         # Log the local URL for accessing the Gradio interface
         if not self.public_url:
             self.logger.info("Gradio interface available at: http://0.0.0.0:7860")
