@@ -58,7 +58,7 @@ async def test_publishes_proof():
         content="hello",
         conversation_id=CONVERSATION_ID,
     )
-    await runtime.run_request(request)
+    await runtime._run_request(request)
     agent.publish_proof.execute.assert_called_with(request, RESPONSE_MESSAGE, "mock_proof")
 
 
@@ -75,7 +75,7 @@ async def test_post_output_to_client():
         content="hello",
         conversation_id=CONVERSATION_ID,
     )
-    await runtime.run_request(request)
+    await runtime._run_request(request)
     assert output_client.output_requests[0] == request
     assert output_client.output_responses[0] == RESPONSE_MESSAGE
     # assert output_client.output_proofs[0] == "mock_proof"
@@ -95,7 +95,7 @@ async def test_payment_validation(monkeypatch):
     )
 
     request = Message(content="test with payment sig123")
-    await runtime.run_request(request)
+    await runtime._run_request(request)
 
     assert len(user_agent.called_messages) == 1
     assert user_agent.called_messages[0].content == "validated task"
@@ -115,7 +115,7 @@ async def test_payment_validation_failure(monkeypatch):
     )
 
     request = Message(content="test with invalid payment")
-    await runtime.run_request(request)
+    await runtime._run_request(request)
 
     assert output_client.output_responses[0].content == "Invalid payment"
     assert len(user_agent.called_messages) == 0
