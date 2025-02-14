@@ -15,54 +15,56 @@ import logging
 import os
 from typing import Optional
 
-from solana.rpc.api import Client
 from solana.rpc.commitment import Confirmed
 from solders.pubkey import Pubkey  # type: ignore # pylint: disable=E0401
+
+from solana.rpc.api import Client
 
 from spl.token.client import Token
 from spl.token.constants import TOKEN_PROGRAM_ID
 from spl.token.instructions import get_associated_token_address
 
-from galadriel.core_agent import tool
-from galadriel.tools.web3.wallet_tool import WalletTool
+from galadriel.tools.web3.onchain.solana.base_tool import SolanaBaseTool
 
 logger = logging.getLogger(__name__)
 
 LAMPORTS_PER_SOL = 1_000_000_000
 
-if os.getenv("SOLANA_NETWORK") == "devnet":
-    client = Client("https://api.devnet.solana.com")
-else:
-    client = Client("https://api.mainnet-beta.solana.com")
+
+class GetUserBalanceTool(SolanaBaseTool):
+    name = "get_user_balance"
+    description = "Retrieves the user's balance for a specific token from the blockchain."
+    inputs = {
+        "user_address": {"type": "string", "description": "The address of the user."},
+        "token": {"type": "string", "description": "The token address in Solana."}
+    }
+    output_type = "number"
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(is_wallet_required=False, is_async_client=False, *args, **kwargs)
+
+    # pylint:disable=W0221
+    def forward(self, user_address: str, token: str) -> Optional[float]:
+        return get_user_token_balance(self.client, user_address, token)
 
 
-@tool
-def get_user_balance(user_address: str, token: str) -> Optional[float]:
-    """
-    Retrieves the user's balance for a specific token from the blockchain.
-
-    Args:
-        user_address: The address of the user.
-        token: The token address in solana.
-
-    Returns:
-        The balance of the user for the specified token, or None if the balance is not available.
-    """
-    return get_user_token_balance(user_address, token)
-
-
-class GetAdminWalletAddressTool(WalletTool):
+class GetAdminWalletAddressTool(SolanaBaseTool):
     name = "get_admin_wallet_address"
     description = "This tool returns the wallet address of the admin."
     inputs = {"dummy": {"type": "string", "description": "Dummy input"}}
     output_type = "string"
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(is_wallet_required=True, is_async_client=False, *args, **kwargs)
+
     # pylint:disable=W0221,W0613
     def forward(self, dummy: str) -> str:
-        return self.wallet_repository.get_wallet_address()
+        return self.wallet_manager.get_wallet_address()
 
 
-def get_user_token_balance(user_address: str, token_address: Optional[str] = None) -> Optional[float]:
+def get_user_token_balance(
+    client: Client, user_address: str, token_address: Optional[str] = None
+) -> Optional[float]:
     """Query a user's token balance from the Solana blockchain.
 
     Fetches the current balance of either SOL or an SPL token for

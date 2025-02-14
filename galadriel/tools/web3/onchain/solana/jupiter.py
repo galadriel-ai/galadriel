@@ -1,7 +1,6 @@
 import asyncio
 import base64
 import json
-import os
 
 from solana.rpc.async_api import AsyncClient
 from solana.rpc.commitment import Processed, Confirmed
@@ -16,7 +15,7 @@ from spl.token.constants import TOKEN_PROGRAM_ID
 
 from jupiter_python_sdk.jupiter import Jupiter
 
-from galadriel.tools.web3.wallet_tool import WalletTool
+from galadriel.tools.web3.onchain.solana.base_tool import Network, SolanaBaseTool
 
 
 # API endpoints for Jupiter Protocol
@@ -30,7 +29,7 @@ JUPITER_QUERY_ORDER_HISTORY_API_URL = "https://jup.ag/api/limit/v1/orderHistory"
 JUPITER_QUERY_TRADE_HISTORY_API_URL = "https://jup.ag/api/limit/v1/tradeHistory"
 
 
-class SwapTokenTool(WalletTool):
+class SwapTokenTool(SolanaBaseTool):
     """Tool for performing token swaps using Jupiter Protocol on Solana.
 
     This tool enables token swaps between any two SPL tokens using Jupiter's
@@ -57,11 +56,11 @@ class SwapTokenTool(WalletTool):
     output_type = "string"
 
     def __init__(self, *args, **kwargs):
-        if os.getenv("SOLANA_NETWORK") == "devnet":
+        super().__init__(is_wallet_required=True, is_async_client=True, *args, **kwargs)
+        if self.network is not Network.MAINNET:
             raise NotImplementedError("Jupiter tool is not available on devnet")
-        super().__init__(*args, **kwargs)
 
-    def forward(self, user_address: str, token1: str, token2: str, amount: float) -> str:  # pylint: disable=W0221
+    def forward(self, user_address: str, token1: str, token2: str, amount: float, slippage_bps: int) -> str:  # pylint: disable=W0221
         """Execute a token swap transaction.
 
         Args:
@@ -69,6 +68,7 @@ class SwapTokenTool(WalletTool):
             token1 (str): The address of the token to sell
             token2 (str): The address of the token to buy
             amount (float): The amount of token1 to swap
+            slippage_bps (int): Slippage tolerance in basis points. Defaults to 300 (3%)
 
         Returns:
             str: A success message containing the transaction signature
@@ -76,15 +76,16 @@ class SwapTokenTool(WalletTool):
         Note:
             Uses asyncio to run the swap operation in an event loop
         """
-        wallet = self.wallet_repository.get_wallet()
+        wallet = self.wallet_manager.get_wallet()
 
-        result = asyncio.run(swap(wallet, user_address, token1, float(token2), int(amount)))
+        result = asyncio.run(swap(self.async_client, wallet, user_address, token1, token2, amount, slippage_bps))
 
         return f"Successfully swapped {amount} {token1} for {token2}, tx sig: {result}."
 
 
 # pylint: disable=R0914
 async def swap(
+    async_client: AsyncClient,
     wallet: Keypair,
     output_mint: str,
     input_mint: str,
@@ -97,6 +98,7 @@ async def swap(
     routing and pricing. Handles transaction construction, signing, and confirmation.
 
     Args:
+        async_client (AsyncClient): The Solana RPC client
         wallet (Keypair): The signer wallet for the transaction
         output_mint (str): Target token mint address
         input_mint (str): Source token mint address
@@ -116,8 +118,6 @@ async def swap(
         - Confirms transaction completion
         - Prints transaction URLs for monitoring
     """
-    # Initialize clients
-    async_client = AsyncClient(SOLANA_API_URL)
     jupiter = Jupiter(
         async_client=async_client,
         keypair=wallet,

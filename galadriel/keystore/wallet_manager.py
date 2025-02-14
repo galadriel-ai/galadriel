@@ -2,11 +2,24 @@ import json
 import os
 from typing import Optional
 
-from solders.keypair import Keypair  # pylint: disable=E0401
+from construct import Enum
+from solders.keypair import Keypair  # type: ignore # pylint: disable=E0401
 
 
-class WalletRepository:
-    def __init__(self, key_path: str):
+class KeyType(Enum):
+    """
+    Enumeration of the key types.
+    """
+    SOLANA = "solana"
+    ETHEREUM = "ethereum"
+
+
+class WalletManager:
+    def __init__(self, key_type: KeyType, key_path: str):
+
+        if key_type != KeyType.SOLANA:
+            raise ValueError("Unsupported key type. Only Solana keys are supported currently.")
+
         keypair = _get_private_key(key_path=key_path)
         if keypair is None:
             raise ValueError("No admin key found")
