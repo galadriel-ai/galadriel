@@ -240,7 +240,7 @@ class AgentRuntime:
             asyncio.create_task(agent_input.start(push_only_queue))
 
         while True:
-            # Get the next request from the queue  
+            # Get the next request from the queue
             request = await input_queue.get()
             # Process the request
             await self._run_request(request)
