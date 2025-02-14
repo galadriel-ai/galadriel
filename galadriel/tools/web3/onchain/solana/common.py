@@ -116,9 +116,8 @@ def get_user_token_balance(client: Client, user_address: str, token_address: Opt
 
 
 if __name__ == "__main__":
-    client = Client("https://api.devnet.solana.com")
-    data = get_user_token_balance(
-        client,
+    get_balance_tool = GetUserBalanceTool()
+    data = get_balance_tool.forward(
         "4kbGbZtfkfkRVGunkbKX4M7dGPm9MghJZodjbnRZbmug",
         "ELJKW7qz3DA93K919agEk398kgeY1eGvs2u3GAfV3FLn",
     )
