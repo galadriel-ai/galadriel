@@ -12,7 +12,6 @@ Key Features:
 """
 
 import logging
-import os
 from typing import Optional
 
 from solana.rpc.commitment import Confirmed
