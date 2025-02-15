@@ -37,7 +37,7 @@ def fetch_market_data(dummy: dict) -> str:  # pylint: disable=W0613
     it as a JSON string. Removes unnecessary data to fit context limits.
 
     Args:
-        dummy (dict): Unused parameter required by tool decorator
+        dummy: Unused parameter required by tool decorator
 
     Returns:
         str: JSON string containing market data for top tokens
@@ -70,7 +70,7 @@ def get_token_profile(task: str) -> str:  # pylint: disable=W0613
     address, description, and associated links.
 
     Args:
-        task (str): Unused parameter required by tool decorator
+        task: Unused parameter required by tool decorator
 
     Returns:
         str: A formatted string containing token profile information
