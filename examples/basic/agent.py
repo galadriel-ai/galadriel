@@ -29,7 +29,7 @@ def get_priority(message: Message) -> int:
     return 2
 
 # Combine inputs with custom priority function
-inputs = CompositeInput(
+client = CompositeInput(
     message_client,
     ShutdownAfter(5),
     priority_fn=get_priority
