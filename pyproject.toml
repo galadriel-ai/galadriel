@@ -52,7 +52,7 @@ build = { version = "^1.2.2", optional = true }
 types-requests = { version = "^2.32.0.20241016", optional = true }
 
 [tool.poetry.extras]
-dev = ["ruff", "mypy", "pytest", "pytest-asyncio", "pytest-mock", "pytest-xprocess", "twine", "build", "types-requests"]
+dev = ["ruff", "mypy", "pytest", "py", "pytest-asyncio", "pytest-mock", "pytest-xprocess", "twine", "build", "types-requests"]
 
 [build-system]
 requires = ["poetry-core"]

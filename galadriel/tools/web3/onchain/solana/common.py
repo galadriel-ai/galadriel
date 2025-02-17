@@ -11,52 +11,57 @@ Key Features:
 - Multi-user support
 """
 
-import asyncio
 import logging
 from typing import Optional
 
 from solana.rpc.commitment import Confirmed
 from solders.pubkey import Pubkey  # type: ignore # pylint: disable=E0401
 
-from spl.token.async_client import AsyncToken
+from solana.rpc.api import Client
+
+from spl.token.client import Token
 from spl.token.constants import TOKEN_PROGRAM_ID
 from spl.token.instructions import get_associated_token_address
 
-from galadriel.core_agent import tool
-from galadriel.tools.web3.wallet_tool import WalletTool
+from galadriel.tools.web3.onchain.solana.base_tool import SolanaBaseTool
 
 logger = logging.getLogger(__name__)
 
 LAMPORTS_PER_SOL = 1_000_000_000
 
 
-@tool
-def get_user_balance(user_address: str, token: str) -> Optional[float]:
-    """
-    Retrieves the user's balance for a specific token from the blockchain.
+class GetUserBalanceTool(SolanaBaseTool):
+    name = "get_user_balance"
+    description = "Retrieves the user's balance for a specific token from the blockchain."
+    inputs = {
+        "user_address": {"type": "string", "description": "The address of the user."},
+        "token": {"type": "string", "description": "The token address in Solana."},
+    }
+    output_type = "number"
 
-    Args:
-        user_address: The address of the user.
-        token: The token address in solana.
+    def __init__(self, *args, **kwargs):
+        super().__init__(is_wallet_required=False, is_async_client=False, *args, **kwargs)
 
-    Returns:
-        The balance of the user for the specified token, or None if the balance is not available.
-    """
-    return asyncio.run(get_user_token_balance(user_address, token))
+    # pylint:disable=W0221
+    def forward(self, user_address: str, token: str) -> Optional[float]:
+        return get_user_token_balance(self.client, user_address, token)
 
 
-class GetAdminWalletAddressTool(WalletTool):
+class GetAdminWalletAddressTool(SolanaBaseTool):
     name = "get_admin_wallet_address"
     description = "This tool returns the wallet address of the admin."
     inputs = {"dummy": {"type": "string", "description": "Dummy input"}}
     output_type = "string"
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(is_wallet_required=True, is_async_client=False, *args, **kwargs)
+
     # pylint:disable=W0221,W0613
     def forward(self, dummy: str) -> str:
-        return self.wallet_repository.get_wallet_address()
+        return self.wallet_manager.get_wallet_address()
 
 
-async def get_user_token_balance(self, user_address: str, token_address: Optional[str] = None) -> Optional[float]:
+def get_user_token_balance(client: Client, user_address: str, token_address: Optional[str] = None) -> Optional[float]:
     """Query a user's token balance from the Solana blockchain.
 
     Fetches the current balance of either SOL or an SPL token for
@@ -83,28 +88,37 @@ async def get_user_token_balance(self, user_address: str, token_address: Optiona
 
         # Handle SOL balance query
         if not token_address:
-            response = await self.async_client.get_balance(user_pubkey, commitment=Confirmed)
-            return response.value / LAMPORTS_PER_SOL
+            response_sol = client.get_balance(user_pubkey, commitment=Confirmed)
+            return response_sol.value / LAMPORTS_PER_SOL
 
         # Handle SPL token balance query
         token_address = Pubkey.from_string(token_address)  # type: ignore
-        spl_client = AsyncToken(self.async_client, token_address, TOKEN_PROGRAM_ID, user_pubkey)  # type: ignore
+        spl_client = Token(client, token_address, TOKEN_PROGRAM_ID, user_pubkey)  # type: ignore
 
         # Verify token mint is initialized
-        mint = await spl_client.get_mint_info()
+        mint = spl_client.get_mint_info()
         if not mint.is_initialized:
             raise ValueError("Token mint is not initialized.")
 
         # Get balance from Associated Token Account
         wallet_ata = get_associated_token_address(user_pubkey, token_address)  # type: ignore
-        response = await self.async_client.get_token_account_balance(wallet_ata)
+        response = client.get_token_account_balance(wallet_ata)
         if response.value is None:
             return None
 
-        response = response.value.ui_amount
-        logger.info(f"Balance response: {response}")
+        response_amount = response.value.ui_amount
+        logger.info(f"Balance response: {response_amount}")
 
-        return float(response)
+        return response_amount
 
     except Exception as error:
         raise Exception(f"Failed to get balance: {str(error)}") from error  # pylint: disable=W0719
+
+
+if __name__ == "__main__":
+    get_balance_tool = GetUserBalanceTool()
+    data = get_balance_tool.forward(
+        "4kbGbZtfkfkRVGunkbKX4M7dGPm9MghJZodjbnRZbmug",
+        "ELJKW7qz3DA93K919agEk398kgeY1eGvs2u3GAfV3FLn",
+    )
+    print(data)
