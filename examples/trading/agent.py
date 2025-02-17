@@ -29,7 +29,7 @@ model = LiteLLMModel(
 
 # Prepare a Web3 specific toolkit, relevant for the trading agent
 tools = [
-    market_data_devnet.fetch_market_data,
+    market_data_devnet.fetch_mock_market_data,
     raydium_cpmm.BuyTokenWithSolTool(),
     solana_common.GetAdminWalletAddressTool(),
     solana_common.GetUserBalanceTool(),

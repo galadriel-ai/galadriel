@@ -3,7 +3,7 @@ from galadriel.core_agent import tool
 
 
 @tool
-def fetch_market_data() -> str:  # pylint: disable=W0613
+def fetch_mock_market_data() -> str:  # pylint: disable=W0613
     """
     Fetches market data for the Solana Devnet.
 
