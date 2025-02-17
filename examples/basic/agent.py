@@ -2,6 +2,7 @@ import asyncio
 import os
 from pathlib import Path
 
+from discord import Message
 from dotenv import load_dotenv
 
 from galadriel import AgentRuntime, CodeAgent, CompositeInput
@@ -22,10 +23,16 @@ message_client = SimpleMessageClient(
     "What is the capital of Estonia?", "What's the price of Solana today?"
 )
 
-# Combine inputs (priorities are determined dynamically based on message content)
+def get_priority(message: Message) -> int:
+    if message.content == "higher prio":
+        return 1
+    return 2
+
+# Combine inputs with custom priority function
 inputs = CompositeInput(
     message_client,
-    DiscordClient(),
+    ShutdownAfter(5),
+    priority_fn=get_priority
 )
 
 # Set up the runtime

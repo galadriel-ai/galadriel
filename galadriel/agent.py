@@ -64,16 +64,12 @@ class AgentInput:
 
 
 class CompositeInput(AgentInput):
-    def __init__(self, *inputs: AgentInput):
+    def __init__(self, *inputs: AgentInput, priority_fn: Optional[callable] = None):
         self.inputs = inputs
         self.logger = get_agent_logger()
         self._priority_queue: Optional[asyncio.PriorityQueue] = None
         self._output_queue: Optional[PushOnlyQueue] = None
-
-    def get_message_priority(self, message: Message) -> int:
-        if message.content == AgentRuntime.SHUTDOWN_MESSAGE:
-            return 1
-        return 2
+        self._priority_fn = priority_fn or (lambda _: 2)
 
     async def _handle_input(self, input_source: AgentInput) -> None:
         assert self._priority_queue is not None
@@ -83,7 +79,7 @@ class CompositeInput(AgentInput):
         while True:
             try:
                 message = await queue.get()
-                priority = self.get_message_priority(message)
+                priority = self._priority_fn(message)
                 await self._priority_queue.put((priority, message))
                 self.logger.debug(f"Added message with priority {priority}: {message}")
             except asyncio.CancelledError:
