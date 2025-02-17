@@ -64,65 +64,22 @@ class AgentInput:
 
 
 class CompositeInput(AgentInput):
-    """Combines multiple input sources with dynamic message prioritization.
-    
-    This class allows multiple input sources to be managed as a single unit,
-    with message priorities determined at runtime based on message content
-    or other factors.
-
-    Attributes:
-        inputs: List of input sources
-        logger: Logger instance for tracking activities
-    """
-
     def __init__(self, *inputs: AgentInput):
-        """Initialize with multiple input sources.
-
-        Args:
-            *inputs: Variable number of AgentInput instances
-        """
         self.inputs = inputs
         self.logger = get_agent_logger()
         self._priority_queue: Optional[asyncio.PriorityQueue] = None
         self._output_queue: Optional[PushOnlyQueue] = None
 
     def get_message_priority(self, message: Message) -> int:
-        """Determine priority for a message. Lower number means higher priority.
-        
-        Override this method to implement custom priority logic.
-        Default implementation:
-        - Shutdown messages: highest priority (1)
-        - Other messages: normal priority (2)
-
-        Args:
-            message (Message): The message to prioritize
-
-        Returns:
-            int: Priority value (lower is higher priority)
-        """
         if message.content == AgentRuntime.SHUTDOWN_MESSAGE:
             return 1
         return 2
 
     async def _handle_input(self, input_source: AgentInput) -> None:
-        """Handle messages from a single input source.
-
-        Creates a temporary queue for the input source and forwards messages
-        to the priority queue with appropriate priorities.
-
-        Args:
-            input_source (AgentInput): The input source to handle
-        """
         assert self._priority_queue is not None
-        
-        # Create temporary queue for this input
         queue = asyncio.Queue()
         internal_queue = PushOnlyQueue(queue)
-        
-        # Start the input source with temporary queue
         await input_source.start(internal_queue)
-        
-        # Forward messages to priority queue with priorities
         while True:
             try:
                 message = await queue.get()
@@ -133,24 +90,12 @@ class CompositeInput(AgentInput):
                 break
 
     async def start(self, queue: PushOnlyQueue) -> None:
-        """Start all input sources with priority-based message handling.
-
-        Creates a priority queue to manage messages from all inputs,
-        and forwards prioritized messages to the output queue.
-
-        Args:
-            queue (PushOnlyQueue): Queue to which prioritized messages should be pushed
-        """
         self._output_queue = queue
         self._priority_queue = asyncio.PriorityQueue()
-        
-        # Start handling each input source
         input_tasks = [
             asyncio.create_task(self._handle_input(input_source))
             for input_source in self.inputs
         ]
-        
-        # Forward prioritized messages to output queue
         try:
             while True:
                 priority, message = await self._priority_queue.get()
