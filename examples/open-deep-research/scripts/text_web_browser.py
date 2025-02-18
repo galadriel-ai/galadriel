@@ -212,7 +212,7 @@ class SimpleTextBrowser:
         if filter_year is not None:
             params["tbs"] = f"cdr:1,cd_min:01/01/{filter_year},cd_max:12/31/{filter_year}"
 
-        search = serpapi.search(params)#GoogleSearch(params)
+        search = serpapi.search(params)  # GoogleSearch(params)
         results = search.get_dict()
         self.page_title = f"{query} - Search"
         if "organic_results" not in results.keys():
@@ -252,9 +252,8 @@ class SimpleTextBrowser:
                 redacted_version = redacted_version.replace("Your browser can't play this video.", "")
                 web_snippets.append(redacted_version)
 
-        content = (
-            f"A Google search for '{query}' found {len(web_snippets)} results:\n\n## Web Results\n"
-            + "\n\n".join(web_snippets)
+        content = f"A Google search for '{query}' found {len(web_snippets)} results:\n\n## Web Results\n" + "\n\n".join(
+            web_snippets
         )
 
         self._set_page_content(content)
@@ -498,9 +497,7 @@ class PageUpTool(Tool):
 
 class PageDownTool(Tool):
     name = "page_down"
-    description = (
-        "Scroll the viewport DOWN one page-length in the current webpage and return the new viewport content."
-    )
+    description = "Scroll the viewport DOWN one page-length in the current webpage and return the new viewport content."
     inputs = {}
     output_type = "string"
 
