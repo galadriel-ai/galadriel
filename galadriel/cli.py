@@ -427,29 +427,40 @@ def _build_image(docker_username: str) -> None:
 
 def _get_image_layer_hashes(image_name: str) -> List[str]:
     """Get the layer hashes of the Docker image and parse its output as JSON."""
-    result = subprocess.run(
-        ["docker", "inspect", image_name],
-        check=True,
-        capture_output=True,
-        text=True,
-    )
+    try:
+        result = subprocess.run(
+            ["docker", "inspect", image_name],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+    except subprocess.CalledProcessError as exc:
+        click.echo(f"Failed to run docker inspect: {exc}", err=True)
+        return []
+
     try:
         inspect_data = json.loads(result.stdout)
     except json.JSONDecodeError as exc:
         click.echo(f"Failed to parse docker inspect output as JSON: {exc}", err=True)
         raise exc
 
-    if isinstance(inspect_data, list) and inspect_data:
-        rootfs = inspect_data[0].get("RootFS", {})
-        layers = rootfs.get("Layers")
-        if not layers:
-            click.echo("No layer hashes found in the Docker image.", err=True)
-            return []
-        return layers
-    else:
-        error_msg = "Unexpected docker inspect output format"
+    # Ensure that inspect_data is a list.
+    if not isinstance(inspect_data, list):
+        error_msg = f"Unexpected docker inspect output format: expected a list, got {type(inspect_data)}"
         click.echo(error_msg, err=True)
         raise ValueError(error_msg)
+
+    # Check if the list is empty to avoid IndexError.
+    if not inspect_data:
+        click.echo("docker inspect returned an empty list for the image.", err=True)
+        return []
+
+    rootfs = inspect_data[0].get("RootFS", {})
+    layers = rootfs.get("Layers")
+    if not layers:
+        click.echo("No layer hashes found in the Docker image.", err=True)
+        return []
+    return layers
 
 
 def _get_image_hash(image_name: str) -> str:
@@ -460,7 +471,7 @@ def _get_image_hash(image_name: str) -> str:
     over the resulting string.
 
     Args:
-        docker_username: The Docker username used to tag the image.
+        image_name: The name of the Docker image to get the hash for.
 
     Returns:
         A string containing the combined SHA-256 hash.
