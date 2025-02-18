@@ -1,110 +1,64 @@
 import json
 import requests
-from galadriel.core_agent import tool
+from typing import Dict, Any
+
+from galadriel.core_agent import Tool
 
 
-def get_token_list() -> list:
-    """Fetch a list of top tokens from DexScreener.
+class GetTokenDataTool(Tool):
+    """Tool for fetching detailed token data from DexScreener.
 
-    Retrieves a list of top tokens from DexScreener's token-boosts endpoint
-    and extracts their addresses.
+    Retrieves and formats token data from DexScreener API, removing unnecessary
+    information to fit context limits.
 
-    Returns:
-        list: A list of dictionaries containing token addresses
-              Limited to the first 4 tokens for performance
-
-    Note:
-        The endpoint used is DexScreener's token-boosts/top/v1
-        Each dictionary in the returned list has the format:
-        {"address": "token_address"}
-    """
-    token_list = []
-    response = requests.get("https://api.dexscreener.com/token-boosts/top/v1", timeout=30)
-
-    if response.status_code == 200:
-        _data = response.json()
-        for token in _data:
-            token_list.append({"address": token["tokenAddress"]})
-    # return the first 4 tokens
-    return token_list[:4]
-
-
-@tool
-def fetch_market_data(dummy: dict) -> str:  # pylint: disable=W0613
-    """Fetch detailed market data for top tokens on Solana.
-
-    Retrieves market data for the top tokens from DexScreener and formats
-    it as a JSON string. Removes unnecessary data to fit context limits.
-
-    Args:
-        dummy (dict): Unused parameter required by tool decorator
-
-    Returns:
-        str: JSON string containing market data for top tokens
-
-    Note:
-        - Uses get_token_list() to determine which tokens to fetch
-        - Removes 'info' and 'url' fields from the response to reduce size
-        - Data is fetched from DexScreener's tokens/v1/solana endpoint
-    """
-    token_list = get_token_list()
-    market_data = []
-    for token in token_list:
-        response = requests.get(f"https://api.dexscreener.com/tokens/v1/solana/{token['address']}", timeout=30)
-        if response.status_code == 200:
-            _data = response.json()
-            # Remove unrelated data to fit the context limit
-            if "info" in _data[0]:
-                del _data[0]["info"]
-            if "url" in _data[0]:
-                del _data[0]["url"]
-            market_data.append(_data[0])
-    return json.dumps(market_data)
-
-
-@tool
-def get_token_profile(task: str) -> str:  # pylint: disable=W0613
-    """Fetch the latest token profiles from DexScreener.
-
-    Retrieves detailed profile information for tokens, including chain,
-    address, description, and associated links.
-
-    Args:
-        task (str): Unused parameter required by tool decorator
-
-    Returns:
-        str: A formatted string containing token profile information
-
-    Note:
-        - Data is fetched from DexScreener's token-profiles/latest/v1 endpoint
-        - Each token profile includes:
-            * Chain ID
-            * Token address
-            * Description
-            * Associated links (with type and URL)
-        - Invalid or incomplete profiles are skipped
+    Attributes:
+        name (str): Tool identifier
+        description (str): Description of the tool's functionality
+        inputs (dict): Schema for required input parameters
+        output_type (str): Type of data returned by the tool
     """
 
-    response = requests.get(
-        "https://api.dexscreener.com/token-profiles/latest/v1",
-        headers={},
-        timeout=30,
-    )
-    _data = response.json()
-    result = ""
-    for token in _data:
+    name = "get_token_data"
+    description = "Fetch detailed data for a specific token from DexScreener"
+    inputs = {
+        "ecosystem": {
+            "type": "string",
+            "description": "The ecosystem of the token (e.g., 'solana', 'ethereum')",
+        },
+        "token_address": {
+            "type": "string",
+            "description": "The address of the token to fetch data for",
+        },
+    }
+    output_type = "object"
+
+    def forward(self, ecosystem: str, token_address: str) -> Dict[str, Any]:
+        """Fetch token data from DexScreener API.
+
+        Args:
+            ecosystem (str): The ecosystem of the token (e.g., 'solana', 'ethereum')
+            token_address (str): The address of the token to fetch data for
+
+        Returns:
+            Dict[str, Any]: Token data as a dictionary, or empty dict if request fails
+        """
         try:
-            d = "Chain: " + token["chainId"]
-            d += ", tokenAddress: " + token["tokenAddress"]
-            d += ", description: " + token["description"]
-            for link in token["links"]:
-                d += f", {link['type']}: {link['url']}"
-            result += d + "\n"
-        except Exception:
-            pass
-    return result
+            response = requests.get(f"https://api.dexscreener.com/tokens/v1/{ecosystem}/{token_address}", timeout=30)
+            if response.status_code == 200:
+                data = response.json()
+                # Remove unrelated data to fit the context limit
+                if data and len(data) > 0:
+                    if "info" in data[0]:
+                        del data[0]["info"]
+                    return data[0]
+            return {}
+        except Exception as e:
+            print(f"Error fetching token data: {str(e)}")
+            return {}
 
 
+# Example usage
 if __name__ == "__main__":
-    data = fetch_market_data(dummy={})
-    print(data)
+    token_tool = GetTokenDataTool()
+    data = token_tool.forward("solana", "9BB6NFEcjBCtnNLFko2FqVQBq8HHM13kCyYcdQbgpump")
+    print(json.dumps(data, indent=2))

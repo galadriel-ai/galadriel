@@ -16,7 +16,6 @@ Key Features:
 import base64
 from dataclasses import dataclass
 from enum import Enum
-import logging
 import os
 import struct
 from typing import Optional
@@ -33,7 +32,6 @@ from solders.system_program import (  # type: ignore # pylint: disable=E0401
     create_account_with_seed,
 )
 from solders.transaction import VersionedTransaction  # type: ignore # pylint: disable=E0401
-from solders.account_decoder import ParsedAccount  # type: ignore # pylint: disable=E0401
 from spl.token.client import Token
 from spl.token.instructions import (
     CloseAccountParams,
@@ -58,11 +56,11 @@ from construct import (
 )
 
 
+from galadriel.logging_utils import get_agent_logger, init_logging
 from galadriel.tools.web3.onchain.solana.base_tool import SolanaBaseTool
 from galadriel.tools.web3.onchain.solana.raydium_openbook import confirm_txn, get_token_balance
 
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+logger = get_agent_logger()
 
 UNIT_BUDGET = 150_000
 UNIT_PRICE = 1_000_000
@@ -276,7 +274,9 @@ class BuyTokenWithSolTool(SolanaBaseTool):
         """
         payer_keypair = self.wallet_manager.get_wallet()
         result = buy(self.client, payer_keypair, pair_address, sol_in, slippage)
-        return "Transaction successful" if result else "Transaction failed"
+        if result:
+            return f"Transaction successful: {result}"
+        return "Transaction failed"
 
 
 class SellTokenForSolTool(SolanaBaseTool):
@@ -303,11 +303,13 @@ class SellTokenForSolTool(SolanaBaseTool):
             "type": "integer",
             "description": "The percentage of token to sell",
             "default": 100,
+            "nullable": True,
         },
         "slippage": {
             "type": "integer",
             "description": "The slippage tolerance percentage",
             "default": 5,
+            "nullable": True,
         },
     }
     output_type = "string"
@@ -339,7 +341,7 @@ def buy(
     pair_address: str,
     sol_in: float = 0.1,
     slippage: int = 1,
-) -> bool:
+) -> Optional[str]:
     """Buy tokens with SOL using Raydium CPMM.
 
     Creates necessary token accounts, executes the swap, and handles cleanup
@@ -367,8 +369,9 @@ def buy(
     pool_keys: Optional[CpmmPoolKeys] = fetch_cpmm_pool_keys(client, pair_address)
     if pool_keys is None:
         logger.error("No pool keys found...")
-        return False
-    logger.info("Pool keys fetched successfully.")
+        return None
+    logger.info(f"Pool keys fetched successfully. Pool keys: {pool_keys.token_0_mint}, {pool_keys.token_1_mint}")
+    logger.info(f"Pool token programs: {pool_keys.token_0_program}, {pool_keys.token_1_program}")
 
     if pool_keys.token_0_mint == WSOL:
         mint = pool_keys.token_1_mint
@@ -474,15 +477,18 @@ def buy(
     logger.info("Sending transaction...")
     txn_sig = client.send_transaction(
         txn=VersionedTransaction(compiled_message, [payer_keypair]),
-        opts=TxOpts(skip_preflight=True),
+        opts=TxOpts(skip_preflight=False),
     ).value
     logger.info(f"Transaction Signature: {txn_sig}")
 
     logger.info("Confirming transaction...")
     confirmed = confirm_txn(client, txn_sig)
+    if not confirmed:
+        logger.error("Transaction failed.")
+        return None
 
-    logger.info(f"Transaction confirmed: {confirmed}")
-    return confirmed
+    logger.info(f"Transaction confirmed: {txn_sig}")
+    return str(txn_sig)
 
 
 # pylint:disable=R0914
@@ -492,7 +498,7 @@ def sell(
     pair_address: str,
     percentage: int = 100,
     slippage: int = 1,
-) -> bool:
+) -> Optional[str]:
     """Sell tokens for SOL using Raydium CPMM.
 
     Swaps specified percentage of token balance for SOL with slippage protection.
@@ -517,7 +523,7 @@ def sell(
         pool_keys: Optional[CpmmPoolKeys] = fetch_cpmm_pool_keys(client, pair_address)
         if pool_keys is None:
             logger.error("No pool keys found...")
-            return False
+            return None
         logger.info("Pool keys fetched successfully.")
 
         if pool_keys.token_0_mint == WSOL:
@@ -533,7 +539,7 @@ def sell(
 
         if token_balance == 0 or token_balance is None:
             logger.error("No token balance available to sell.")
-            return False
+            return None
 
         token_balance = token_balance * (percentage / 100)
         logger.info(f"Selling {percentage}% of the token balance, adjusted balance: {token_balance}")
@@ -636,13 +642,16 @@ def sell(
 
         logger.info("Confirming transaction...")
         confirmed = confirm_txn(client, txn_sig)
+        if not confirmed:
+            logger.error("Transaction failed.")
+            return None
 
-        logger.info(f"Transaction confirmed: {confirmed}")
-        return confirmed
+        logger.info(f"Transaction confirmed: {txn_sig}")
+        return str(txn_sig)
 
     except Exception as e:
         logger.error(f"Error occurred during transaction: {e}")
-        return False
+        return None
 
 
 def fetch_cpmm_pool_keys(client: Client, pair_address: str) -> Optional[CpmmPoolKeys]:
@@ -662,9 +671,7 @@ def fetch_cpmm_pool_keys(client: Client, pair_address: str) -> Optional[CpmmPool
             logger.error("Pool state account not found.")
             return None
         pool_state_data = pool_state_account.data
-        if isinstance(pool_state_data, ParsedAccount):
-            pool_state_data = bytes(pool_state_data)
-        parsed_data = CPMM_POOL_STATE_LAYOUT.parse(pool_state_data)
+        parsed_data = CPMM_POOL_STATE_LAYOUT.parse(bytes(pool_state_data))
 
         pool_keys = CpmmPoolKeys(
             pool_state=pool_state,
@@ -867,5 +874,7 @@ def tokens_for_sol(token_amount, base_vault_balance, quote_vault_balance, swap_f
 # main function to run the code
 if __name__ == "__main__":
     # Example usage
+    init_logging(False)
     buy_tool = BuyTokenWithSolTool()
-    buy_tool.forward("ftNSdLt7wuF9kKz6BxiUVWYWeRYGyt1RgL5sSjCVnJ2", 0.05, 5)
+    res = buy_tool.forward("Hga48QXtpCgLSTsfysDirPJzq8aoBPjvePUgmXhFGDro", 0.0001, 5)
+    print(res)

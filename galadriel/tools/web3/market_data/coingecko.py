@@ -1,3 +1,4 @@
+import json
 import os
 import requests
 
@@ -88,6 +89,53 @@ class GetCoinPriceTool(CoingeckoTool):
         return data
 
 
+class GetCoinMarketDataTool(CoingeckoTool):
+    """Tool for retrieving current cryptocurrency market data.
+
+    Fetches current market data for a specified cryptocurrency, including
+    price, market cap, 24hr volume, and 24hr price change percentage.
+
+    Attributes:
+        name (str): Tool identifier for the agent system
+        description (str): Description of the tool's functionality
+        inputs (dict): Schema for the required input parameters
+        output_type (str): Type of data returned by the tool
+    """
+
+    name = "get_coin_market_data"
+    description = "This is a tool that returns the market data of given crypto token."
+    inputs = {
+        "coin_id": {
+            "type": "string",
+            "description": "The full name of the token. For example 'solana' not 'sol'",
+        }
+    }
+    output_type = "string"
+
+    def forward(self, coin_id: str) -> str:  # pylint: disable=W0221
+        """Fetch current market data for a cryptocurrency.
+
+        Args:
+            coin_id (str): The coingecko id of the cryptocurrency (e.g., 'bitcoin')
+
+        Returns:
+            str: JSON string containing market data
+
+        Note:
+            Returns data including:
+            - Current price in USD
+            - Market capitalization
+            - 24-hour trading volume
+            - 24-hour price change percentage
+        """
+        response = call_coingecko_api(
+            api_key=self.api_key,
+            request="https://api.coingecko.com/api/v3/coins/" + coin_id,
+        )
+        data = response.json()
+        return data
+
+
 class GetCoinHistoricalDataTool(CoingeckoTool):
     """Tool for retrieving historical cryptocurrency price data.
 
@@ -134,6 +182,47 @@ class GetCoinHistoricalDataTool(CoingeckoTool):
         )
         data = response.json()
         return data
+
+
+class FetchMarketDataPerCategoriesTool(CoingeckoTool):
+    """Tool for retrieving market data for cryptocurrencies in specific categories.
+
+    Fetches market data for cryptocurrencies in specific categories from CoinGecko.
+
+    Attributes:
+        name (str): Tool identifier for the agent system
+        description (str): Description of the tool's functionality
+        inputs (dict): Schema for the required input parameters
+        output_type (str): Type of data returned by the tool
+    """
+
+    name = "fetch_market_data_per_categories"
+    description = "This is a tool that returns the market data for cryptocurrencies in specific categories."
+    inputs = {
+        "categories": {
+            "type": "array",
+            "description": "The categories of the cryptocurrencies to fetch data for",
+        }
+    }
+    output_type = "string"
+
+    def forward(self, categories: list) -> str:  # pylint: disable=W0221
+        """Fetch market data for cryptocurrencies in specific categories.
+
+        Args:
+            categories: The categories of the cryptocurrencies to fetch data for
+
+        Returns:
+            JSON string containing market data for the specified categories
+        """
+        response = call_coingecko_api(
+            api_key=self.api_key,
+            request="https://api.coingecko.com/api/v3/coins/categories?order=market_cap_change_24h_asc",
+        )
+        data = response.json()
+
+        filtered_data = [category_data for category_data in data if category_data["id"] in categories]
+        return json.dumps(filtered_data)
 
 
 class FetchTrendingCoinsTool(CoingeckoTool):
@@ -198,5 +287,5 @@ def call_coingecko_api(api_key: str, request: str) -> requests.Response:
 
 
 if __name__ == "__main__":
-    get_coin_price = GetCoinPriceTool()
-    print(get_coin_price.forward("ethereum"))
+    fetch_market_data = FetchMarketDataPerCategoriesTool()
+    print(fetch_market_data.forward("pump-fun"))

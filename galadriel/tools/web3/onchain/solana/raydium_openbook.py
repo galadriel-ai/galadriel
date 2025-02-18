@@ -307,11 +307,13 @@ class SellTokenForSolTool(SolanaBaseTool):
             "type": "integer",
             "description": "The percentage of token to sell",
             "default": 100,
+            "nullable": True,
         },
         "slippage": {
             "type": "integer",
             "description": "The slippage tolerance percentage",
             "default": 5,
+            "nullable": True,
         },
     }
     output_type = "string"
@@ -840,7 +842,7 @@ def confirm_txn(client: Client, txn_sig: Signature, max_retries: int = 20, retry
     Returns:
         bool: True if transaction is confirmed, False otherwise
     """
-    retries = 1
+    retries = 5
 
     while retries < max_retries:
         try:
@@ -853,10 +855,10 @@ def confirm_txn(client: Client, txn_sig: Signature, max_retries: int = 20, retry
             if txn_res.value and txn_res.value.transaction.meta:
                 txn_json = json.loads(txn_res.value.transaction.meta.to_json())
             else:
-                return False
+                raise Exception("Transaction not found.")
 
             if txn_json["err"] is None:
-                logger.info("Transaction confirmed... try count:", retries)
+                logger.info(f"Transaction confirmed... try count: {retries}")
                 return True
 
             logger.error("Error: Transaction not confirmed. Retrying...")
@@ -864,7 +866,7 @@ def confirm_txn(client: Client, txn_sig: Signature, max_retries: int = 20, retry
                 logger.error("Transaction failed.")
                 return False
         except Exception:
-            logger.info("Awaiting confirmation... try count:", retries)
+            logger.info(f"Awaiting confirmation... try count: {retries}")
             retries += 1
             time.sleep(retry_interval)
 
@@ -876,4 +878,4 @@ def confirm_txn(client: Client, txn_sig: Signature, max_retries: int = 20, retry
 if __name__ == "__main__":
     # buy_token
     buy_token_with_sol_tool = BuyTokenWithSolTool()
-    buy_token_with_sol_tool.forward("FFBvVfBcZ8abyt9dgQ1dS9F49mzNTCQbEpppwE9mcReB", 0.05, 5)
+    buy_token_with_sol_tool.forward("Hga48QXtpCgLSTsfysDirPJzq8aoBPjvePUgmXhFGDro", 0.0001, 5)
