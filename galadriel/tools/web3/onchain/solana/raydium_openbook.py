@@ -873,9 +873,3 @@ def confirm_txn(client: Client, txn_sig: Signature, max_retries: int = 20, retry
     logger.error("Max retries reached. Transaction confirmation failed.")
     return False
 
-
-# main function to run the code
-if __name__ == "__main__":
-    # buy_token
-    buy_token_with_sol_tool = BuyTokenWithSolTool()
-    buy_token_with_sol_tool.forward("Hga48QXtpCgLSTsfysDirPJzq8aoBPjvePUgmXhFGDro", 0.0001, 5)
