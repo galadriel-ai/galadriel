@@ -64,7 +64,7 @@ tools = [
     coingecko.FetchMarketDataPerCategoriesTool(),
     coingecko.GetCoinMarketDataTool(),
     coingecko.GetCoinHistoricalDataTool(),
-    dexscreener.get_token_data,
+    dexscreener.GetTokenDataTool(),
     solana_common.GetAdminWalletAddressTool(),
     solana_common.GetUserBalanceTool(),
     raydium_openbook.BuyTokenWithSolTool(),

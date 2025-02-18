@@ -45,10 +45,6 @@ class SwapTokenTool(SolanaBaseTool):
     name = "swap_token"
     description = "Swaps one token for another in the user's portfolio."
     inputs = {
-        "user_address": {
-            "type": "string",
-            "description": "The solana address of the user",
-        },
         "token1": {"type": "string", "description": "The address of the token to sell"},
         "token2": {"type": "string", "description": "The address of the token to buy"},
         "amount": {"type": "number", "description": "The amount of token1 to swap"},
