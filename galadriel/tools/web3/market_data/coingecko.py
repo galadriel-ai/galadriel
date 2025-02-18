@@ -1,3 +1,4 @@
+import json
 import os
 import requests
 
@@ -196,9 +197,7 @@ class FetchMarketDataPerCategoriesTool(CoingeckoTool):
     """
 
     name = "fetch_market_data_per_categories"
-    description = (
-        "This is a tool that returns the market data for cryptocurrencies in specific categories."
-    )
+    description = "This is a tool that returns the market data for cryptocurrencies in specific categories."
     inputs = {
         "categories": {
             "type": "array",
@@ -222,10 +221,8 @@ class FetchMarketDataPerCategoriesTool(CoingeckoTool):
         )
         data = response.json()
 
-        filtered_data = [
-            category_data for category_data in data if category_data["id"] in categories
-        ]
-        return filtered_data
+        filtered_data = [category_data for category_data in data if category_data["id"] in categories]
+        return json.dumps(filtered_data)
 
 
 class FetchTrendingCoinsTool(CoingeckoTool):

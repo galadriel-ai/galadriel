@@ -32,7 +32,6 @@ from solders.system_program import (  # type: ignore # pylint: disable=E0401
     create_account_with_seed,
 )
 from solders.transaction import VersionedTransaction  # type: ignore # pylint: disable=E0401
-from solders.account_decoder import ParsedAccount  # type: ignore # pylint: disable=E0401
 from spl.token.client import Token
 from spl.token.instructions import (
     CloseAccountParams,
@@ -370,10 +369,8 @@ def buy(
     pool_keys: Optional[CpmmPoolKeys] = fetch_cpmm_pool_keys(client, pair_address)
     if pool_keys is None:
         logger.error("No pool keys found...")
-        return False
-    logger.info(
-        f"Pool keys fetched successfully. Pool keys: {pool_keys.token_0_mint}, {pool_keys.token_1_mint}"
-    )
+        return None
+    logger.info(f"Pool keys fetched successfully. Pool keys: {pool_keys.token_0_mint}, {pool_keys.token_1_mint}")
     logger.info(f"Pool token programs: {pool_keys.token_0_program}, {pool_keys.token_1_program}")
 
     if pool_keys.token_0_mint == WSOL:
@@ -526,7 +523,7 @@ def sell(
         pool_keys: Optional[CpmmPoolKeys] = fetch_cpmm_pool_keys(client, pair_address)
         if pool_keys is None:
             logger.error("No pool keys found...")
-            return False
+            return None
         logger.info("Pool keys fetched successfully.")
 
         if pool_keys.token_0_mint == WSOL:
@@ -542,7 +539,7 @@ def sell(
 
         if token_balance == 0 or token_balance is None:
             logger.error("No token balance available to sell.")
-            return False
+            return None
 
         token_balance = token_balance * (percentage / 100)
         logger.info(f"Selling {percentage}% of the token balance, adjusted balance: {token_balance}")
@@ -674,7 +671,6 @@ def fetch_cpmm_pool_keys(client: Client, pair_address: str) -> Optional[CpmmPool
             logger.error("Pool state account not found.")
             return None
         pool_state_data = pool_state_account.data
-        logger.info(f"Pool state data: {pool_state_data}")
         parsed_data = CPMM_POOL_STATE_LAYOUT.parse(bytes(pool_state_data))
 
         pool_keys = CpmmPoolKeys(
@@ -813,7 +809,6 @@ def get_cpmm_reserves(client: Client, pool_keys: CpmmPoolKeys) -> tuple:
 
     balances_response = client.get_multiple_accounts_json_parsed([quote_vault, base_vault], Processed)
     balances = balances_response.value
-    logger.info(f"Balances: {balances}")
 
     quote_account = balances[0]
     base_account = balances[1]

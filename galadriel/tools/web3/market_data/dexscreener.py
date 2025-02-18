@@ -17,9 +17,7 @@ def get_token_data(ecosystem: str, token_address: str) -> str:
     Returns:
         A JSON string containing detailed data for the token
     """
-    response = requests.get(
-        f"https://api.dexscreener.com/tokens/v1/{ecosystem}/{token_address}", timeout=30
-    )
+    response = requests.get(f"https://api.dexscreener.com/tokens/v1/{ecosystem}/{token_address}", timeout=30)
     if response.status_code == 200:
         data = response.json()
         # Remove unrelated data to fit the context limit

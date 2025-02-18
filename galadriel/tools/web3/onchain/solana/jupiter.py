@@ -65,9 +65,7 @@ class SwapTokenTool(SolanaBaseTool):
         if self.network is not Network.MAINNET:
             raise NotImplementedError("Jupiter tool is not available on devnet")
 
-    def forward(
-        self, user_address: str, token1: str, token2: str, amount: float, slippage_bps: int = 300
-    ) -> str:  # pylint: disable=W0221
+    def forward(self, token1: str, token2: str, amount: float, slippage_bps: int = 300) -> str:  # pylint: disable=W0221
         """Execute a token swap transaction.
 
         Args:
