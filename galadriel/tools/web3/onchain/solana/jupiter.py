@@ -52,6 +52,11 @@ class SwapTokenTool(SolanaBaseTool):
         "token1": {"type": "string", "description": "The address of the token to sell"},
         "token2": {"type": "string", "description": "The address of the token to buy"},
         "amount": {"type": "number", "description": "The amount of token1 to swap"},
+        "slippage_bps": {
+            "type": "number",
+            "description": "Slippage tolerance in basis points. Defaults to 300 (3%)",
+            "nullable": True,
+        },
     }
     output_type = "string"
 
@@ -60,7 +65,9 @@ class SwapTokenTool(SolanaBaseTool):
         if self.network is not Network.MAINNET:
             raise NotImplementedError("Jupiter tool is not available on devnet")
 
-    def forward(self, token1: str, token2: str, amount: float, slippage_bps: int) -> str:  # pylint: disable=W0221
+    def forward(
+        self, user_address: str, token1: str, token2: str, amount: float, slippage_bps: int = 300
+    ) -> str:  # pylint: disable=W0221
         """Execute a token swap transaction.
 
         Args:
@@ -77,7 +84,16 @@ class SwapTokenTool(SolanaBaseTool):
         """
         wallet = self.wallet_manager.get_wallet()
 
-        result = asyncio.run(swap(self.async_client, wallet, token1, token2, amount, slippage_bps))
+        result = asyncio.run(
+            swap(
+                async_client=self.async_client,
+                wallet=wallet,
+                input_mint=token1,
+                output_mint=token2,
+                input_amount=amount,
+                slippage_bps=slippage_bps,
+            )
+        )
 
         return f"Successfully swapped {amount} {token1} for {token2}, tx sig: {result}."
 
@@ -86,8 +102,8 @@ class SwapTokenTool(SolanaBaseTool):
 async def swap(
     async_client: AsyncClient,
     wallet: Keypair,
-    output_mint: str,
     input_mint: str,
+    output_mint: str,
     input_amount: float,
     slippage_bps: int = 300,
 ) -> str:
@@ -99,8 +115,8 @@ async def swap(
     Args:
         async_client (AsyncClient): The Solana RPC client
         wallet (Keypair): The signer wallet for the transaction
-        output_mint (str): Target token mint address
         input_mint (str): Source token mint address
+        output_mint (str): Target token mint address
         input_amount (float): Amount of input token to swap
         slippage_bps (int, optional): Slippage tolerance in basis points. Defaults to 300 (3%)
 
@@ -166,3 +182,15 @@ async def swap(
 
     except Exception as e:
         raise Exception(f"Swap failed: {str(e)}")  # pylint: disable=W0719
+
+
+if __name__ == "__main__":
+    swap_tool = SwapTokenTool()
+    print(
+        swap_tool.forward(
+            "So11111111111111111111111111111111111111112",
+            "3iQL8BFS2vE7mww4ehAqQHAsbmRNCrPxizWAT2Zfyr9y",
+            0.0001,
+            300,
+        )
+    )
