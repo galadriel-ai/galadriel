@@ -8,8 +8,8 @@ from galadriel import AgentRuntime, LiteLLMModel
 from galadriel.agent import CodeAgent
 from galadriel.clients import Cron
 from galadriel.tools.web3.market_data import coingecko, dexscreener
-from galadriel.tools.web3.onchain.solana import jupiter, raydium_openbook
 from galadriel.tools.web3.onchain.solana import common as solana_common
+from galadriel.tools.web3.onchain.solana import jupiter, raydium_openbook
 
 TRADING_INTERVAL_SECONDS = 300
 

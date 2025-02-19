@@ -8,13 +8,11 @@ from .agent import (
     AgentState,
 )
 
-from smolagents import(
+from smolagents import (
     LiteLLMModel,
 )
 
-from smolagents.agents import (
-    LogLevel
-)
+from smolagents.agents import LogLevel
 
 __all__ = [
     "Agent",
@@ -25,5 +23,5 @@ __all__ = [
     "CodeAgent",
     "ToolCallingAgent",
     "LiteLLMModel",
-    "LogLevel"
+    "LogLevel",
 ]

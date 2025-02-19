@@ -1,5 +1,5 @@
-from galadriel.tools import Tool
 from datetime import datetime
+from galadriel.tools import tool
 
 
 @tool

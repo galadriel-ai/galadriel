@@ -1,5 +1,5 @@
 import json
-from galadriel.tools import Tool
+from galadriel.tools import tool
 
 
 @tool
