@@ -3,7 +3,7 @@ import os
 
 from solana.rpc.api import Client
 from solana.rpc.async_api import AsyncClient
-from galadriel.core_agent import Tool
+from galadriel.tools import Tool
 from galadriel.keystore.wallet_manager import KeyType, WalletManager
 
 

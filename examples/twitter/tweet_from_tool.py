@@ -4,10 +4,8 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-from galadriel import CodeAgent
-from galadriel import AgentRuntime
+from galadriel import AgentRuntime, LiteLLMModel, CodeAgent
 from galadriel.clients import Cron
-from galadriel.core_agent import LiteLLMModel
 from galadriel.tools.twitter import TwitterPostTool
 
 load_dotenv(dotenv_path=Path(".") / ".env", override=True)

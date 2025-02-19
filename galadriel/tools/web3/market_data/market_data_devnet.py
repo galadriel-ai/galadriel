@@ -1,5 +1,5 @@
 import json
-from galadriel.core_agent import tool
+from galadriel.tools import Tool
 
 
 @tool

@@ -12,7 +12,6 @@ import click
 import requests
 from dotenv import dotenv_values
 from dotenv import load_dotenv
-
 # pylint: disable=import-error
 from solders.keypair import Keypair  # type: ignore
 

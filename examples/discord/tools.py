@@ -1,4 +1,4 @@
-from galadriel.core_agent import tool
+from galadriel.tools import tool
 from datetime import datetime
 
 

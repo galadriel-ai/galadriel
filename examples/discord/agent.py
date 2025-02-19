@@ -1,11 +1,10 @@
-from galadriel.core_agent import LiteLLMModel
 from dotenv import load_dotenv
 from pathlib import Path
 
 from character_agent import CharacterAgent
 from galadriel.tools.composio_converter import convert_action
 from tools import get_time
-from galadriel import AgentRuntime
+from galadriel import AgentRuntime, LiteLLMModel
 from galadriel.clients import DiscordClient
 import os
 import asyncio

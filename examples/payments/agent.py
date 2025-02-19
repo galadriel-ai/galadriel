@@ -4,11 +4,10 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-from galadriel import AgentRuntime, CodeAgent
+from galadriel import AgentRuntime, CodeAgent, LiteLLMModel
 from galadriel.clients import SimpleMessageClient
-from galadriel.core_agent import LiteLLMModel
 from galadriel.entities import Pricing
-from galadriel.tools.web3 import dexscreener, coingecko
+from galadriel.tools.web3.market_data import dexscreener, coingecko
 
 load_dotenv(dotenv_path=Path(".") / ".env", override=True)
 
@@ -20,8 +19,8 @@ model = LiteLLMModel(
 # Set up a researcher who will perform Web3 related tasks
 researcher = CodeAgent(
     tools=[
-        coingecko.get_coin_price,
-        dexscreener.get_token_profile,
+        coingecko.GetCoinMarketDataTool(),
+        dexscreener.GetTokenDataTool(),
     ],
     model=model,
     add_base_tools=True,

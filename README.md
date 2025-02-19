@@ -19,9 +19,9 @@ It uses `TestClient` which sends 2 messages sequentially to the agent and prints
 
 ```python
 import asyncio
-from galadriel import AgentRuntime, CodeAgent
+from galadriel import AgentRuntime, CodeAgent, LiteLLMModel
 from galadriel.clients import SimpleMessageClient
-from galadriel.core_agent import LiteLLMModel, DuckDuckGoSearchTool
+from galadriel.tools import DuckDuckGoSearchTool
 
 model = LiteLLMModel(model_id="gpt-4o", api_key="<ADD YOUR OPENAI KEY HERE>")
 
