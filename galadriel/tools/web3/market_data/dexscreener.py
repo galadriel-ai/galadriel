@@ -2,7 +2,7 @@ import json
 import requests
 from typing import Dict, Any
 
-from galadriel.core_agent import Tool
+from galadriel.tools import Tool
 
 
 class GetTokenDataTool(Tool):
