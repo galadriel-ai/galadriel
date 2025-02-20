@@ -207,7 +207,7 @@ class AgentRuntime:
             inputs (List[AgentInput]): Input sources for the agent
             outputs (List[AgentOutput]): Output destinations for responses
             agent (Agent): The agent implementation to use
-            pricing (Optional[Pricing]): Payment configuration if required
+            solana_payment_validator (SolanaPaymentValidator): Payment validator
             debug (bool): Enable debug mode
             enable_logs (bool): Enable logging
         """
@@ -235,7 +235,7 @@ class AgentRuntime:
 
         for agent_input in self.inputs:
             # Each agent input receives a queue it can push messages to
-            asyncio.create_task(agent_input.start(push_only_queue))
+            asyncio.create_task(self._safe_client_start(agent_input, push_only_queue))
 
         while True:
             # Get the next request from the queue
@@ -259,18 +259,30 @@ class AgentRuntime:
                 task_and_payment = await self.solana_payment_validator.execute(request)
                 request.content = task_and_payment.task
             except PaymentValidationError as e:
+                logger.error("Payment validation error", exc_info=True)
                 response = Message(content=str(e))
+            except Exception as e:
+                logger.error("Unexpected error during payment validation", exc_info=True)
+                response = Message(content=f"Payment validation failed due to an unexpected error: {str(e)}")
+        # Run the agent if payment validation passed
         if not response:
-            # Run the agent if no errors occurred so far
-            response = await self.agent.execute(request)
-            if self.debug and self.enable_logs:
-                memory = await self._get_memory()
-                logger.info(f"Current agent memory: {pformat(memory)}")
+            try:
+                response = await self.agent.execute(request)
+                if self.debug and self.enable_logs:
+                    memory = await self._get_memory()
+                    logger.info(f"Current agent memory: {pformat(memory)}")
+            except Exception as e:
+                logger.error("Error during agent execution", exc_info=True)
+                response = Message(content=f"An error occurred while processing your request: {str(e)}")
+        # Send the response to the outputs
         if response:
             # proof = await self._generate_proof(request, response)
             # await self._publish_proof(request, response, proof)
             for output in self.outputs:
-                await output.send(request, response)
+                try:
+                    await output.send(request, response)
+                except Exception as e:
+                    logger.error("Failed to send response via output", exc_info=True)
 
     async def _get_memory(self) -> List[Dict[str, str]]:
         """Retrieve the current state of the agent's memory.
@@ -279,6 +291,12 @@ class AgentRuntime:
             List[Dict[str, str]]: The agent's memory in a serializable format
         """
         return self.agent.write_memory_to_messages(summary_mode=True)  # type: ignore
+
+    async def _safe_client_start(self, agent_input: AgentInput, queue: PushOnlyQueue):
+        try:
+            await agent_input.start(queue)
+        except Exception as e:
+            logger.error(f"Input client {agent_input.__class__.__name__} failed", exc_info=True)
 
     async def _generate_proof(self, request: Message, response: Message) -> str:
         return generate_proof.execute(request, response)
