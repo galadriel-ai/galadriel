@@ -57,15 +57,21 @@ class GetCoinPriceTool(CoingeckoTool):
             "type": "array",
             "description": "The list of token names. Names must be full, for example 'solana' not 'sol'",
             "items": {"type": "string"},
+        },
+        "currencies": {
+            "type": "array",
+            "description": "The list of currencies to convert the price to. Default is USD",
+            "items": {"type": "string"},
         }
     }
     output_type = "string"
 
-    def forward(self, token_names: List[str]) -> str:  # pylint: disable=W0221
+    def forward(self, token_names: List[str], currencies: List[str]) -> str:  # pylint: disable=W0221
         """Fetch current price and market data for a cryptocurrency.
 
         Args:
             token_names (str): The list of full name of the cryptocurrency (e.g., 'bitcoin')
+            currencies (List[str]): The list of currencies to convert the price to. The list of supported currencies is [here](https://docs.coingecko.com/v3.0.1/reference/simple-supported-currencies
 
         Returns:
             str: JSON string containing price and market data
@@ -78,19 +84,23 @@ class GetCoinPriceTool(CoingeckoTool):
             - 24-hour price change percentage
             - Last updated timestamp
         """
+        base_url = "https://api.coingecko.com/api/v3/simple/price"
+        params = {
+            "vs_currencies": ",".join(currencies),
+            "include_market_cap": "true",
+            "include_24hr_vol": "true",
+            "include_24hr_change": "true",
+            "include_last_updated_at": "true",
+            "precision": "2",
+            "ids": ",".join(token_names),
+        }
+        
+        url = f"{base_url}?" + "&".join(f"{k}={v}" for k, v in params.items())
         response = call_coingecko_api(
             api_key=self.api_key,
-            request="https://api.coingecko.com/api/v3/simple/price"
-            "?vs_currencies=usd"
-            "&include_market_cap=true"
-            "&include_24hr_vol=true"
-            "&include_24hr_change=true"
-            "&include_last_updated_at=true"
-            "&precision=2"
-            "&ids=" + ",".join(token_names),
+            request=url,
         )
-        data = response.json()
-        return data
+        return response.json()
 
 
 class GetCoinMarketDataTool(CoingeckoTool):
