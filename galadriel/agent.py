@@ -233,13 +233,20 @@ class AgentRuntime:
         input_queue = asyncio.Queue()
         push_only_queue = PushOnlyQueue(input_queue)
 
-        for agent_input in self.inputs:
-            # Each agent input receives a queue it can push messages to
-            asyncio.create_task(self._safe_client_start(agent_input, push_only_queue))
+        # Create tasks for all inputs and track them
+        input_tasks = [
+            asyncio.create_task(self._safe_client_start(agent_input, push_only_queue)) for agent_input in self.inputs
+        ]
 
         while True:
+            active_tasks = [task for task in input_tasks if not task.done()]
+            if not active_tasks:
+                raise RuntimeError("All input clients died")
             # Get the next request from the queue
-            request = await input_queue.get()
+            try:
+                request = await asyncio.wait_for(input_queue.get(), timeout=1.0)
+            except asyncio.TimeoutError:
+                continue
             # Process the request
             await self._run_request(request)
             # await self.upload_state()
@@ -295,8 +302,9 @@ class AgentRuntime:
     async def _safe_client_start(self, agent_input: AgentInput, queue: PushOnlyQueue):
         try:
             await agent_input.start(queue)
-        except Exception:
+        except Exception as e:
             logger.error(f"Input client {agent_input.__class__.__name__} failed", exc_info=True)
+            raise e
 
     async def _generate_proof(self, request: Message, response: Message) -> str:
         return generate_proof.execute(request, response)
