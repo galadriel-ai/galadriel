@@ -19,7 +19,9 @@ class AttestationManager:
 
     def _initialize_keypair(self):
         """Generate and store the Ed25519 keypair if it doesn't exist."""
-        if not os.path.exists(self.PRIVATE_KEY_FILE) or not os.path.exists(self.PUBLIC_KEY_FILE):
+        if not os.path.exists(self.PRIVATE_KEY_FILE) or not os.path.exists(
+            self.PUBLIC_KEY_FILE
+        ):
             private_key = Ed25519PrivateKey.generate()
             public_key = private_key.public_key()
 
