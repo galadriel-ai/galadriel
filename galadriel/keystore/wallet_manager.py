@@ -17,7 +17,9 @@ class KeyType(Enum):
 
 class WalletManager:
     def __init__(self, key_type: KeyType, key_path: str):
-        if key_type != KeyType.SOLANA:
+        self.key_type = key_type
+
+        if self.key_type != KeyType.SOLANA:
             raise ValueError("Unsupported key type. Only Solana keys are supported currently.")
 
         keypair = _get_private_key(key_path=key_path)

@@ -16,6 +16,7 @@ from spl.token.constants import TOKEN_PROGRAM_ID
 from jupiter_python_sdk.jupiter import Jupiter
 
 from galadriel.tools.web3.onchain.solana.base_tool import Network, SolanaBaseTool
+from galadriel.keystore.wallet_manager import WalletManager
 
 
 # API endpoints for Jupiter Protocol
@@ -56,8 +57,10 @@ class SwapTokenTool(SolanaBaseTool):
     }
     output_type = "string"
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(is_wallet_required=True, is_async_client=True, *args, **kwargs)
+    def __init__(self, wallet_manager: WalletManager, *args, **kwargs):
+        if wallet_manager is None:
+            raise ValueError("Wallet manager is not provided.")
+        super().__init__(wallet_manager=wallet_manager, is_async_client=True, *args, **kwargs)
         if self.network is not Network.MAINNET:
             raise NotImplementedError("Jupiter tool is not available on devnet")
 

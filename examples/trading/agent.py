@@ -7,15 +7,20 @@ from dotenv import load_dotenv
 from galadriel import AgentRuntime, LiteLLMModel
 from galadriel.agent import CodeAgent
 from galadriel.clients import Cron
+from galadriel.keystore.wallet_manager import KeyType, WalletManager
 from galadriel.tools.web3.market_data import coingecko, dexscreener
-from galadriel.tools.web3.onchain.solana import common as solana_common
-from galadriel.tools.web3.onchain.solana import jupiter, raydium_openbook
+from galadriel.tools.web3.onchain.solana import (
+    jupiter,
+    raydium_openbook,
+    spl,
+    native as solana_native,
+)
 
 TRADING_INTERVAL_SECONDS = 300
 
 # Set up a complex trading prompt which explains the trading strategy
 TRADING_PROMPT = """
-You are an AI trading agent specialized in executing token swaps on the Solana ecosystem. Your objective is to identify the best opportunities among tokens in the "pump-fun" and "solana-meme-coins" categories and then execute trades using either Raydium or Jupiter (whichever is applicable). Note: For each swap, the maximal SOL out must not exceed 0.0001 SOL.
+You are an AI trading agent specialized in executing token swaps on the Solana ecosystem. Your objective is to identify the best opportunities among tokens in the "pump-fun" and "solana-meme-coins" categories and then execute trades using either Raydium or Jupiter (whichever is applicable). Note: For each swap, the maximal SOL out must not exceed 0.006 SOL.
 
 Steps:
 
@@ -37,14 +42,14 @@ Using the Solana address, call the dexscreener tool get_token_data to retrieve a
 Determine the Best Coins to Buy:
 
 Analyze the combined data (from CoinGecko and dexscreener) against your trading criteria (e.g., strong momentum, sufficient liquidity, favorable price action).
-Only consider tokens whose swap operation would result in an output of SOL that is less than or equal to 0.0001 SOL.
+Only consider tokens whose swap operation would result in an output of SOL that is less than or equal to 0.006 SOL.
 If no token meets your criteria, take no action.
 Execute Swap Operation:
 
 For each qualifying token, determine the best swapping method:
 If the token is available on Raydium, use the Raydium swap API.
 Otherwise, if it’s available on Jupiter, use the Jupiter swap API.
-Ensure the transaction parameters are correctly set, including the restriction that the maximum SOL output per swap is 0.0001 SOL.
+Ensure the transaction parameters are correctly set, including the restriction that the maximum SOL output per swap is 0.006 SOL.
 Log and Monitor:
 
 Once a swap is executed, log the transaction details for further analysis and monitor the performance of the swap.
@@ -58,17 +63,19 @@ model = LiteLLMModel(
     api_key=os.getenv("OPENAI_API_KEY"),
 )
 
+wallet_manager = WalletManager(key_type=KeyType.SOLANA, key_path=os.getenv("SOLANA_KEY_PATH"))
+
 # Prepare a Web3 specific toolkit, relevant for the trading agent
 tools = [
-    coingecko.FetchMarketDataPerCategoriesTool(),
-    coingecko.GetCoinMarketDataTool(),
-    coingecko.GetCoinHistoricalDataTool(),
-    dexscreener.GetTokenDataTool(),
-    solana_common.GetAdminWalletAddressTool(),
-    solana_common.GetUserBalanceTool(),
-    raydium_openbook.BuyTokenWithSolTool(),
-    raydium_openbook.SellTokenForSolTool(),
-    jupiter.SwapTokenTool(),
+    coingecko.FetchMarketDataPerCategoriesTool(wallet_manager=wallet_manager),
+    coingecko.GetCoinMarketDataTool(wallet_manager=wallet_manager),
+    coingecko.GetCoinHistoricalDataTool(wallet_manager=wallet_manager),
+    dexscreener.GetTokenDataTool(wallet_manager=wallet_manager),
+    solana_native.GetSOLBalanceTool(),
+    spl.GetTokenBalanceTool(),
+    raydium_openbook.BuyTokenWithSolTool(wallet_manager=wallet_manager),
+    raydium_openbook.SellTokenForSolTool(wallet_manager=wallet_manager),
+    jupiter.SwapTokenTool(wallet_manager=wallet_manager),
 ]
 
 # Create a trading agent
@@ -78,6 +85,7 @@ trading_agent = CodeAgent(
     tools=tools,
     add_base_tools=True,
     additional_authorized_imports=["json"],
+    flush_memory=True,
     max_steps=8,  # Make the trading agent more reliable by increasing the number of steps he can take to complete the task
 )
 

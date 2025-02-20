@@ -59,6 +59,8 @@ from construct import (
 from galadriel.logging_utils import get_agent_logger, init_logging
 from galadriel.tools.web3.onchain.solana.base_tool import SolanaBaseTool
 from galadriel.tools.web3.onchain.solana.raydium_openbook import confirm_txn, get_token_balance
+from galadriel.core_agent import Tool
+from galadriel.keystore.wallet_manager import WalletManager
 
 logger = get_agent_logger()
 
@@ -257,8 +259,10 @@ class BuyTokenWithSolTool(SolanaBaseTool):
     }
     output_type = "string"
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(is_wallet_required=True, is_async_client=False, *args, **kwargs)
+    def __init__(self, wallet_manager: WalletManager, *args, **kwargs):
+        if wallet_manager is None:
+            raise ValueError("Wallet manager is not provided.")
+        super().__init__(wallet_manager=wallet_manager, is_async_client=False, *args, **kwargs)
 
     # pylint:disable=W0221
     def forward(self, pair_address: str, sol_in: float = 0.01, slippage: int = 5) -> str:
@@ -314,8 +318,10 @@ class SellTokenForSolTool(SolanaBaseTool):
     }
     output_type = "string"
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(is_wallet_required=True, is_async_client=False, *args, **kwargs)
+    def __init__(self, wallet_manager: WalletManager, *args, **kwargs):
+        if wallet_manager is None:
+            raise ValueError("Wallet manager is not provided.")
+        super().__init__(wallet_manager=wallet_manager, is_async_client=False, *args, **kwargs)
 
     # pylint:disable=W0221
     def forward(self, pair_address: str, percentage: int = 100, slippage: int = 5) -> str:

@@ -1,6 +1,7 @@
 from enum import Enum
 import os
 
+from construct import Optional
 from solana.rpc.api import Client
 from solana.rpc.async_api import AsyncClient
 from galadriel.tools import Tool
@@ -38,32 +39,21 @@ class SolanaBaseTool(Tool):
                 # Use wallet for transactions
     """
 
-    def __init__(self, is_wallet_required: bool, is_async_client: bool, *args, **kwargs):
+    def __init__(
+        self, wallet_manager: WalletManager | None, is_async_client: bool = False, *args, **kwargs
+    ):
         """Initialize the Solana tool.
 
-        Sets up the wallet manager using the keypair file specified
-        in environment variables.
-
         Args:
-            is_wallet_required (bool): Flag indicating if wallet access is required
+            wallet_manager (WalletManager): The wallet manager instance for handling wallet operations
             is_async_client (bool): Flag indicating if async client should be used
             *args: Variable length argument list passed to parent Tool class
             **kwargs: Arbitrary keyword arguments passed to parent Tool class
-
-        Raises:
-            ValueError: If SOLANA_KEY_PATH environment variable is not set
-
-        Note:
-            The keypair file should be kept secure and never committed to
-            version control.
         """
-        key_path = os.getenv("SOLANA_KEY_PATH")
-        if not key_path:
-            raise ValueError("SOLANA_KEY_PATH environment variable is not set")
+        if wallet_manager and wallet_manager.key_type is not KeyType.SOLANA:
+            raise ValueError("Wrong wallet type for Solana tools")
 
-        # Initialize wallet repository with keypair file
-        if is_wallet_required:
-            self.wallet_manager = WalletManager(KeyType.SOLANA, key_path)
+        self.wallet_manager = wallet_manager
 
         # Set the network and client based on the environment variable, default to mainnet
         if os.getenv("SOLANA_NETWORK") == "devnet":
