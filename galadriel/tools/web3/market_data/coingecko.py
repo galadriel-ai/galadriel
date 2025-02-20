@@ -166,7 +166,7 @@ class GetCoinHistoricalDataTool(CoingeckoTool):
     name = "get_coin_historical_data"
     description = "This is a tool that returns the historical data of given crypto token."
     inputs = {
-        "task": {
+        "token": {
             "type": "string",
             "description": "The full name of the token. For example 'solana' not 'sol'",
         },
@@ -177,11 +177,11 @@ class GetCoinHistoricalDataTool(CoingeckoTool):
     }
     output_type = "string"
 
-    def forward(self, task: str, days: str) -> str:  # pylint: disable=W0221
+    def forward(self, token: str, days: str) -> str:  # pylint: disable=W0221
         """Fetch historical price data for a cryptocurrency.
 
         Args:
-            task (str): The full name of the cryptocurrency (e.g., 'bitcoin')
+            token (str): The full name of the cryptocurrency (e.g., 'bitcoin')
             days (str): Number of days of historical data to retrieve
 
         Returns:
@@ -192,7 +192,7 @@ class GetCoinHistoricalDataTool(CoingeckoTool):
         """
         response = call_coingecko_api(
             api_key=self.api_key,
-            request="https://api.coingecko.com/api/v3/coins/" + task + "/market_chart?vs_currency=usd&days=" + days,
+            request="https://api.coingecko.com/api/v3/coins/" + token + "/market_chart?vs_currency=usd&days=" + days,
         )
         data = response.json()
         return data
