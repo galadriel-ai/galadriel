@@ -1,12 +1,11 @@
 from typing import Dict
 from typing import List
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, AsyncMock
 
 import pytest
 
 from galadriel import AgentRuntime, Agent, AgentInput, AgentOutput
 from galadriel import agent
-from galadriel.domain import validate_solana_payment
 from galadriel.entities import Message, PushOnlyQueue, Pricing
 from galadriel.errors import PaymentValidationError
 
@@ -81,17 +80,15 @@ async def test_post_output_to_client():
     # assert output_client.output_proofs[0] == "mock_proof"
 
 
-async def test_payment_validation(monkeypatch):
+async def test_payment_validation():
     """Test payment validation flow."""
     user_agent = MockAgent()
     pricing = Pricing(cost=0.1, wallet_address="HN7cABqLq46Es1jh92dQQisAq662SmxELLLsHHe4YWrH")
     runtime = AgentRuntime(inputs=[], outputs=[], agent=user_agent, pricing=pricing)
 
     # Mock successful payment validation
-    monkeypatch.setattr(
-        validate_solana_payment,
-        "execute",
-        MagicMock(return_value=MagicMock(task="validated task", signature="sig123")),
+    runtime.solana_payment_validator.execute = AsyncMock(
+        return_value=AsyncMock(task="validated task", signature="sig123")
     )
 
     request = Message(content="test with payment sig123")
@@ -101,7 +98,7 @@ async def test_payment_validation(monkeypatch):
     assert user_agent.called_messages[0].content == "validated task"
 
 
-async def test_payment_validation_failure(monkeypatch):
+async def test_payment_validation_failure():
     """Test payment validation failure."""
     user_agent = MockAgent()
     output_client = MockAgentOutput()
@@ -109,10 +106,7 @@ async def test_payment_validation_failure(monkeypatch):
     runtime = AgentRuntime(inputs=[], outputs=[output_client], agent=user_agent, pricing=pricing)
 
     # Mock failed payment validation
-    monkeypatch.setattr(
-        "galadriel.domain.validate_solana_payment.execute",
-        MagicMock(side_effect=PaymentValidationError("Invalid payment")),
-    )
+    runtime.solana_payment_validator.execute = AsyncMock(side_effect=PaymentValidationError("Invalid payment"))
 
     request = Message(content="test with invalid payment")
     await runtime._run_request(request)
