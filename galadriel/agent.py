@@ -281,7 +281,7 @@ class AgentRuntime:
             for output in self.outputs:
                 try:
                     await output.send(request, response)
-                except Exception as e:
+                except Exception:
                     logger.error("Failed to send response via output", exc_info=True)
 
     async def _get_memory(self) -> List[Dict[str, str]]:
@@ -295,7 +295,7 @@ class AgentRuntime:
     async def _safe_client_start(self, agent_input: AgentInput, queue: PushOnlyQueue):
         try:
             await agent_input.start(queue)
-        except Exception as e:
+        except Exception:
             logger.error(f"Input client {agent_input.__class__.__name__} failed", exc_info=True)
 
     async def _generate_proof(self, request: Message, response: Message) -> str:
