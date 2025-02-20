@@ -1,7 +1,6 @@
 from enum import Enum
 import os
 
-from construct import Optional
 from solana.rpc.api import Client
 from solana.rpc.async_api import AsyncClient
 from galadriel.tools import Tool
@@ -39,9 +38,7 @@ class SolanaBaseTool(Tool):
                 # Use wallet for transactions
     """
 
-    def __init__(
-        self, wallet_manager: WalletManager | None, is_async_client: bool = False, *args, **kwargs
-    ):
+    def __init__(self, wallet_manager: WalletManager, is_async_client: bool = False, *args, **kwargs):
         """Initialize the Solana tool.
 
         Args:
@@ -50,10 +47,10 @@ class SolanaBaseTool(Tool):
             *args: Variable length argument list passed to parent Tool class
             **kwargs: Arbitrary keyword arguments passed to parent Tool class
         """
-        if wallet_manager and wallet_manager.key_type is not KeyType.SOLANA:
-            raise ValueError("Wrong wallet type for Solana tools")
-
         self.wallet_manager = wallet_manager
+
+        if self.wallet_manager.key_type is not KeyType.SOLANA:
+            raise ValueError("Wrong wallet type for Solana tools")
 
         # Set the network and client based on the environment variable, default to mainnet
         if os.getenv("SOLANA_NETWORK") == "devnet":

@@ -67,7 +67,7 @@ class GetTokenBalanceTool(SolanaBaseTool):
             token_pubkey = Pubkey.from_string(token_address)
 
             # Initialize SPL token client
-            spl_client = Token(self.client, token_pubkey, TOKEN_PROGRAM_ID, user_pubkey)
+            spl_client = Token(self.client, token_pubkey, TOKEN_PROGRAM_ID, user_pubkey)  # type: ignore
 
             # Verify token mint is initialized
             mint = spl_client.get_mint_info()
@@ -93,6 +93,6 @@ if __name__ == "__main__":
     get_balance_tool = GetTokenBalanceTool()
     data = get_balance_tool.forward(
         "4kbGbZtfkfkRVGunkbKX4M7dGPm9MghJZodjbnRZbmug",
-        "ELJKW7qz3DA93K919agEk398kgeY1eGvs2u3GAfV3FLn",
+        "J1Wpmugrooj1yMyQKrdZ2vwRXG5rhfx3vTnYE39gpump",
     )
     print(data)

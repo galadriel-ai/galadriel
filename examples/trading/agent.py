@@ -12,8 +12,8 @@ from galadriel.tools.web3.market_data import coingecko, dexscreener
 from galadriel.tools.web3.onchain.solana import (
     jupiter,
     raydium_openbook,
-    spl,
     native as solana_native,
+    spl_token,
 )
 
 TRADING_INTERVAL_SECONDS = 300
@@ -72,7 +72,7 @@ tools = [
     coingecko.GetCoinHistoricalDataTool(wallet_manager=wallet_manager),
     dexscreener.GetTokenDataTool(wallet_manager=wallet_manager),
     solana_native.GetSOLBalanceTool(),
-    spl.GetTokenBalanceTool(),
+    spl_token.GetTokenBalanceTool(),
     raydium_openbook.BuyTokenWithSolTool(wallet_manager=wallet_manager),
     raydium_openbook.SellTokenForSolTool(wallet_manager=wallet_manager),
     jupiter.SwapTokenTool(wallet_manager=wallet_manager),
