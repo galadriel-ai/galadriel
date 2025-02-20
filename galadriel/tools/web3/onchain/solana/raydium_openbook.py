@@ -266,7 +266,7 @@ class BuyTokenWithSolTool(SolanaBaseTool):
     output_type = "string"
 
     def __init__(self, wallet: SolanaWallet, *args, **kwargs):
-        super().__init__(wallet=wallet, *args, **kwargs)
+        super().__init__(wallet, *args, **kwargs)
 
     def forward(self, pair_address: str, sol_in: float = 0.01, slippage: int = 5) -> str:  # pylint: disable=W0221
         """Execute a SOL to token swap transaction.
@@ -320,7 +320,7 @@ class SellTokenForSolTool(SolanaBaseTool):
     output_type = "string"
 
     def __init__(self, wallet: SolanaWallet, *args, **kwargs):
-        super().__init__(wallet=wallet, *args, **kwargs)
+        super().__init__(wallet, *args, **kwargs)
 
     def forward(self, pair_address: str, percentage: int = 100, slippage: int = 5) -> str:  # pylint: disable=W0221
         """Execute a token to SOL swap transaction.

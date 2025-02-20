@@ -45,7 +45,7 @@ class GetSOLBalanceTool(SolanaBaseTool):
     output_type = "number"
 
     def __init__(self, wallet: SolanaWallet, *args, **kwargs):
-        super().__init__(wallet=wallet, *args, **kwargs)
+        super().__init__(wallet, *args, **kwargs)
 
     def forward(self, user_address: str) -> Optional[float]:
         """Get SOL balance for a wallet address.

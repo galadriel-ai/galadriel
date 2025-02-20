@@ -51,7 +51,7 @@ class GetTokenBalanceTool(SolanaBaseTool):
     output_type = "number"
 
     def __init__(self, wallet: SolanaWallet, *args, **kwargs):
-        super().__init__(wallet=wallet, *args, **kwargs)
+        super().__init__(wallet, *args, **kwargs)
 
     def forward(self, user_address: str, token_address: str) -> Optional[float]:
         """Get SPL token balance for a wallet address.

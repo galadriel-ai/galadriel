@@ -259,12 +259,12 @@ class BuyTokenWithSolTool(SolanaBaseTool):
     output_type = "string"
 
     def __init__(self, wallet: SolanaWallet, *args, **kwargs):
-        super().__init__(wallet=wallet, *args, **kwargs)
+        super().__init__(wallet, *args, **kwargs)
 
     def forward(self, pair_address: str, sol_in: float = 0.01, slippage: int = 5) -> str:
         payer_keypair = self.wallet.get_wallet()
         result = buy(self.client, payer_keypair, pair_address, sol_in, slippage)
-        return result
+        return result  # type: ignore
 
 
 class SellTokenForSolTool(SolanaBaseTool):
@@ -303,12 +303,12 @@ class SellTokenForSolTool(SolanaBaseTool):
     output_type = "string"
 
     def __init__(self, wallet: SolanaWallet, *args, **kwargs):
-        super().__init__(wallet=wallet, *args, **kwargs)
+        super().__init__(wallet, *args, **kwargs)
 
     def forward(self, pair_address: str, percentage: int = 100, slippage: int = 5) -> str:
         payer_keypair = self.wallet.get_wallet()
         result = sell(self.client, payer_keypair, pair_address, percentage, slippage)
-        return result
+        return result  # type: ignore
 
 
 # pylint:disable=R0914, R0915
