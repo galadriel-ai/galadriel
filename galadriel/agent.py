@@ -5,7 +5,6 @@ from abc import abstractmethod
 from pathlib import Path
 from typing import Dict, List
 from typing import Optional
-from typing import Set
 
 from pprint import pformat
 
@@ -16,7 +15,7 @@ from smolagents import ToolCallingAgent as InternalToolCallingAgent
 
 from galadriel.domain import generate_proof
 from galadriel.domain import publish_proof
-from galadriel.domain import validate_solana_payment
+from galadriel.domain.validate_solana_payment import SolanaPaymentValidator
 from galadriel.domain.prompts import format_prompt
 from galadriel.entities import Message
 from galadriel.entities import Pricing
@@ -216,8 +215,7 @@ class AgentRuntime:
         self.inputs = inputs
         self.outputs = outputs
         self.agent = agent
-        self.pricing = pricing
-        self.spent_payments: Set[str] = set()
+        self.solana_payment_validator = SolanaPaymentValidator(pricing)  # type: ignore
         self.debug = debug
         self.enable_logs = enable_logs
         self.is_running: bool = False
@@ -279,9 +277,9 @@ class AgentRuntime:
         """
         response = None
         # Handle payment validation
-        if self.pricing:
+        if self.solana_payment_validator.pricing:
             try:
-                task_and_payment = validate_solana_payment.execute(self.pricing, self.spent_payments, request)
+                task_and_payment = await self.solana_payment_validator.execute(request)
                 request.content = task_and_payment.task
             except PaymentValidationError as e:
                 response = Message(content=str(e))

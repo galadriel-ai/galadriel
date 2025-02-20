@@ -20,7 +20,7 @@ from typing import List
 from langchain.docstore.document import Document
 from langchain_community.retrievers import BM25Retriever
 
-from galadriel.core_agent import Tool
+from galadriel.tools import Tool
 
 
 class RetrieverTool(Tool):

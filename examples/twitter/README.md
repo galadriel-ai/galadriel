@@ -25,9 +25,7 @@ This example demonstrates several key features of the Galadriel framework:
 
 1. Setup local env and install `galadriel`.
 
-```bash
 ```shell
-pip install -r requirements.txt
 python3 -m venv venv
 source venv/bin/activate
 pip install galadriel

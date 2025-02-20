@@ -1,7 +1,7 @@
 from composio_langchain import App
 from composio_langchain import ComposioToolSet
 
-from galadriel.core_agent import Tool
+from galadriel.tools import Tool
 
 
 def convert_action(api_key: str, action: str) -> Tool:
