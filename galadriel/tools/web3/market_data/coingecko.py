@@ -62,7 +62,7 @@ class GetCoinPriceTool(CoingeckoTool):
             "type": "array",
             "description": "The list of currencies to convert the price to. Default is USD",
             "items": {"type": "string"},
-        }
+        },
     }
     output_type = "string"
 
@@ -94,7 +94,7 @@ class GetCoinPriceTool(CoingeckoTool):
             "precision": "2",
             "ids": ",".join(token_names),
         }
-        
+
         url = f"{base_url}?" + "&".join(f"{k}={v}" for k, v in params.items())
         response = call_coingecko_api(
             api_key=self.api_key,
