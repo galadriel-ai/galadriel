@@ -143,4 +143,4 @@ def test_extract_transaction_signature_preserves_task():
     result = _extract_transaction_signature(message)
     assert isinstance(result, TaskAndPaymentSignature)
     assert result.signature == test_signature
-    assert result.task.strip() == "How long should I hold my ETH portfolio before selling?"
+    assert result.task == "How long should I hold my ETH portfolio before selling?"
