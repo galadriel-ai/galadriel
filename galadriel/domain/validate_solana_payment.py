@@ -1,7 +1,7 @@
 from dataclasses import dataclass
-from typing import List
-from typing import Optional
-from typing import Set
+import re
+import time
+from typing import List, Optional, Set
 
 from solana.rpc.api import Client
 from solders.pubkey import Pubkey  # pylint: disable=E0401
@@ -58,20 +58,42 @@ def execute(pricing: Pricing, existing_payments: Set[str], request: Message) -> 
 
 
 def _get_sol_amount_transferred(pricing: Pricing, tx_signature: str) -> int:
+    """
+    Get the amount of SOL transferred in lamports for the given transaction signature.
+    This function includes a retry mechanism with exponential backoff to handle RPC rate limits.
+    """
     http_client = Client("https://api.mainnet-beta.solana.com")
     tx_sig = Signature.from_string(tx_signature)
-    tx_info = http_client.get_transaction(tx_sig=tx_sig, max_supported_transaction_version=10)
+    max_retries = 3
+    delay = 1.0  # initial delay in seconds
+
+    for attempt in range(max_retries):
+        try:
+            tx_info = http_client.get_transaction(tx_sig=tx_sig, max_supported_transaction_version=10)
+            break  # Successful call, exit the retry loop.
+        except Exception as e:
+            # If we've not reached the final attempt, wait and retry.
+            if attempt < max_retries - 1:
+                time.sleep(delay)
+                delay *= 2  # Exponential backoff.
+            else:
+                raise PaymentValidationError(
+                    f"RPC error on transaction validation: {str(e)}. "
+                    f"Consider switching to an RPC endpoint with higher rate limits."
+                )
+    # If the transaction data is not available, return 0.
     if not tx_info.value:
-        return False
+        return 0
+
     transaction = tx_info.value.transaction.transaction  # The actual transaction
     account_keys = transaction.message.account_keys  # type: ignore
     index = _get_key_index(account_keys, pricing.wallet_address)  # type: ignore
     if index < 0:
-        return False
+        return 0
 
     meta = tx_info.value.transaction.meta
     if meta.err is not None:  # type: ignore
-        return False
+        return 0
 
     pre_balance = meta.pre_balances[index]  # type: ignore
     post_balance = meta.post_balances[index]  # type: ignore
@@ -95,37 +117,34 @@ def _get_key_index(account_keys: List[Pubkey], wallet_address: str) -> int:
 
 def _extract_transaction_signature(message: str) -> Optional[TaskAndPaymentSignature]:
     """
-    Given a string parses it to the task and the payment
-    For example: "How long should I hold my ETH portfolio before selling?
-    https://solscan.io/tx/5aqB4BGzQyFybjvKBjdcP8KAstZo81ooUZnf64vSbLLWbUqNSGgXWaGHNteiK2EJrjTmDKdLYHamJpdQBFevWuvy"
+    Given a string, parses it to extract the task text and the Solana transaction signature.
 
-    :param message: string
-    :return: TaskAndPaymentSignature if valid, none otherwise
+    For example:
+      "How long should I hold my ETH portfolio before selling?
+       https://solscan.io/tx/5aqB4BGzQyFybjvKBjdcP8KAstZo81ooUZnf64vSbLLWbUqNSGgXWaGHNteiK2EJrjTmDKdLYHamJpdQBFevWuvy"
+
+    :param message: Input string containing the task and the transaction signature.
+    :return: TaskAndPaymentSignature if a valid signature is found, otherwise None.
     """
     if not message:
         return None
 
-    if "https://solscan.io/tx/" in message:
-        task, payment = message.split("https://solscan.io/tx/")
-        task = task.strip()
-        payment_signature = payment.replace("https://solscan.io/tx/", "").strip()
-        return TaskAndPaymentSignature(
-            task=task,
-            signature=payment_signature,
-        )
+    # Regex pattern to capture a valid Solana transaction signature,
+    # with an optional URL prefix and trailing slash.
+    pattern = re.compile(
+        r"(?:https?://solscan\.io/tx/)?"  # Optional URL prefix
+        r"([1-9A-HJ-NP-Za-km-z]{87,88})"  # Capture group for the signature (base58, typical length 87-88)
+        r"(?:/)?"  # Optional trailing slash
+    )
 
-    signature = _find_signature(message)
-    if signature:
-        task = message.replace(signature, "").strip()
-        return TaskAndPaymentSignature(task=task, signature=signature)
-    return None
-
-
-def _find_signature(message: str) -> Optional[str]:
-    for word in message.split():
-        try:
-            signature = Signature.from_string(word.strip())
-            return str(signature)
-        except Exception:
-            pass
+    try:
+        match = pattern.search(message)
+        if match:
+            signature = match.group(1)
+            # Validate and normalize the signature using solana's Signature class.
+            valid_signature = str(Signature.from_string(signature))
+            task = message.replace(match.group(0), "").strip()
+            return TaskAndPaymentSignature(task=task, signature=valid_signature)
+    except Exception:
+        pass
     return None

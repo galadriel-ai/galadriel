@@ -5,6 +5,8 @@ import pytest
 from galadriel.domain import validate_solana_payment
 from galadriel.domain.validate_solana_payment import (
     PaymentValidationError,
+    TaskAndPaymentSignature,
+    _extract_transaction_signature,
 )
 from galadriel.domain.validate_solana_payment import TaskAndPaymentSignatureResponse
 from galadriel.entities import Message
@@ -16,6 +18,9 @@ def pricing():
     return Pricing(cost=0.1, wallet_address="HN7cABqLq46Es1jh92dQQisAq662SmxELLLsHHe4YWrH")
 
 
+test_signature = "52rdAHYLiTw2vVJmkyWi2sQesn3dLaPnKrDc9UjySmnBK7qi39DyzTXrdPAPNEeh9b1JvHRB1RLg8RQZVXywDMGE"
+
+
 def test_successful_payment_validation(monkeypatch, pricing):
     """Test successful payment validation with valid signature."""
     monkeypatch.setattr(
@@ -25,20 +30,20 @@ def test_successful_payment_validation(monkeypatch, pricing):
     )
 
     spent_payments = set()
-    message = Message(content="My task https://solscan.io/tx/valid_signature123")
+    message = Message(content=f"My task https://solscan.io/tx/{test_signature}")
 
     result = validate_solana_payment.execute(pricing, spent_payments, message)
 
     assert isinstance(result, TaskAndPaymentSignatureResponse)
     assert result.task == "My task"
-    assert result.signature == "valid_signature123"
-    assert "valid_signature123" in spent_payments
+    assert result.signature == test_signature
+    assert test_signature in spent_payments
 
 
 def test_reused_signature(pricing):
     """Test validation fails when signature was already used."""
-    spent_payments = {"used_signature123"}
-    message = Message(content="My task https://solscan.io/tx/used_signature123")
+    spent_payments = {test_signature}
+    message = Message(content=f"My task https://solscan.io/tx/{test_signature}")
 
     with pytest.raises(PaymentValidationError) as exc_info:
         validate_solana_payment.execute(pricing, spent_payments, message)
@@ -66,22 +71,21 @@ def test_invalid_payment(monkeypatch, pricing):
     )
 
     spent_payments = set()
-    message = Message(content="My task https://solscan.io/tx/invalid_payment123")
+    message = Message(content=f"My task https://solscan.io/tx/{test_signature}")
 
     with pytest.raises(PaymentValidationError) as exc_info:
         validate_solana_payment.execute(pricing, spent_payments, message)
 
     assert "Payment validation failed" in str(exc_info.value)
-    assert "invalid_payment123" not in spent_payments
+    assert test_signature not in spent_payments
 
 
 def test_signature_extraction_formats(monkeypatch, pricing):
     """Test different signature format extractions."""
     test_cases = [
-        "My task https://solscan.io/tx/2pcaEXQGhg9fRcMxQ3bj1La31em3fNynnTF5y1WodE56zxcvcqK3SnBjok8eYHajCJ6DxsjfrpEqtCdrEk2cxQ1Z",
-        "My task 2pcaEXQGhg9fRcMxQ3bj1La31em3fNynnTF5y1WodE56zxcvcqK3SnBjok8eYHajCJ6DxsjfrpEqtCdrEk2cxQ1Z",
-        "2pcaEXQGhg9fRcMxQ3bj1La31em3fNynnTF5y1WodE56zxcvcqK3SnBjok8eYHajCJ6DxsjfrpEqtCdrEk2cxQ1Z My task",
-        "My task\n2pcaEXQGhg9fRcMxQ3bj1La31em3fNynnTF5y1WodE56zxcvcqK3SnBjok8eYHajCJ6DxsjfrpEqtCdrEk2cxQ1Z\nmore text",
+        f"My task https://solscan.io/tx/{test_signature}",
+        f"My task {test_signature}",
+        f"My task\n{test_signature}\nmore text",
     ]
     monkeypatch.setattr(
         validate_solana_payment,
@@ -94,7 +98,49 @@ def test_signature_extraction_formats(monkeypatch, pricing):
 
         result = validate_solana_payment.execute(pricing, spent_payments, message)
         assert isinstance(result, TaskAndPaymentSignatureResponse)
-        assert (
-            "2pcaEXQGhg9fRcMxQ3bj1La31em3fNynnTF5y1WodE56zxcvcqK3SnBjok8eYHajCJ6DxsjfrpEqtCdrEk2cxQ1Z"
-            in result.signature
-        )
+        assert result.signature == test_signature
+
+
+def test_extract_transaction_signature():
+    test_cases = [
+        # With solscan URL
+        (f"https://solscan.io/tx/{test_signature} - hello", "- hello"),
+        (f"hello https://solscan.io/tx/{test_signature}", "hello"),
+        (f"hello https://solscan.io/tx/{test_signature} ", "hello"),
+        # Raw signature
+        (f"{test_signature} - hello", "- hello"),
+        (f"hello {test_signature}", "hello"),
+        (f"hello {test_signature} ", "hello"),
+        # With trailing slash
+        (f"https://solscan.io/tx/{test_signature}/ - hello", "- hello"),
+        (f"hello https://solscan.io/tx/{test_signature}/", "hello"),
+        (f"hello https://solscan.io/tx/{test_signature}/ ", "hello"),
+    ]
+
+    for message, expected_task in test_cases:
+        result = _extract_transaction_signature(message)
+        assert isinstance(result, TaskAndPaymentSignature)
+        assert result.signature == test_signature
+        assert result.task == expected_task
+
+
+def test_extract_transaction_signature_invalid_cases():
+    invalid_cases = [
+        "",  # Empty string
+        "Hello world",  # No signature
+        "https://solscan.io/tx/",  # Incomplete URL
+        "https://solscan.io/tx/invalid_signature",  # Invalid signature
+    ]
+
+    for message in invalid_cases:
+        result = _extract_transaction_signature(message)
+        assert result is None
+
+
+def test_extract_transaction_signature_preserves_task():
+    message = f"How long should I hold my ETH portfolio before selling?\nhttps://solscan.io/tx/{test_signature}"
+
+    result = _extract_transaction_signature(message)
+    assert isinstance(result, TaskAndPaymentSignature)
+    assert result.signature == test_signature
+    assert result.task.strip() == "How long should I hold my ETH portfolio before selling?"
