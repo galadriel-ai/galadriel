@@ -60,7 +60,7 @@ model = LiteLLMModel(
 
 # Prepare a Web3 specific toolkit, relevant for the trading agent
 tools = [
-    coingecko.FetchMarketDataPerCategoriesTool(),
+    coingecko.GetMarketDataPerCategoriesTool(),
     coingecko.GetCoinMarketDataTool(),
     coingecko.GetCoinHistoricalDataTool(),
     dexscreener.GetTokenDataTool(),

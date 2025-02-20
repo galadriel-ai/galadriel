@@ -164,7 +164,7 @@ class GetCoinHistoricalDataTool(CoingeckoTool):
     """
 
     name = "get_coin_historical_data"
-    description = "This is a tool that returns the historical data of given crypto token."
+    description = "This is a tool that returns the historical chart data of a coin including time in UNIX, price, market cap and 24hrs volume ."
     inputs = {
         "token": {
             "type": "string",
@@ -198,7 +198,7 @@ class GetCoinHistoricalDataTool(CoingeckoTool):
         return data
 
 
-class FetchMarketDataPerCategoriesTool(CoingeckoTool):
+class GetMarketDataPerCategoriesTool(CoingeckoTool):
     """Tool for retrieving market data for cryptocurrencies in specific categories.
 
     Fetches market data for cryptocurrencies in specific categories from CoinGecko.
@@ -210,12 +210,12 @@ class FetchMarketDataPerCategoriesTool(CoingeckoTool):
         output_type (str): Type of data returned by the tool
     """
 
-    name = "fetch_market_data_per_categories"
+    name = "get_market_data_per_categories"
     description = "This is a tool that returns the market data for cryptocurrencies in specific categories."
     inputs = {
         "categories": {
             "type": "array",
-            "description": "The categories of the cryptocurrencies to fetch data for",
+            "description": "The categories of the cryptocurrencies to get data for",
         }
     }
     output_type = "string"
@@ -301,5 +301,5 @@ def call_coingecko_api(api_key: str, request: str) -> requests.Response:
 
 
 if __name__ == "__main__":
-    fetch_market_data = FetchMarketDataPerCategoriesTool()
+    fetch_market_data = GetMarketDataPerCategoriesTool()
     print(fetch_market_data.forward("pump-fun"))
