@@ -258,7 +258,7 @@ class AgentRuntime:
         # Handle payment validation
         if self.pricing:
             try:
-                task_and_payment = validate_solana_payment.execute(self.pricing, self.spent_payments, request)
+                task_and_payment = await validate_solana_payment.execute(self.pricing, self.spent_payments, request)
                 request.content = task_and_payment.task
             except PaymentValidationError as e:
                 response = Message(content=str(e))

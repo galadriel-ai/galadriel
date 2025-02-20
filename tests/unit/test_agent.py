@@ -1,6 +1,6 @@
 from typing import Dict
 from typing import List
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, AsyncMock
 
 import pytest
 
@@ -91,7 +91,7 @@ async def test_payment_validation(monkeypatch):
     monkeypatch.setattr(
         validate_solana_payment,
         "execute",
-        MagicMock(return_value=MagicMock(task="validated task", signature="sig123")),
+        AsyncMock(return_value=AsyncMock(task="validated task", signature="sig123")),
     )
 
     request = Message(content="test with payment sig123")
@@ -111,7 +111,7 @@ async def test_payment_validation_failure(monkeypatch):
     # Mock failed payment validation
     monkeypatch.setattr(
         "galadriel.domain.validate_solana_payment.execute",
-        MagicMock(side_effect=PaymentValidationError("Invalid payment")),
+        AsyncMock(side_effect=PaymentValidationError("Invalid payment")),
     )
 
     request = Message(content="test with invalid payment")

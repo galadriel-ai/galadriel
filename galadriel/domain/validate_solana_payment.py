@@ -3,7 +3,7 @@ import re
 import time
 from typing import List, Optional, Set
 
-from solana.rpc.api import Client
+from solana.rpc.async_api import AsyncClient
 from solders.pubkey import Pubkey  # pylint: disable=E0401
 from solders.signature import Signature  # pylint: disable=E0401
 
@@ -23,7 +23,7 @@ class TaskAndPaymentSignatureResponse(TaskAndPaymentSignature):
     amount_transferred_lamport: int
 
 
-def execute(pricing: Pricing, existing_payments: Set[str], request: Message) -> TaskAndPaymentSignatureResponse:
+async def execute(pricing: Pricing, existing_payments: Set[str], request: Message) -> TaskAndPaymentSignatureResponse:
     """Validate the payment for the request.
     Args:
         pricing: Pricing configuration, containing the wallet address and payment amount required
@@ -43,7 +43,7 @@ def execute(pricing: Pricing, existing_payments: Set[str], request: Message) -> 
         raise PaymentValidationError(
             f"Transaction {task_and_payment.signature} has already been used. Please submit a new payment."
         )
-    sol_transferred_lamport = _get_sol_amount_transferred(pricing, task_and_payment.signature)
+    sol_transferred_lamport = await _get_sol_amount_transferred(pricing, task_and_payment.signature)
     if sol_transferred_lamport < pricing.cost * 10**9:
         raise PaymentValidationError(
             f"Payment validation failed for transaction {task_and_payment.signature}. "
@@ -57,19 +57,19 @@ def execute(pricing: Pricing, existing_payments: Set[str], request: Message) -> 
     )
 
 
-def _get_sol_amount_transferred(pricing: Pricing, tx_signature: str) -> int:
+async def _get_sol_amount_transferred(pricing: Pricing, tx_signature: str) -> int:
     """
     Get the amount of SOL transferred in lamports for the given transaction signature.
     This function includes a retry mechanism with exponential backoff to handle RPC rate limits.
     """
-    http_client = Client("https://api.mainnet-beta.solana.com")
+    http_client = AsyncClient("https://api.mainnet-beta.solana.com")
     tx_sig = Signature.from_string(tx_signature)
     max_retries = 3
     delay = 1.0  # initial delay in seconds
 
     for attempt in range(max_retries):
         try:
-            tx_info = http_client.get_transaction(tx_sig=tx_sig, max_supported_transaction_version=10)
+            tx_info = await http_client.get_transaction(tx_sig=tx_sig, max_supported_transaction_version=10)
             break  # Successful call, exit the retry loop.
         except Exception as e:
             # If we've not reached the final attempt, wait and retry.

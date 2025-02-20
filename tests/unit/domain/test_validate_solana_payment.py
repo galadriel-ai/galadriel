@@ -1,4 +1,4 @@
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock
 
 import pytest
 
@@ -21,18 +21,18 @@ def pricing():
 test_signature = "52rdAHYLiTw2vVJmkyWi2sQesn3dLaPnKrDc9UjySmnBK7qi39DyzTXrdPAPNEeh9b1JvHRB1RLg8RQZVXywDMGE"
 
 
-def test_successful_payment_validation(monkeypatch, pricing):
+async def test_successful_payment_validation(monkeypatch, pricing):
     """Test successful payment validation with valid signature."""
     monkeypatch.setattr(
         validate_solana_payment,
         "_get_sol_amount_transferred",
-        MagicMock(return_value=pricing.cost * 10**9),
+        AsyncMock(return_value=pricing.cost * 10**9),
     )
 
     spent_payments = set()
     message = Message(content=f"My task https://solscan.io/tx/{test_signature}")
 
-    result = validate_solana_payment.execute(pricing, spent_payments, message)
+    result = await validate_solana_payment.execute(pricing, spent_payments, message)
 
     assert isinstance(result, TaskAndPaymentSignatureResponse)
     assert result.task == "My task"
@@ -40,47 +40,47 @@ def test_successful_payment_validation(monkeypatch, pricing):
     assert test_signature in spent_payments
 
 
-def test_reused_signature(pricing):
+async def test_reused_signature(pricing):
     """Test validation fails when signature was already used."""
     spent_payments = {test_signature}
     message = Message(content=f"My task https://solscan.io/tx/{test_signature}")
 
     with pytest.raises(PaymentValidationError) as exc_info:
-        validate_solana_payment.execute(pricing, spent_payments, message)
+        await validate_solana_payment.execute(pricing, spent_payments, message)
 
     assert "already been used" in str(exc_info.value)
 
 
-def test_missing_signature(pricing):
+async def test_missing_signature(pricing):
     """Test validation fails when no signature is provided."""
     spent_payments = set()
     message = Message(content="My task without signature")
 
     with pytest.raises(PaymentValidationError) as exc_info:
-        validate_solana_payment.execute(pricing, spent_payments, message)
+        await validate_solana_payment.execute(pricing, spent_payments, message)
 
     assert "No transaction signature found" in str(exc_info.value)
 
 
-def test_invalid_payment(monkeypatch, pricing):
+async def test_invalid_payment(monkeypatch, pricing):
     """Test validation fails when payment amount is incorrect."""
     monkeypatch.setattr(
         validate_solana_payment,
         "_get_sol_amount_transferred",
-        MagicMock(return_value=pricing.cost * 10**9 - 1),
+        AsyncMock(return_value=pricing.cost * 10**9 - 1),
     )
 
     spent_payments = set()
     message = Message(content=f"My task https://solscan.io/tx/{test_signature}")
 
     with pytest.raises(PaymentValidationError) as exc_info:
-        validate_solana_payment.execute(pricing, spent_payments, message)
+        await validate_solana_payment.execute(pricing, spent_payments, message)
 
     assert "Payment validation failed" in str(exc_info.value)
     assert test_signature not in spent_payments
 
 
-def test_signature_extraction_formats(monkeypatch, pricing):
+async def test_signature_extraction_formats(monkeypatch, pricing):
     """Test different signature format extractions."""
     test_cases = [
         f"My task https://solscan.io/tx/{test_signature}",
@@ -90,13 +90,13 @@ def test_signature_extraction_formats(monkeypatch, pricing):
     monkeypatch.setattr(
         validate_solana_payment,
         "_get_sol_amount_transferred",
-        MagicMock(return_value=pricing.cost * 10**9),
+        AsyncMock(return_value=pricing.cost * 10**9),
     )
     for test_case in test_cases:
         spent_payments = set()
         message = Message(content=test_case)
 
-        result = validate_solana_payment.execute(pricing, spent_payments, message)
+        result = await validate_solana_payment.execute(pricing, spent_payments, message)
         assert isinstance(result, TaskAndPaymentSignatureResponse)
         assert result.signature == test_signature
 
