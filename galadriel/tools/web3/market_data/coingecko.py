@@ -1,5 +1,8 @@
 import json
+import json
 import os
+from typing import List
+
 import requests
 
 from galadriel.tools import Tool
@@ -50,18 +53,19 @@ class GetCoinPriceTool(CoingeckoTool):
     name = "get_coin_price"
     description = "This is a tool that returns the price of given crypto token together with market cap, 24hr vol and 24hr change."  # pylint: disable=C0301
     inputs = {
-        "task": {
-            "type": "string",
-            "description": "The full name of the token. For example 'solana' not 'sol'",
+        "token_names": {
+            "type": "array",
+            "description": "The list of token names. Names must be full, for example 'solana' not 'sol'",
+            "items": {"type": "string"},
         }
     }
     output_type = "string"
 
-    def forward(self, task: str) -> str:  # pylint: disable=W0221
+    def forward(self, token_names: List[str]) -> str:  # pylint: disable=W0221
         """Fetch current price and market data for a cryptocurrency.
 
         Args:
-            task (str): The full name of the cryptocurrency (e.g., 'bitcoin')
+            token_names (str): The list of full name of the cryptocurrency (e.g., 'bitcoin')
 
         Returns:
             str: JSON string containing price and market data
@@ -83,7 +87,7 @@ class GetCoinPriceTool(CoingeckoTool):
             "&include_24hr_change=true"
             "&include_last_updated_at=true"
             "&precision=2"
-            "&ids=" + task,
+            "&ids=" + ",".join(token_names),
         )
         data = response.json()
         return data
