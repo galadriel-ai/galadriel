@@ -23,6 +23,9 @@ class TaskAndPaymentSignatureResponse(TaskAndPaymentSignature):
     amount_transferred_lamport: int
 
 
+http_client = AsyncClient("https://api.mainnet-beta.solana.com")
+
+
 async def execute(pricing: Pricing, existing_payments: Set[str], request: Message) -> TaskAndPaymentSignatureResponse:
     """Validate the payment for the request.
     Args:
@@ -62,7 +65,6 @@ async def _get_sol_amount_transferred(pricing: Pricing, tx_signature: str) -> in
     Get the amount of SOL transferred in lamports for the given transaction signature.
     This function includes a retry mechanism with exponential backoff to handle RPC rate limits.
     """
-    http_client = AsyncClient("https://api.mainnet-beta.solana.com")
     tx_sig = Signature.from_string(tx_signature)
     max_retries = 3
     delay = 1.0  # initial delay in seconds
