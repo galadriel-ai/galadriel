@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 from galadriel import AgentRuntime, LiteLLMModel
 from galadriel.agent import CodeAgent
 from galadriel.clients import Cron
-from galadriel.keystore.wallet_manager import KeyType, WalletManager
+from galadriel.wallets.solana_wallet import SolanaWallet
 from galadriel.tools.web3.market_data import coingecko, dexscreener
 from galadriel.tools.web3.onchain.solana import (
     jupiter,
@@ -63,19 +63,19 @@ model = LiteLLMModel(
     api_key=os.getenv("OPENAI_API_KEY"),
 )
 
-wallet_manager = WalletManager(key_type=KeyType.SOLANA, key_path=os.getenv("SOLANA_KEY_PATH"))
+solana_wallet = SolanaWallet(key_path=os.getenv("SOLANA_KEY_PATH"))
 
 # Prepare a Web3 specific toolkit, relevant for the trading agent
 tools = [
-    coingecko.FetchMarketDataPerCategoriesTool(wallet_manager=wallet_manager),
-    coingecko.GetCoinMarketDataTool(wallet_manager=wallet_manager),
-    coingecko.GetCoinHistoricalDataTool(wallet_manager=wallet_manager),
-    dexscreener.GetTokenDataTool(wallet_manager=wallet_manager),
-    solana_native.GetSOLBalanceTool(wallet_manager=wallet_manager),
-    spl_token.GetTokenBalanceTool(wallet_manager=wallet_manager),
-    raydium_openbook.BuyTokenWithSolTool(wallet_manager=wallet_manager),
-    raydium_openbook.SellTokenForSolTool(wallet_manager=wallet_manager),
-    jupiter.SwapTokenTool(wallet_manager=wallet_manager),
+    coingecko.FetchMarketDataPerCategoriesTool(),
+    coingecko.GetCoinMarketDataTool(),
+    coingecko.GetCoinHistoricalDataTool(),
+    dexscreener.GetTokenDataTool(),
+    solana_native.GetSOLBalanceTool(solana_wallet),
+    spl_token.GetTokenBalanceTool(solana_wallet),
+    raydium_openbook.BuyTokenWithSolTool(solana_wallet),
+    raydium_openbook.SellTokenForSolTool(solana_wallet),
+    jupiter.SwapTokenTool(solana_wallet),
 ]
 
 # Create a trading agent

@@ -14,8 +14,8 @@ from typing import Optional
 from solana.rpc.commitment import Confirmed
 from solders.pubkey import Pubkey  # type: ignore # pylint: disable=E0401
 
-from galadriel.keystore.wallet_manager import KeyType, WalletManager
 from galadriel.tools.web3.onchain.solana.base_tool import SolanaBaseTool
+from galadriel.wallets.solana_wallet import SolanaWallet
 
 logger = logging.getLogger(__name__)
 
@@ -44,8 +44,8 @@ class GetSOLBalanceTool(SolanaBaseTool):
     }
     output_type = "number"
 
-    def __init__(self, wallet_manager: WalletManager, *args, **kwargs):
-        super().__init__(wallet_manager, *args, **kwargs)
+    def __init__(self, wallet: SolanaWallet, *args, **kwargs):
+        super().__init__(wallet=wallet, *args, **kwargs)
 
     def forward(self, user_address: str) -> Optional[float]:
         """Get SOL balance for a wallet address.
@@ -66,7 +66,7 @@ class GetSOLBalanceTool(SolanaBaseTool):
 
 
 if __name__ == "__main__":
-    wallet_manager = WalletManager(KeyType.SOLANA, "/path/to/keypair.json")
-    get_balance_tool = GetSOLBalanceTool(wallet_manager)
+    wallet = SolanaWallet(key_path="/path/to/keypair.json")
+    get_balance_tool = GetSOLBalanceTool(wallet)
     data = get_balance_tool.forward("4kbGbZtfkfkRVGunkbKX4M7dGPm9MghJZodjbnRZbmug")
     print(data)

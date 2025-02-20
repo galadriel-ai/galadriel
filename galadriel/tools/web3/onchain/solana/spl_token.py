@@ -18,8 +18,8 @@ from spl.token.client import Token
 from spl.token.constants import TOKEN_PROGRAM_ID
 from spl.token.instructions import get_associated_token_address
 
-from galadriel.keystore.wallet_manager import KeyType, WalletManager
 from galadriel.tools.web3.onchain.solana.base_tool import SolanaBaseTool
+from galadriel.wallets.solana_wallet import SolanaWallet
 
 logger = logging.getLogger(__name__)
 
@@ -50,8 +50,8 @@ class GetTokenBalanceTool(SolanaBaseTool):
     }
     output_type = "number"
 
-    def __init__(self, wallet_manager, *args, **kwargs):
-        super().__init__(wallet_manager, *args, **kwargs)
+    def __init__(self, wallet: SolanaWallet, *args, **kwargs):
+        super().__init__(wallet=wallet, *args, **kwargs)
 
     def forward(self, user_address: str, token_address: str) -> Optional[float]:
         """Get SPL token balance for a wallet address.
@@ -91,8 +91,8 @@ class GetTokenBalanceTool(SolanaBaseTool):
 
 
 if __name__ == "__main__":
-    wallet_manager = WalletManager(KeyType.SOLANA, "path/to/keypair.json")  # noqa: F821
-    get_balance_tool = GetTokenBalanceTool(wallet_manager)
+    wallet = SolanaWallet(key_path="path/to/keypair.json")
+    get_balance_tool = GetTokenBalanceTool(wallet)
     data = get_balance_tool.forward(
         "4kbGbZtfkfkRVGunkbKX4M7dGPm9MghJZodjbnRZbmug",
         "J1Wpmugrooj1yMyQKrdZ2vwRXG5rhfx3vTnYE39gpump",

@@ -58,7 +58,7 @@ from construct import (
 from construct import Struct as cStruct
 
 from galadriel.tools.web3.onchain.solana.base_tool import SolanaBaseTool
-from galadriel.keystore.wallet_manager import KeyType, WalletManager
+from galadriel.wallets.solana_wallet import SolanaWallet
 
 
 logger = logging.getLogger(__name__)
@@ -265,8 +265,8 @@ class BuyTokenWithSolTool(SolanaBaseTool):
     }
     output_type = "string"
 
-    def __init__(self, wallet_manager: WalletManager, *args, **kwargs):
-        super().__init__(wallet_manager, *args, **kwargs)
+    def __init__(self, wallet: SolanaWallet, *args, **kwargs):
+        super().__init__(wallet=wallet, *args, **kwargs)
 
     def forward(self, pair_address: str, sol_in: float = 0.01, slippage: int = 5) -> str:  # pylint: disable=W0221
         """Execute a SOL to token swap transaction.
@@ -279,7 +279,7 @@ class BuyTokenWithSolTool(SolanaBaseTool):
         Returns:
             str: Transaction result message with signature
         """
-        payer_keypair = self.wallet_manager.get_wallet()
+        payer_keypair = self.wallet.get_wallet()
         result = buy(self.client, payer_keypair, pair_address, sol_in, slippage)
         return result
 
@@ -319,8 +319,8 @@ class SellTokenForSolTool(SolanaBaseTool):
     }
     output_type = "string"
 
-    def __init__(self, wallet_manager: WalletManager, *args, **kwargs):
-        super().__init__(wallet_manager, *args, **kwargs)
+    def __init__(self, wallet: SolanaWallet, *args, **kwargs):
+        super().__init__(wallet=wallet, *args, **kwargs)
 
     def forward(self, pair_address: str, percentage: int = 100, slippage: int = 5) -> str:  # pylint: disable=W0221
         """Execute a token to SOL swap transaction.
@@ -333,7 +333,7 @@ class SellTokenForSolTool(SolanaBaseTool):
         Returns:
             str: Transaction result message with signature
         """
-        payer_keypair = self.wallet_manager.get_wallet()
+        payer_keypair = self.wallet.get_wallet()
         result = sell(self.client, payer_keypair, pair_address, percentage, slippage)
         return result
 
@@ -877,7 +877,6 @@ def confirm_txn(client: Client, txn_sig: Signature, max_retries: int = 20, retry
 
 # main function to run the code
 if __name__ == "__main__":
-    # buy_token
-    wallet_manager = WalletManager(KeyType.SOLANA, key_path="solana_wallet.json")
-    buy_token_with_sol_tool = BuyTokenWithSolTool(wallet_manager=wallet_manager)
+    wallet = SolanaWallet(key_path="solana_wallet.json")
+    buy_token_with_sol_tool = BuyTokenWithSolTool(wallet)
     buy_token_with_sol_tool.forward("Hga48QXtpCgLSTsfysDirPJzq8aoBPjvePUgmXhFGDro", 0.0001, 5)
