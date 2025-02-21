@@ -59,6 +59,7 @@ from construct import (
 from galadriel.logging_utils import get_agent_logger, init_logging
 from galadriel.tools.web3.onchain.solana.base_tool import SolanaBaseTool
 from galadriel.tools.web3.onchain.solana.raydium_openbook import confirm_txn, get_token_balance
+from galadriel.wallets.solana_wallet import SolanaWallet
 
 logger = get_agent_logger()
 
@@ -257,26 +258,13 @@ class BuyTokenWithSolTool(SolanaBaseTool):
     }
     output_type = "string"
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(is_wallet_required=True, is_async_client=False, *args, **kwargs)
+    def __init__(self, wallet: SolanaWallet, *args, **kwargs):
+        super().__init__(wallet, *args, **kwargs)
 
-    # pylint:disable=W0221
     def forward(self, pair_address: str, sol_in: float = 0.01, slippage: int = 5) -> str:
-        """Execute a SOL to token swap transaction.
-
-        Args:
-            pair_address (str): The Raydium CPMM pair address
-            sol_in (float, optional): Amount of SOL to swap. Defaults to 0.01
-            slippage (int, optional): Slippage tolerance percentage. Defaults to 5
-
-        Returns:
-            str: Transaction result message
-        """
-        payer_keypair = self.wallet_manager.get_wallet()
+        payer_keypair = self.wallet.get_wallet()
         result = buy(self.client, payer_keypair, pair_address, sol_in, slippage)
-        if result:
-            return f"Transaction successful: {result}"
-        return "Transaction failed"
+        return result  # type: ignore
 
 
 class SellTokenForSolTool(SolanaBaseTool):
@@ -314,24 +302,13 @@ class SellTokenForSolTool(SolanaBaseTool):
     }
     output_type = "string"
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(is_wallet_required=True, is_async_client=False, *args, **kwargs)
+    def __init__(self, wallet: SolanaWallet, *args, **kwargs):
+        super().__init__(wallet, *args, **kwargs)
 
-    # pylint:disable=W0221
     def forward(self, pair_address: str, percentage: int = 100, slippage: int = 5) -> str:
-        """Execute a token to SOL swap.
-
-        Args:
-            pair_address (str): The Raydium CPMM pair address
-            percentage (int, optional): Percentage of token to sell. Defaults to 100
-            slippage (int, optional): Slippage tolerance percentage. Defaults to 5
-
-        Returns:
-            str: Transaction result message
-        """
-        payer_keypair = self.wallet_manager.get_wallet()
+        payer_keypair = self.wallet.get_wallet()
         result = sell(self.client, payer_keypair, pair_address, percentage, slippage)
-        return "Transaction successful" if result else "Transaction failed"
+        return result  # type: ignore
 
 
 # pylint:disable=R0914, R0915
@@ -875,6 +852,7 @@ def tokens_for_sol(token_amount, base_vault_balance, quote_vault_balance, swap_f
 if __name__ == "__main__":
     # Example usage
     init_logging(False)
-    buy_tool = BuyTokenWithSolTool()
+    wallet = SolanaWallet(key_path="keys.json")
+    buy_tool = BuyTokenWithSolTool(wallet)
     res = buy_tool.forward("Hga48QXtpCgLSTsfysDirPJzq8aoBPjvePUgmXhFGDro", 0.0001, 5)
     print(res)

@@ -1,5 +1,7 @@
 import json
 import os
+from typing import List
+
 import requests
 
 from galadriel.tools import Tool
@@ -50,18 +52,25 @@ class GetCoinPriceTool(CoingeckoTool):
     name = "get_coin_price"
     description = "This is a tool that returns the price of given crypto token together with market cap, 24hr vol and 24hr change."  # pylint: disable=C0301
     inputs = {
-        "task": {
-            "type": "string",
-            "description": "The full name of the token. For example 'solana' not 'sol'",
-        }
+        "token_names": {
+            "type": "array",
+            "description": "The list of token names. Names must be full, for example 'solana' not 'sol'",
+            "items": {"type": "string"},
+        },
+        "currencies": {
+            "type": "array",
+            "description": "The list of currencies to convert the price to. Default is USD",
+            "items": {"type": "string"},
+        },
     }
     output_type = "string"
 
-    def forward(self, task: str) -> str:  # pylint: disable=W0221
+    def forward(self, token_names: List[str], currencies: List[str]) -> str:  # pylint: disable=W0221
         """Fetch current price and market data for a cryptocurrency.
 
         Args:
-            task (str): The full name of the cryptocurrency (e.g., 'bitcoin')
+            token_names (List[str]): The list of full name of the cryptocurrency (e.g., 'bitcoin')
+            currencies (List[str]): The list of currencies to convert the price to. The list of supported currencies is [here](https://docs.coingecko.com/v3.0.1/reference/simple-supported-currencies
 
         Returns:
             str: JSON string containing price and market data
@@ -74,19 +83,23 @@ class GetCoinPriceTool(CoingeckoTool):
             - 24-hour price change percentage
             - Last updated timestamp
         """
+        base_url = "https://api.coingecko.com/api/v3/simple/price"
+        params = {
+            "vs_currencies": ",".join(currencies),
+            "include_market_cap": "true",
+            "include_24hr_vol": "true",
+            "include_24hr_change": "true",
+            "include_last_updated_at": "true",
+            "precision": "2",
+            "ids": ",".join(token_names),
+        }
+
+        url = f"{base_url}?" + "&".join(f"{k}={v}" for k, v in params.items())
         response = call_coingecko_api(
             api_key=self.api_key,
-            request="https://api.coingecko.com/api/v3/simple/price"
-            "?vs_currencies=usd"
-            "&include_market_cap=true"
-            "&include_24hr_vol=true"
-            "&include_24hr_change=true"
-            "&include_last_updated_at=true"
-            "&precision=2"
-            "&ids=" + task,
+            request=url,
         )
-        data = response.json()
-        return data
+        return response.json()
 
 
 class GetCoinMarketDataTool(CoingeckoTool):
@@ -150,9 +163,9 @@ class GetCoinHistoricalDataTool(CoingeckoTool):
     """
 
     name = "get_coin_historical_data"
-    description = "This is a tool that returns the historical data of given crypto token."
+    description = "This is a tool that returns the historical chart data of a coin including time in UNIX, price, market cap and 24hrs volume ."
     inputs = {
-        "task": {
+        "token": {
             "type": "string",
             "description": "The full name of the token. For example 'solana' not 'sol'",
         },
@@ -163,11 +176,11 @@ class GetCoinHistoricalDataTool(CoingeckoTool):
     }
     output_type = "string"
 
-    def forward(self, task: str, days: str) -> str:  # pylint: disable=W0221
+    def forward(self, token: str, days: str) -> str:  # pylint: disable=W0221
         """Fetch historical price data for a cryptocurrency.
 
         Args:
-            task (str): The full name of the cryptocurrency (e.g., 'bitcoin')
+            token (str): The full name of the cryptocurrency (e.g., 'bitcoin')
             days (str): Number of days of historical data to retrieve
 
         Returns:
@@ -178,13 +191,13 @@ class GetCoinHistoricalDataTool(CoingeckoTool):
         """
         response = call_coingecko_api(
             api_key=self.api_key,
-            request="https://api.coingecko.com/api/v3/coins/" + task + "/market_chart?vs_currency=usd&days=" + days,
+            request="https://api.coingecko.com/api/v3/coins/" + token + "/market_chart?vs_currency=usd&days=" + days,
         )
         data = response.json()
         return data
 
 
-class FetchMarketDataPerCategoriesTool(CoingeckoTool):
+class GetMarketDataPerCategoriesTool(CoingeckoTool):
     """Tool for retrieving market data for cryptocurrencies in specific categories.
 
     Fetches market data for cryptocurrencies in specific categories from CoinGecko.
@@ -196,12 +209,12 @@ class FetchMarketDataPerCategoriesTool(CoingeckoTool):
         output_type (str): Type of data returned by the tool
     """
 
-    name = "fetch_market_data_per_categories"
+    name = "get_market_data_per_categories"
     description = "This is a tool that returns the market data for cryptocurrencies in specific categories."
     inputs = {
         "categories": {
             "type": "array",
-            "description": "The categories of the cryptocurrencies to fetch data for",
+            "description": "The categories of the cryptocurrencies to get data for",
         }
     }
     output_type = "string"
@@ -287,5 +300,5 @@ def call_coingecko_api(api_key: str, request: str) -> requests.Response:
 
 
 if __name__ == "__main__":
-    fetch_market_data = FetchMarketDataPerCategoriesTool()
+    fetch_market_data = GetMarketDataPerCategoriesTool()
     print(fetch_market_data.forward("pump-fun"))

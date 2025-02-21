@@ -126,6 +126,7 @@ class CodeAgent(Agent, InternalCodeAgent):
         InternalCodeAgent.__init__(self, **kwargs)
         self.chat_memory = chat_memory
         self.prompt_template = prompt_template or DEFAULT_PROMPT_TEMPLATE_WITH_CHAT_MEMORY if chat_memory else DEFAULT_PROMPT_TEMPLATE
+        format_prompt.validate_prompt_template(self.prompt_template)
 
     async def execute(self, request: Message, memory: Optional[str] = None) -> Message:
         request_dict = {"request": request.content, "chat_history": memory}
@@ -175,6 +176,7 @@ class ToolCallingAgent(Agent, InternalToolCallingAgent):
         InternalToolCallingAgent.__init__(self, **kwargs)
         self.chat_memory = chat_memory
         self.prompt_template = prompt_template or DEFAULT_PROMPT_TEMPLATE_WITH_CHAT_MEMORY if chat_memory else DEFAULT_PROMPT_TEMPLATE
+        format_prompt.validate_prompt_template(self.prompt_template)
 
     async def execute(self, request: Message, memory: Optional[str] = None) -> Message:
         request_dict = {"request": request.content, "chat_history": memory}
@@ -290,7 +292,7 @@ class AgentRuntime:
             List[Dict[str, str]]: The agent's memory in a serializable format
         """
         return self.agent.write_memory_to_messages(summary_mode=True)  # type: ignore
-    
+
     async def _save_chat_memories(self, file_name: str) -> str:
         """Save the current state of the agent's chat memories.
 
