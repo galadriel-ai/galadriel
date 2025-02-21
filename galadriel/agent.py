@@ -29,7 +29,8 @@ DEFAULT_PROMPT_TEMPLATE = "{{request}}"
 
 DEFAULT_PROMPT_TEMPLATE_WITH_CHAT_MEMORY = """
 You are a helpful chatbot assistant.
-Answer the following question: \n\n {{request}} \n\n Here is the chat history: \n\n {{chat_history}} \n
+Here is the chat history: \n\n {{chat_history}} \n
+Answer the following question: \n\n {{request}} \n
 Please remember the chat history and use it to answer the question, if relevant to the question.
 """
 
