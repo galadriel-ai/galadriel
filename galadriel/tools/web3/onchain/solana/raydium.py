@@ -1,8 +1,9 @@
 """
-Raydium AMM V4 Integration Module
+Raydium AMM OpenBook and CPMM interaction tools.
 
-This module provides tools for interacting with Raydium's Automated Market Maker (AMM) V4
-on the Solana blockchain. It enables token swaps using SOL as the base currency.
+This module provides tools for interacting with Raydium's Automated Market Maker
+(AMM) V4 and Constant Product Market Maker (CPMM) pools on the Solana blockchain.
+It enables token swaps using SOL as the base currency.
 
 Key Features:
 - Buy tokens with SOL
@@ -11,7 +12,6 @@ Key Features:
 - Price calculation with slippage protection
 """
 
-# pylint: disable=R0801
 import os
 from typing import Optional
 
@@ -26,7 +26,7 @@ from galadriel.utils.raydium.constants import WSOL
 logger = get_agent_logger()
 
 
-class TokenSwapTool(SolanaBaseTool):
+class SwapTokenTool(SolanaBaseTool):
     """Tool for swapping tokens using Raydium."""
 
     name = "swap_token"
@@ -135,7 +135,11 @@ class TokenSwapTool(SolanaBaseTool):
 if __name__ == "__main__":
     init_logging(False)
     wallet = SolanaWallet(key_path=os.getenv("SOLANA_KEY_PATH"))  # type: ignore
-    swap_tool = TokenSwapTool(wallet)
+    swap_tool = SwapTokenTool(wallet)
     res = swap_tool.forward(
-        "J3b6dvheS2Y1cbMtVz5TCWXNegSjJDbUKxdUVDPoqmS7", "61V8vBaqAGMpgDQi4JcAwo1dmBGHsyhzodcPqnEVpump", WSOL, 0.0001, 10
-    )  # type: ignore
+        "J3b6dvheS2Y1cbMtVz5TCWXNegSjJDbUKxdUVDPoqmS7",
+        "61V8vBaqAGMpgDQi4JcAwo1dmBGHsyhzodcPqnEVpump",
+        WSOL,
+        0.0001,
+        10,  # type: ignore
+    )

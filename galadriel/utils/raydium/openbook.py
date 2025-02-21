@@ -9,13 +9,13 @@ import struct
 from solana.rpc.api import Client
 from solana.rpc.commitment import Processed
 from solana.rpc.types import TokenAccountOpts, TxOpts
-from solders.compute_budget import set_compute_unit_limit, set_compute_unit_price
-from solders.instruction import AccountMeta, Instruction
-from solders.keypair import Keypair
-from solders.message import MessageV0
-from solders.pubkey import Pubkey
-from solders.system_program import CreateAccountWithSeedParams, create_account_with_seed
-from solders.transaction import VersionedTransaction
+from solders.compute_budget import set_compute_unit_limit, set_compute_unit_price  # type: ignore
+from solders.instruction import AccountMeta, Instruction  # type: ignore
+from solders.keypair import Keypair  # type: ignore
+from solders.message import MessageV0  # type: ignore
+from solders.pubkey import Pubkey  # type: ignore
+from solders.system_program import CreateAccountWithSeedParams, create_account_with_seed  # type: ignore
+from solders.transaction import VersionedTransaction  # type: ignore
 from spl.token.client import Token
 from spl.token.instructions import (
     CloseAccountParams,
