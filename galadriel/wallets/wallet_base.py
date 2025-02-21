@@ -6,10 +6,4 @@ class WalletBase(ABC):
     def get_address(self) -> str:
         pass
 
-    # @abstractmethod
-    # def sign_message(self, message: str) -> str:
-    #    pass
-
-    # @abstractmethod
-    # def balance_of(self, address: str) -> float:
-    #    pass
+    # TODO: add fns sign() to allow wallets sign transactions
