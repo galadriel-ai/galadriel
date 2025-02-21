@@ -6,20 +6,16 @@ import time
 from typing import Optional
 
 from solana.rpc.api import Client
-from solana.rpc.commitment import Processed, Confirmed
-from solana.rpc.types import TxOpts
+from solana.rpc.commitment import Confirmed
 from solders.pubkey import Pubkey  # type: ignore # pylint: disable=E0401
 from solders.signature import Signature  # type: ignore # pylint: disable=E0401
 from spl.token.instructions import get_associated_token_address
 
-from .constants import LAMPORTS_PER_SOL
 
 logger = logging.getLogger(__name__)
 
 
-def confirm_txn(
-    client: Client, txn_sig: Signature, max_retries: int = 20, retry_interval: int = 3
-) -> bool:
+def confirm_txn(client: Client, txn_sig: Signature, max_retries: int = 20, retry_interval: int = 3) -> bool:
     """Confirm a transaction."""
     retries = 0
 

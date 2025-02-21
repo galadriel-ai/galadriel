@@ -1,4 +1,3 @@
-
 """
 Raydium AMM V4 Integration Module
 
@@ -13,37 +12,8 @@ Key Features:
 """
 
 # pylint: disable=R0801
-import base64
-from dataclasses import dataclass
-import json
 import os
-import struct
-import time
 from typing import Optional
-import logging
-from solana.rpc.api import Client
-from solana.rpc.commitment import Processed, Confirmed
-from solana.rpc.types import TokenAccountOpts, TxOpts
-from solders.compute_budget import set_compute_unit_limit, set_compute_unit_price  # type: ignore # pylint: disable=E0401
-from solders.message import MessageV0  # type: ignore # pylint: disable=E0401
-from solders.keypair import Keypair  # type: ignore # pylint: disable=E0401
-from solders.pubkey import Pubkey  # type: ignore # pylint: disable=E0401
-from solders.signature import Signature  # type: ignore # pylint: disable=E0401
-from solders.instruction import AccountMeta, Instruction  # type: ignore # pylint: disable=E0401
-from solders.transaction import VersionedTransaction  # type: ignore # pylint: disable=E0401
-from solders.system_program import (
-    CreateAccountWithSeedParams,
-    create_account_with_seed,
-)
-from spl.token.client import Token
-from spl.token.instructions import (
-    CloseAccountParams,
-    InitializeAccountParams,
-    close_account,
-    create_associated_token_account,
-    get_associated_token_address,
-    initialize_account,
-)
 
 from galadriel.tools.web3.onchain.solana.base_tool import SolanaBaseTool
 from galadriel.wallets.solana_wallet import SolanaWallet
@@ -81,7 +51,9 @@ class TokenSwapTool(SolanaBaseTool):
     def __init__(self, wallet: SolanaWallet):
         super().__init__(wallet)
 
-    def forward(self, pair_address: str, token_in: str, token_out: str, input_amount: float, slippage: int = 5) -> Optional[str]:
+    def forward(
+        self, pair_address: str, token_in: str, token_out: str, input_amount: float, slippage: int = 5
+    ) -> Optional[str]:
         """Buy tokens with SOL.
 
         Args:
@@ -95,7 +67,7 @@ class TokenSwapTool(SolanaBaseTool):
         """
         keypair = self.wallet.get_wallet()
         if token_in == WSOL:
-            # Buy token with SOL using OpenBook 
+            # Buy token with SOL using OpenBook
             logger.info(f"Buying {token_out} with SOL using OpenBook")
             res = openbook_buy(
                 client=self.client,
@@ -108,7 +80,7 @@ class TokenSwapTool(SolanaBaseTool):
             if res:
                 return res
             else:
-                # If the OpenBook buy fails, try CPMM 
+                # If the OpenBook buy fails, try CPMM
                 logger.info("Buy with openbook failed. Trying CPMM.")
                 res = cpmm_buy(
                     client=self.client,
@@ -125,8 +97,6 @@ class TokenSwapTool(SolanaBaseTool):
                 else:
                     logger.error(f"Failed to buy {token_out} with SOL using CPMM")
                     return None
-
-
 
         elif token_out == WSOL:
             res = openbook_sell(
@@ -164,8 +134,8 @@ class TokenSwapTool(SolanaBaseTool):
 
 if __name__ == "__main__":
     init_logging(False)
-    wallet = SolanaWallet(key_path=os.getenv("SOLANA_KEY_PATH"))
+    wallet = SolanaWallet(key_path=os.getenv("SOLANA_KEY_PATH"))  # type: ignore
     swap_tool = TokenSwapTool(wallet)
-    res = swap_tool.forward("J3b6dvheS2Y1cbMtVz5TCWXNegSjJDbUKxdUVDPoqmS7", "61V8vBaqAGMpgDQi4JcAwo1dmBGHsyhzodcPqnEVpump", WSOL, 0.0001, 10)
-
-
+    res = swap_tool.forward(
+        "J3b6dvheS2Y1cbMtVz5TCWXNegSjJDbUKxdUVDPoqmS7", "61V8vBaqAGMpgDQi4JcAwo1dmBGHsyhzodcPqnEVpump", WSOL, 0.0001, 10
+    )  # type: ignore

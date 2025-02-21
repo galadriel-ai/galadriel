@@ -14,17 +14,14 @@ from construct import (
 )
 
 from construct import (
-    Bytes,
-    Int64ul,
-    Padding,
     BitsInteger,
     BitsSwapped,
     BitStruct,
     Const,
-    Flag,
     BytesInteger,
 )
 from construct import Struct as cStruct
+
 
 # pylint:disable=W0223
 class UInt128Adapter(Adapter):
@@ -208,6 +205,3 @@ MARKET_STATE_LAYOUT_V3 = cStruct(
     "referrer_rebate_accrued" / Int64ul,
     Padding(7),
 )
-
-
-

@@ -3,7 +3,7 @@
 import base64
 import logging
 import os
-from typing import Optional, Tuple
+from typing import Optional
 import struct
 
 from solana.rpc.api import Client
@@ -41,19 +41,15 @@ from .constants import (
     RAYDIUM_DEVNET_AUTHORITY,
     OPENBOOK_MAINNET_MARKET,
     OPENBOOK_DEVNET_MARKET,
-    FEE_DESTINATION_MAINNET_ID,
-    FEE_DESTINATION_DEVNET_ID,
 )
-from .layouts import OPENBOOK_POOL_STATE_LAYOUT, LIQUIDITY_STATE_LAYOUT_V4, MARKET_STATE_LAYOUT_V3
-from .types import DIRECTION, AmmV4PoolKeys
+from .layouts import LIQUIDITY_STATE_LAYOUT_V4, MARKET_STATE_LAYOUT_V3
+from .types import AmmV4PoolKeys
 from .utils import confirm_txn, get_token_balance, sol_for_tokens, tokens_for_sol
 
 logger = logging.getLogger(__name__)
 
 
-def fetch_amm_v4_pool_keys(
-    client: Client, network: Network, pair_address: str
-) -> Optional[AmmV4PoolKeys]:
+def fetch_amm_v4_pool_keys(client: Client, network: Network, pair_address: str) -> Optional[AmmV4PoolKeys]:
     """Fetch pool configuration for a Raydium AMM V4 pair.
 
     Retrieves and parses pool configuration data from the Solana blockchain.
@@ -73,7 +69,7 @@ def fetch_amm_v4_pool_keys(
         if not 0 <= value < 2**64:
             raise ValueError("Value must be in the range of a u64 (0 to 2^64 - 1).")
         return struct.pack("<Q", value)
-    
+
     openbook_market = OPENBOOK_MAINNET_MARKET if network == Network.MAINNET else OPENBOOK_DEVNET_MARKET
     openbook_authority = RAYDIUM_MAINNET_AUTHORITY if network == Network.MAINNET else RAYDIUM_DEVNET_AUTHORITY
 
@@ -117,7 +113,7 @@ def fetch_amm_v4_pool_keys(
         return None
 
 
-def get_amm_v4_reserves(client: Client, pool_keys: AmmV4PoolKeys) -> Tuple[float, float, int]:
+def get_amm_v4_reserves(client: Client, pool_keys: AmmV4PoolKeys) -> tuple:
     """Get current token reserves from AMM pool.
 
     Fetches current balances of both tokens in the pool.
@@ -232,8 +228,7 @@ def make_amm_v4_swap_instruction(
         return swap_instruction
     except Exception as e:
         logger.error(f"Error occurred: {e}")
-        return None
-
+        raise e
 
 
 def buy(
@@ -241,7 +236,7 @@ def buy(
     network: Network,
     payer_keypair: Keypair,
     pair_address: str,
-    sol_in: float, 
+    sol_in: float,
     slippage: int = 5,
 ) -> Optional[str]:
     """Buy tokens with SOL using Raydium AMM V4."""
@@ -386,7 +381,7 @@ def sell(
     client: Client,
     network: Network,
     payer_keypair: Keypair,
-    pair_address: str,  
+    pair_address: str,
     amount_in: float,
     slippage: int = 5,
 ) -> Optional[str]:
@@ -414,7 +409,6 @@ def sell(
         if amount_in > token_balance:
             logger.error("Insufficient token balance.")
             return None
-
 
         # Calculate swap amounts
         logger.info("Calculating transaction amounts...")
@@ -485,7 +479,6 @@ def sell(
         instructions.extend([create_wsol_account_instruction, initialize_wsol_account_instruction])
         instructions.append(swap_instruction)
         instructions.append(close_wsol_account_instruction)
-
 
         # Send transaction
         logger.info("Compiling transaction message...")

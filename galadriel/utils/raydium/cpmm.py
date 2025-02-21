@@ -4,7 +4,7 @@ import base64
 import logging
 import os
 import struct
-from typing import Optional, Tuple
+from typing import Optional
 
 from solana.rpc.api import Client
 from solana.rpc.commitment import Processed
@@ -47,22 +47,14 @@ from .utils import confirm_txn, get_token_balance, sol_for_tokens, tokens_for_so
 logger = logging.getLogger(__name__)
 
 
-def fetch_cpmm_pool_keys(
-    client: Client, network: Network, pair_address: str
-) -> Optional[CpmmPoolKeys]:
+def fetch_cpmm_pool_keys(client: Client, network: Network, pair_address: str) -> Optional[CpmmPoolKeys]:
     """Fetch pool configuration for a Raydium CPMM pair."""
     try:
         # Get network-specific constants
-        pool_authority = (
-            RAYDIUM_MAINNET_POOL_AUTHORITY
-            if network == Network.MAINNET
-            else RAYDIUM_DEVNET_POOL_AUTHORITY
-        )
+        pool_authority = RAYDIUM_MAINNET_POOL_AUTHORITY if network == Network.MAINNET else RAYDIUM_DEVNET_POOL_AUTHORITY
 
         pool_state = Pubkey.from_string(pair_address)
-        pool_state_account = client.get_account_info_json_parsed(
-            pool_state, commitment=Processed
-        ).value
+        pool_state_account = client.get_account_info_json_parsed(pool_state, commitment=Processed).value
         if not pool_state_account:
             logger.error("Pool state account not found.")
             return None
@@ -103,7 +95,7 @@ def fetch_cpmm_pool_keys(
         return None
 
 
-def get_cpmm_reserves(client: Client, pool_keys: CpmmPoolKeys) -> Tuple[float, float, int]:
+def get_cpmm_reserves(client: Client, pool_keys: CpmmPoolKeys) -> tuple:
     """Get current token reserves from CPMM pool.
 
     Args:
@@ -174,7 +166,7 @@ def make_cpmm_swap_instruction(
         action (DIRECTION): Swap direction (BUY or SELL)
         network (Network): Network to use (mainnet or devnet)
 
-    Returns:    
+    Returns:
         Instruction: The compiled swap instruction
     """
     try:
@@ -391,7 +383,7 @@ def sell(
     network: Network,
     payer_keypair: Keypair,
     pair_address: str,
-    amount_in: float ,
+    amount_in: float,
     slippage: int = 5,
 ) -> Optional[str]:
     """Sell tokens for SOL using Raydium CPMM.
@@ -431,10 +423,9 @@ def sell(
             logger.error("No token balance available to sell.")
             return None
 
-
-        if amount_in  > token_balance:
+        if amount_in > token_balance:
             logger.error("Insufficient token balance to sell.")
-            return
+            return None
 
         # Calculate swap amounts
         logger.info("Calculating transaction amounts...")
@@ -506,7 +497,6 @@ def sell(
         instructions.extend([create_wsol_account_instruction, initialize_wsol_account_instruction])
         instructions.append(swap_instruction)
         instructions.append(close_wsol_account_instruction)
-
 
         # Send transaction
         logger.info("Compiling transaction message...")
