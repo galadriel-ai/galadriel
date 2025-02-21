@@ -1,5 +1,4 @@
 import json
-import json
 import os
 from typing import List
 
@@ -70,7 +69,7 @@ class GetCoinPriceTool(CoingeckoTool):
         """Fetch current price and market data for a cryptocurrency.
 
         Args:
-            token_names (str): The list of full name of the cryptocurrency (e.g., 'bitcoin')
+            token_names (List[str]): The list of full name of the cryptocurrency (e.g., 'bitcoin')
             currencies (List[str]): The list of currencies to convert the price to. The list of supported currencies is [here](https://docs.coingecko.com/v3.0.1/reference/simple-supported-currencies
 
         Returns:
