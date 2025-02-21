@@ -29,7 +29,7 @@ logger = get_agent_logger()
 class SwapTokenTool(SolanaBaseTool):
     """Tool for swapping tokens using Raydium."""
 
-    name = "swap_token"
+    name = "raydium_swap_token"
     description = "Swap tokens using Raydium"
     inputs = {
         "pair_address": {"type": "string", "description": "The Raydium OpenBook pair address"},
@@ -66,7 +66,7 @@ class SwapTokenTool(SolanaBaseTool):
             Optional[str]: Transaction signature if successful, None otherwise
         """
         keypair = self.wallet.get_wallet()
-        if token_in == WSOL:
+        if token_in == str(WSOL):
             # Buy token with SOL using OpenBook
             logger.info(f"Buying {token_out} with SOL using OpenBook")
             res = openbook_buy(
@@ -98,7 +98,7 @@ class SwapTokenTool(SolanaBaseTool):
                     logger.error(f"Failed to buy {token_out} with SOL using CPMM")
                     return None
 
-        elif token_out == WSOL:
+        elif token_out == str(WSOL):
             res = openbook_sell(
                 client=self.client,
                 network=self.network,
@@ -139,7 +139,7 @@ if __name__ == "__main__":
     res = swap_tool.forward(
         "J3b6dvheS2Y1cbMtVz5TCWXNegSjJDbUKxdUVDPoqmS7",
         "61V8vBaqAGMpgDQi4JcAwo1dmBGHsyhzodcPqnEVpump",
-        WSOL,
+        "So11111111111111111111111111111111111111112",
         0.0001,
-        10,  # type: ignore
+        10,
     )

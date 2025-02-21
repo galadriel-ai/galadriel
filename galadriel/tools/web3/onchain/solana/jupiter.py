@@ -43,8 +43,8 @@ class SwapTokenTool(SolanaBaseTool):
         output_type (str): Type of data returned by the tool
     """
 
-    name = "swap_token"
-    description = "Swaps one token for another in the user's portfolio."
+    name = "jupiter_swap_token"
+    description = "Swaps one token for another on Jupiter Swap."
     inputs = {
         "token1": {"type": "string", "description": "The address of the token to sell"},
         "token2": {"type": "string", "description": "The address of the token to buy"},
