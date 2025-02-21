@@ -118,6 +118,7 @@ class CodeAgent(Agent, InternalCodeAgent):
         """
         InternalCodeAgent.__init__(self, **kwargs)
         self.prompt_template = prompt_template or DEFAULT_PROMPT_TEMPLATE
+        format_prompt.validate_prompt_template(self.prompt_template)
         self.flush_memory = flush_memory
 
     async def execute(self, request: Message) -> Message:
@@ -168,6 +169,7 @@ class ToolCallingAgent(Agent, InternalToolCallingAgent):
         """
         InternalToolCallingAgent.__init__(self, **kwargs)
         self.prompt_template = prompt_template or DEFAULT_PROMPT_TEMPLATE
+        format_prompt.validate_prompt_template(self.prompt_template)
         self.flush_memory = flush_memory
 
     async def execute(self, request: Message) -> Message:
