@@ -1,5 +1,6 @@
 import json
 from pathlib import Path
+from typing import Optional
 
 from rich.text import Text
 
@@ -22,6 +23,9 @@ DISCORD_SYSTEM_PROMPT = """
 # Task: You received a new message on discord from {{user_name}}. You must reply in the voice and style of {{agent_name}}, here's the message:
 {{message}}
 
+# Chat History:
+{{chat_history}}
+
 Be very brief, and concise, add a statement in your voice.
 Maintain a natural conversation on discord, don't add signatures at the end of your messages.
 Don't overuse emojis.
@@ -40,13 +44,15 @@ class CharacterAgent(ToolCallingAgent):
             self.logger.log(Text(f"Error validating character file: {e}"), level=LogLevel.ERROR)
             raise e
 
-    async def execute(self, message: Message) -> Message:
+    async def execute(self, message: Message, memory: Optional[str] = None) -> Message:
         try:
             # Load the agent template on every execution to ensure randomness
             character_prompt = load_agent_template(DISCORD_SYSTEM_PROMPT, Path(self.character_json_path))
             task_message = character_prompt.replace("{{message}}", message.content).replace(
                 "{{user_name}}", message.additional_kwargs["author"]
             )
+            if memory:
+                task_message = task_message.replace("{{chat_history}}", memory)
             # Use parent's run method to process the message content
             response = super().run(
                 task=task_message,
