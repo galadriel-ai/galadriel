@@ -111,5 +111,5 @@ async def test_payment_validation_failure():
     request = Message(content="test with invalid payment")
     await runtime._run_request(request)
 
-    assert output_client.output_responses[0].content == "Invalid payment"
+    assert output_client.output_responses == []
     assert len(user_agent.called_messages) == 0

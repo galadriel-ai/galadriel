@@ -259,20 +259,18 @@ class AgentRuntime:
         Args:
             request (Message): The request to process
         """
-        response = None
+        task_and_payment, response = None, None
         # Handle payment validation
         if self.solana_payment_validator.pricing:
             try:
                 task_and_payment = await self.solana_payment_validator.execute(request)
                 request.content = task_and_payment.task
-            except PaymentValidationError as e:
+            except PaymentValidationError:
                 logger.error("Payment validation error", exc_info=True)
-                response = Message(content=str(e))
-            except Exception as e:
+            except Exception:
                 logger.error("Unexpected error during payment validation", exc_info=True)
-                response = Message(content=f"Payment validation failed due to an unexpected error: {str(e)}")
-        # Run the agent if payment validation passed
-        if not response:
+        # Run the agent if payment validation passed or not required
+        if task_and_payment or not self.solana_payment_validator.pricing:
             try:
                 response = await self.agent.execute(request)
                 if self.debug and self.enable_logs:
