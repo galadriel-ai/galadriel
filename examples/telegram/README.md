@@ -22,10 +22,12 @@ This example demonstrates several key features of the Galadriel framework:
 
 ## Setup and Running
 
-1. Install dependencies:
+1. Setup local env and install `galadriel`.
 
-```bash
-pip install -r requirements.txt
+```shell
+python3 -m venv venv
+source venv/bin/activate
+pip install galadriel
 ```
 
 2. Create a `.env` file with the following variables:

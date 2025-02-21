@@ -4,10 +4,9 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-from galadriel import AgentRuntime, CodeAgent
+from galadriel import AgentRuntime, LiteLLMModel, CodeAgent
 from galadriel.clients import SimpleMessageClient
-from galadriel.core_agent import LiteLLMModel, DuckDuckGoSearchTool
-
+from galadriel.tools import DuckDuckGoSearchTool
 
 load_dotenv(dotenv_path=Path(".") / ".env", override=True)
 model = LiteLLMModel(model_id="gpt-4o", api_key=os.getenv("OPENAI_API_KEY"))

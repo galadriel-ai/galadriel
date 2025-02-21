@@ -20,7 +20,7 @@ import json
 import os
 from typing import Dict, Optional
 
-from galadriel.core_agent import Tool
+from galadriel.tools import Tool
 from galadriel.connectors.twitter import TwitterApiClient, TwitterCredentials
 from galadriel.logging_utils import get_agent_logger
 
