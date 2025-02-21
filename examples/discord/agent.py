@@ -32,14 +32,13 @@ elon_musk_agent = CharacterAgent(
     tools=[get_time],
     model=model,
 )
-memory_repository = MemoryRepository(api_key=os.getenv("OPENAI_API_KEY"),
-                                     agent_name="elon_musk_agent")
+
 # Set up the runtime
 runtime = AgentRuntime(
     inputs=[discord_client],
     outputs=[discord_client],
     agent=elon_musk_agent,
-    memory_repository=memory_repository,
+    memory_repository=MemoryRepository(api_key=os.getenv("OPENAI_API_KEY"), agent_name="elon_musk_agent"),
 )
 
 # Run the agent

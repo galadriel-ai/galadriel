@@ -116,14 +116,12 @@ manager_agent = CodeAgent(
 
 gradio_client = GradioClient()
 
-memory_repository = MemoryRepository(api_key=os.getenv("OPENAI_API_KEY"),
-                                     agent_name="open_deep_research_agent")
 # Set up the runtime
 runtime = AgentRuntime(
     inputs=[gradio_client],
     outputs=[gradio_client],
     agent=manager_agent,
-    memory_repository=memory_repository,
+    memory_repository=MemoryRepository(api_key=os.getenv("OPENAI_API_KEY"), agent_name="open_deep_research_agent"),
 )
 
 # Run the agent

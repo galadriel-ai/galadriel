@@ -5,7 +5,6 @@ from pathlib import Path
 from typing import Dict, List
 from typing import Optional
 
-from pprint import pformat
 
 from dotenv import load_dotenv as _load_dotenv
 
@@ -125,15 +124,14 @@ class CodeAgent(Agent, InternalCodeAgent):
         """
         InternalCodeAgent.__init__(self, **kwargs)
         self.chat_memory = chat_memory
-        self.prompt_template = prompt_template or DEFAULT_PROMPT_TEMPLATE_WITH_CHAT_MEMORY if chat_memory else DEFAULT_PROMPT_TEMPLATE
+        self.prompt_template = (
+            prompt_template or DEFAULT_PROMPT_TEMPLATE_WITH_CHAT_MEMORY if chat_memory else DEFAULT_PROMPT_TEMPLATE
+        )
         format_prompt.validate_prompt_template(self.prompt_template)
 
     async def execute(self, request: Message, memory: Optional[str] = None) -> Message:
         request_dict = {"request": request.content, "chat_history": memory}
-        answer = InternalCodeAgent.run(
-            self,
-            task=format_prompt.execute(self.prompt_template, request_dict)
-        )
+        answer = InternalCodeAgent.run(self, task=format_prompt.execute(self.prompt_template, request_dict))
         return Message(
             content=str(answer),
             conversation_id=request.conversation_id,
@@ -175,15 +173,14 @@ class ToolCallingAgent(Agent, InternalToolCallingAgent):
         """
         InternalToolCallingAgent.__init__(self, **kwargs)
         self.chat_memory = chat_memory
-        self.prompt_template = prompt_template or DEFAULT_PROMPT_TEMPLATE_WITH_CHAT_MEMORY if chat_memory else DEFAULT_PROMPT_TEMPLATE
+        self.prompt_template = (
+            prompt_template or DEFAULT_PROMPT_TEMPLATE_WITH_CHAT_MEMORY if chat_memory else DEFAULT_PROMPT_TEMPLATE
+        )
         format_prompt.validate_prompt_template(self.prompt_template)
 
     async def execute(self, request: Message, memory: Optional[str] = None) -> Message:
         request_dict = {"request": request.content, "chat_history": memory}
-        answer = InternalToolCallingAgent.run(
-            self,
-            task=format_prompt.execute(self.prompt_template, request_dict)
-        )
+        answer = InternalToolCallingAgent.run(self, task=format_prompt.execute(self.prompt_template, request_dict))
         return Message(
             content=str(answer),
             conversation_id=request.conversation_id,
@@ -273,15 +270,19 @@ class AgentRuntime:
             # Run the agent if no errors occurred so far
             memories = None
             if self.memory_repository:
-                memories = await self.memory_repository.get_memories(prompt=request.content)
+                try:
+                    memories = await self.memory_repository.get_memories(prompt=request.content)
+                except Exception as e:
+                    logger.error(f"Error getting memories: {e}")
             response = await self.agent.execute(request, memories)
-            if self.debug and memories:
-                logger.info(f"Current agent memory: {pformat(memories)}")
         if response:
             # proof = await self._generate_proof(request, response)
             # await self._publish_proof(request, response, proof)
             if self.memory_repository:
-                await self.memory_repository.add_memory(request=request, response=response)
+                try:
+                    await self.memory_repository.add_memory(request=request, response=response)
+                except Exception as e:
+                    logger.error(f"Error adding memory: {e}")
             for output in self.outputs:
                 await output.send(request, response)
 
@@ -293,13 +294,15 @@ class AgentRuntime:
         """
         return self.agent.write_memory_to_messages(summary_mode=True)  # type: ignore
 
-    async def _save_chat_memories(self, file_name: str) -> str:
+    async def _save_chat_memories(self, file_name: str) -> None:
         """Save the current state of the agent's chat memories.
 
         Returns:
             str: The agent's chat memories
         """
-        return self.memory_repository.save_data_locally(file_name)
+        if self.memory_repository:
+            return self.memory_repository.save_data_locally(file_name)
+        return None
 
     async def _generate_proof(self, request: Message, response: Message) -> str:
         return generate_proof.execute(request, response)

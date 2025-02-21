@@ -24,15 +24,12 @@ manager_agent = CodeAgent(tools=[], model=model, managed_agents=[managed_web_age
 # Add basic client which sends two messages to the agent and prints agent's result
 client = SimpleMessageClient("What's the most recent of Daige on X (twitter)?")
 
-memory_repository = MemoryRepository(api_key=os.getenv("OPENAI_API_KEY"),
-                                     agent_name="multi_agent")
-
 # Set up the runtime
 runtime = AgentRuntime(
     agent=manager_agent,
     inputs=[client],
     outputs=[client],
-    memory_repository=memory_repository,
+    memory_repository=MemoryRepository(api_key=os.getenv("OPENAI_API_KEY"), agent_name="multi_agent"),
 )
 
 # Run the agent
