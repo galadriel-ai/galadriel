@@ -8,10 +8,7 @@ def test_none():
 
 
 def test_empty():
-    result = generate_proof.execute(
-        Message(id="test-id-1", content=""),
-        Message(id="test-id-2", content="")
-    )
+    result = generate_proof.execute(Message(id="test-id-1", content=""), Message(id="test-id-2", content=""))
     assert result == "f62856b4343d1e85f557c6843bbdd41b6d83e477862933373c04bd0aa12953c4"
 
 
