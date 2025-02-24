@@ -1,8 +1,10 @@
+import hashlib
 import json
 import os
 import re
 import subprocess
 from pathlib import Path
+from typing import List
 from typing import Optional
 from typing import Tuple
 
@@ -40,12 +42,12 @@ def galadriel():
     pass
 
 
-@galadriel.group()
-def agent():
-    """Agent management commands"""
+# @galadriel.group()
+# def agent():
+#     """Agent management commands"""
 
 
-@agent.command()
+# @agent.command()
 def init() -> None:
     """Create a new Agent folder template in the current directory."""
     agent_name = ""
@@ -69,7 +71,7 @@ def init() -> None:
         click.echo(f"Error creating agent template: {str(e)}", err=True)
 
 
-@agent.command()
+# @agent.command()
 @click.option("--image-name", default="agent", help="Name of the Docker image")
 def build(image_name: str) -> None:
     """Build the agent Docker image."""
@@ -82,7 +84,7 @@ def build(image_name: str) -> None:
         raise click.ClickException(str(e))
 
 
-@agent.command()
+# @agent.command()
 @click.option("--image-name", default="agent", help="Name of the Docker image")
 def publish(image_name: str) -> None:
     """Publish the agent Docker image to the Docker Hub."""
@@ -99,7 +101,7 @@ def publish(image_name: str) -> None:
         raise click.ClickException(str(e))
 
 
-@agent.command()
+# @agent.command()
 @click.option("--image-name", default="agent", help="Name of the Docker image")
 def deploy(image_name: str) -> None:
     """Build, publish and deploy the agent."""
@@ -125,7 +127,7 @@ def deploy(image_name: str) -> None:
         raise click.ClickException(str(e))
 
 
-@agent.command()
+# @agent.command()
 @click.option("--agent-id", help="ID of the agent to update")
 @click.option("--image-name", default="agent", help="Name of the Docker image")
 def update(agent_id: str, image_name: str):
@@ -142,7 +144,7 @@ def update(agent_id: str, image_name: str):
         raise click.ClickException(str(e))
 
 
-@agent.command()
+# @agent.command()
 @click.option("--agent-id", help="ID of the agent to get state for")
 def state(agent_id: str):
     """Get information about a deployed agent from Galadriel platform."""
@@ -168,7 +170,7 @@ def state(agent_id: str):
         click.echo(f"Failed to get agent state: {str(e)}")
 
 
-@agent.command()
+# @agent.command()
 def states():
     """Get all agent states"""
     try:
@@ -193,7 +195,7 @@ def states():
         click.echo(f"Failed to get agent state: {str(e)}")
 
 
-@agent.command()
+# @agent.command()
 @click.argument("agent_id")
 def destroy(agent_id: str):
     """Destroy a deployed agent from Galadriel platform."""
@@ -423,6 +425,69 @@ def _build_image(docker_username: str) -> None:
     click.echo("Successfully built Docker image!")
 
 
+def _get_image_layer_hashes(image_name: str) -> List[str]:
+    """Get the layer hashes of the Docker image and parse its output as JSON."""
+    try:
+        result = subprocess.run(
+            ["docker", "inspect", image_name],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+    except subprocess.CalledProcessError as exc:
+        click.echo(f"Failed to run docker inspect: {exc}", err=True)
+        return []
+
+    try:
+        inspect_data = json.loads(result.stdout)
+    except json.JSONDecodeError as exc:
+        click.echo(f"Failed to parse docker inspect output as JSON: {exc}", err=True)
+        raise exc
+
+    # Ensure that inspect_data is a list.
+    if not isinstance(inspect_data, list):
+        error_msg = f"Unexpected docker inspect output format: expected a list, got {type(inspect_data)}"
+        click.echo(error_msg, err=True)
+        raise ValueError(error_msg)
+
+    # Check if the list is empty to avoid IndexError.
+    if not inspect_data:
+        click.echo("docker inspect returned an empty list for the image.", err=True)
+        return []
+
+    rootfs = inspect_data[0].get("RootFS", {})
+    layers = rootfs.get("Layers")
+    if not layers:
+        click.echo("No layer hashes found in the Docker image.", err=True)
+        return []
+    return layers
+
+
+def _get_image_hash(image_name: str) -> str:
+    """Get a combined hash of all the Docker image layers.
+
+    This function first retrieves all the layer hashes using `_get_image_layer_hashes()`.
+    It then concatenates them (preserving the order) and computes a SHA-256 hash
+    over the resulting string.
+
+    Args:
+        image_name: The name of the Docker image to get the hash for.
+
+    Returns:
+        A string containing the combined SHA-256 hash.
+    """
+    layers = _get_image_layer_hashes(image_name)
+    if not layers:
+        raise click.ClickException("No layer hashes found for the Docker image.")
+
+    # Concatenate all layer hashes into one single string.
+    combined_str = "".join(layers)
+
+    # Compute SHA-256 hash of the concatenated string.
+    combined_hash = hashlib.sha256(combined_str.encode("utf-8")).hexdigest()
+    return combined_hash
+
+
 def _publish_image(image_name: str, docker_username: str, docker_password: str) -> None:
     """Core logic to publish the Docker image to the Docker Hub."""
 
@@ -476,9 +541,13 @@ def _galadriel_deploy(image_name: str, docker_username: str) -> Optional[str]:
     if not api_key:
         raise click.ClickException("GALADRIEL_API_KEY not found in environment")
 
+    docker_image = f"{docker_username}/{image_name}:latest"
+    image_hash = _get_image_hash(docker_image)
+
     payload = {
         "name": image_name,
-        "docker_image": f"{docker_username}/{image_name}:latest",
+        "docker_image": docker_image,
+        "docker_image_hash": image_hash,
         "env_vars": env_vars,
     }
     headers = {
@@ -521,9 +590,13 @@ def _galadriel_update(image_name: str, docker_username: str, agent_id: str) -> b
     if not api_key:
         raise click.ClickException("GALADRIEL_API_KEY not found in environment")
 
+    docker_image = f"{docker_username}/{image_name}:latest"
+    image_hash = _get_image_hash(docker_image)
+
     payload = {
         "name": image_name,
-        "docker_image": f"{docker_username}/{image_name}:latest",
+        "docker_image": docker_image,
+        "docker_image_hash": image_hash,
         "env_vars": env_vars,
     }
     headers = {

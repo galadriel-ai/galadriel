@@ -16,7 +16,6 @@ Key Features:
 import base64
 from dataclasses import dataclass
 from enum import Enum
-import logging
 import os
 import struct
 from typing import Optional
@@ -33,7 +32,6 @@ from solders.system_program import (  # type: ignore # pylint: disable=E0401
     create_account_with_seed,
 )
 from solders.transaction import VersionedTransaction  # type: ignore # pylint: disable=E0401
-from solders.account_decoder import ParsedAccount  # type: ignore # pylint: disable=E0401
 from spl.token.client import Token
 from spl.token.instructions import (
     CloseAccountParams,
@@ -58,24 +56,31 @@ from construct import (
 )
 
 
-from galadriel.tools.web3.wallet_tool import WalletTool
-from galadriel.tools.web3.raydium_openbook import confirm_txn, get_token_balance
+from galadriel.logging_utils import get_agent_logger, init_logging
+from galadriel.tools.web3.onchain.solana.base_tool import SolanaBaseTool
+from galadriel.tools.web3.onchain.solana.raydium_openbook import confirm_txn, get_token_balance
+from galadriel.wallets.solana_wallet import SolanaWallet
 
-logger = logging.getLogger(__name__)
+logger = get_agent_logger()
 
 UNIT_BUDGET = 150_000
 UNIT_PRICE = 1_000_000
 
-# Raydium AMM V4 devnet addresses
-RAYDIUM_CREATE_CPMM_POOL_PROGRAM = Pubkey.from_string("CPMDWBwJDtYax9qW7AyRuVC19Cc4L4Vcy4n2BHAbHkCW")
-CREATE_CPMM_POOL_AUTHORITY = Pubkey.from_string("7rQ1QFNosMkUCuh7Z7fPbTHvh73b68sQYdirycEzJVuw")
+# Raydium CPMM program addresses
+# https://docs.raydium.io/raydium/protocol/developers/addresses
+# https://github.com/raydium-io/raydium-sdk-V2/blob/master/src/common/programId.ts
+if os.getenv("SOLANA_NETWORK") == "devnet":
+    RAYDIUM_CREATE_CPMM_POOL_PROGRAM = Pubkey.from_string("CPMDWBwJDtYax9qW7AyRuVC19Cc4L4Vcy4n2BHAbHkCW")
+    CREATE_CPMM_POOL_AUTHORITY = Pubkey.from_string("7rQ1QFNosMkUCuh7Z7fPbTHvh73b68sQYdirycEzJVuw")
+else:
+    RAYDIUM_CREATE_CPMM_POOL_PROGRAM = Pubkey.from_string("CPMMoo8L3F4NbTegBCKVNunggL7H1ZpdTHKxQB5qKP1C")
+    CREATE_CPMM_POOL_AUTHORITY = Pubkey.from_string("GpMZbSM2GgvTKHJirzeGfMFoaZ8UR2X7F4v8vHTvxFbL")
+
 
 TOKEN_PROGRAM_ID = Pubkey.from_string("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA")
 ACCOUNT_LAYOUT_LEN = 165
 WSOL = Pubkey.from_string("So11111111111111111111111111111111111111112")
 SOL_DECIMAL = 1e9
-
-client = Client("https://api.devnet.solana.com")  # type: ignore
 
 
 @dataclass
@@ -218,11 +223,11 @@ OBSERVATION_STATE = Struct(
 )
 
 
-class BuyTokenWithSolTool(WalletTool):
-    """Tool for buying tokens with SOL using Raydium CPMM.
+class BuyTokenWithSolTool(SolanaBaseTool):
+    """Tool for buying tokens using SOL on Raydium CPMM.
 
-    Enables swapping SOL for any token available in Raydium CPMM pools.
-    Handles WSOL wrapping/unwrapping automatically.
+    Enables users to swap SOL for any token available on Raydium CPMM.
+    Handles account creation, token swaps, and cleanup of temporary accounts.
 
     Attributes:
         name (str): Tool identifier
@@ -253,24 +258,16 @@ class BuyTokenWithSolTool(WalletTool):
     }
     output_type = "string"
 
-    # pylint:disable=W0221
+    def __init__(self, wallet: SolanaWallet, *args, **kwargs):
+        super().__init__(wallet, *args, **kwargs)
+
     def forward(self, pair_address: str, sol_in: float = 0.01, slippage: int = 5) -> str:
-        """Execute a SOL to token swap.
-
-        Args:
-            pair_address (str): The Raydium CPMM pair address
-            sol_in (float, optional): Amount of SOL to swap. Defaults to 0.01
-            slippage (int, optional): Slippage tolerance percentage. Defaults to 5
-
-        Returns:
-            str: Transaction result message
-        """
-        payer_keypair = self.wallet_repository.get_wallet()
-        result = buy(payer_keypair, pair_address, sol_in, slippage)
-        return "Transaction successful" if result else "Transaction failed"
+        payer_keypair = self.wallet.get_wallet()
+        result = buy(self.client, payer_keypair, pair_address, sol_in, slippage)
+        return result  # type: ignore
 
 
-class SellTokenForSolTool(WalletTool):
+class SellTokenForSolTool(SolanaBaseTool):
     """Tool for selling tokens for SOL using Raydium CPMM.
 
     Enables swapping any token for SOL using Raydium CPMM pools.
@@ -294,40 +291,41 @@ class SellTokenForSolTool(WalletTool):
             "type": "integer",
             "description": "The percentage of token to sell",
             "default": 100,
+            "nullable": True,
         },
         "slippage": {
             "type": "integer",
             "description": "The slippage tolerance percentage",
             "default": 5,
+            "nullable": True,
         },
     }
     output_type = "string"
 
-    # pylint:disable=W0221
+    def __init__(self, wallet: SolanaWallet, *args, **kwargs):
+        super().__init__(wallet, *args, **kwargs)
+
     def forward(self, pair_address: str, percentage: int = 100, slippage: int = 5) -> str:
-        """Execute a token to SOL swap.
-
-        Args:
-            pair_address (str): The Raydium CPMM pair address
-            percentage (int, optional): Percentage of token to sell. Defaults to 100
-            slippage (int, optional): Slippage tolerance percentage. Defaults to 5
-
-        Returns:
-            str: Transaction result message
-        """
-        payer_keypair = self.wallet_repository.get_wallet()
-        result = sell(payer_keypair, pair_address, percentage, slippage)
-        return "Transaction successful" if result else "Transaction failed"
+        payer_keypair = self.wallet.get_wallet()
+        result = sell(self.client, payer_keypair, pair_address, percentage, slippage)
+        return result  # type: ignore
 
 
 # pylint:disable=R0914, R0915
-def buy(payer_keypair: Keypair, pair_address: str, sol_in: float = 0.1, slippage: int = 1) -> bool:
+def buy(
+    client: Client,
+    payer_keypair: Keypair,
+    pair_address: str,
+    sol_in: float = 0.1,
+    slippage: int = 1,
+) -> Optional[str]:
     """Buy tokens with SOL using Raydium CPMM.
 
     Creates necessary token accounts, executes the swap, and handles cleanup
     of temporary accounts.
 
     Args:
+        client (Client): The Solana RPC client
         payer_keypair (Keypair): The transaction signer's keypair
         pair_address (str): The Raydium CPMM pair address
         sol_in (float, optional): Amount of SOL to swap. Defaults to 0.1
@@ -345,11 +343,12 @@ def buy(payer_keypair: Keypair, pair_address: str, sol_in: float = 0.1, slippage
     logger.info(f"Starting buy transaction for pair address: {pair_address}")
 
     logger.info("Fetching pool keys...")
-    pool_keys: Optional[CpmmPoolKeys] = fetch_cpmm_pool_keys(pair_address)
+    pool_keys: Optional[CpmmPoolKeys] = fetch_cpmm_pool_keys(client, pair_address)
     if pool_keys is None:
         logger.error("No pool keys found...")
-        return False
-    logger.info("Pool keys fetched successfully.")
+        return None
+    logger.info(f"Pool keys fetched successfully. Pool keys: {pool_keys.token_0_mint}, {pool_keys.token_1_mint}")
+    logger.info(f"Pool token programs: {pool_keys.token_0_program}, {pool_keys.token_1_program}")
 
     if pool_keys.token_0_mint == WSOL:
         mint = pool_keys.token_1_mint
@@ -361,7 +360,7 @@ def buy(payer_keypair: Keypair, pair_address: str, sol_in: float = 0.1, slippage
     logger.info("Calculating transaction amounts...")
     amount_in = int(sol_in * SOL_DECIMAL)
 
-    base_reserve, quote_reserve, token_decimal = get_cpmm_reserves(pool_keys)
+    base_reserve, quote_reserve, token_decimal = get_cpmm_reserves(client, pool_keys)
     amount_out = sol_for_tokens(sol_in, base_reserve, quote_reserve)
     logger.info(f"Estimated Amount Out: {amount_out}")
 
@@ -455,24 +454,34 @@ def buy(payer_keypair: Keypair, pair_address: str, sol_in: float = 0.1, slippage
     logger.info("Sending transaction...")
     txn_sig = client.send_transaction(
         txn=VersionedTransaction(compiled_message, [payer_keypair]),
-        opts=TxOpts(skip_preflight=True),
+        opts=TxOpts(skip_preflight=False),
     ).value
     logger.info(f"Transaction Signature: {txn_sig}")
 
     logger.info("Confirming transaction...")
-    confirmed = confirm_txn(txn_sig)
+    confirmed = confirm_txn(client, txn_sig)
+    if not confirmed:
+        logger.error("Transaction failed.")
+        return None
 
-    logger.info(f"Transaction confirmed: {confirmed}")
-    return confirmed
+    logger.info(f"Transaction confirmed: {txn_sig}")
+    return str(txn_sig)
 
 
 # pylint:disable=R0914
-def sell(payer_keypair: Keypair, pair_address: str, percentage: int = 100, slippage: int = 1) -> bool:
+def sell(
+    client: Client,
+    payer_keypair: Keypair,
+    pair_address: str,
+    percentage: int = 100,
+    slippage: int = 1,
+) -> Optional[str]:
     """Sell tokens for SOL using Raydium CPMM.
 
     Swaps specified percentage of token balance for SOL with slippage protection.
 
     Args:
+        client (Client): The Solana RPC client
         payer_keypair (Keypair): The transaction signer's keypair
         pair_address (str): The Raydium CPMM pair address
         percentage (int, optional): Percentage of token balance to sell. Defaults to 100
@@ -488,10 +497,10 @@ def sell(payer_keypair: Keypair, pair_address: str, percentage: int = 100, slipp
     """
     try:
         logger.info("Fetching pool keys...")
-        pool_keys: Optional[CpmmPoolKeys] = fetch_cpmm_pool_keys(pair_address)
+        pool_keys: Optional[CpmmPoolKeys] = fetch_cpmm_pool_keys(client, pair_address)
         if pool_keys is None:
             logger.error("No pool keys found...")
-            return False
+            return None
         logger.info("Pool keys fetched successfully.")
 
         if pool_keys.token_0_mint == WSOL:
@@ -502,18 +511,18 @@ def sell(payer_keypair: Keypair, pair_address: str, percentage: int = 100, slipp
             token_program_id = pool_keys.token_0_program
 
         logger.info("Retrieving token balance...")
-        token_balance = get_token_balance(payer_keypair.pubkey(), str(mint))
+        token_balance = get_token_balance(client, payer_keypair.pubkey(), str(mint))
         logger.info(f"Token Balance: {token_balance}")
 
         if token_balance == 0 or token_balance is None:
             logger.error("No token balance available to sell.")
-            return False
+            return None
 
         token_balance = token_balance * (percentage / 100)
         logger.info(f"Selling {percentage}% of the token balance, adjusted balance: {token_balance}")
 
         logger.info("Calculating transaction amounts...")
-        base_reserve, quote_reserve, token_decimal = get_cpmm_reserves(pool_keys)
+        base_reserve, quote_reserve, token_decimal = get_cpmm_reserves(client, pool_keys)
         amount_out = tokens_for_sol(token_balance, base_reserve, quote_reserve)
         logger.info(f"Estimated Amount Out: {amount_out}")
 
@@ -609,21 +618,25 @@ def sell(payer_keypair: Keypair, pair_address: str, percentage: int = 100, slipp
         logger.info(f"Transaction Signature: {txn_sig}")
 
         logger.info("Confirming transaction...")
-        confirmed = confirm_txn(txn_sig)
+        confirmed = confirm_txn(client, txn_sig)
+        if not confirmed:
+            logger.error("Transaction failed.")
+            return None
 
-        logger.info(f"Transaction confirmed: {confirmed}")
-        return confirmed
+        logger.info(f"Transaction confirmed: {txn_sig}")
+        return str(txn_sig)
 
     except Exception as e:
         logger.error(f"Error occurred during transaction: {e}")
-        return False
+        return None
 
 
-def fetch_cpmm_pool_keys(pair_address: str) -> Optional[CpmmPoolKeys]:
-    """Fetch the pool keys for a given Raydium CPMM pair address.
+def fetch_cpmm_pool_keys(client: Client, pair_address: str) -> Optional[CpmmPoolKeys]:
+    """Fetch pool configuration for a Raydium CPMM pair.
 
     Args:
-        pair_address (str): The Raydium CPMM pair address
+        client (Client): The Solana RPC client
+        pair_address (str): The CPMM pool address
 
     Returns:
         Optional[CpmmPoolKeys]: The pool keys if found, None otherwise
@@ -635,9 +648,7 @@ def fetch_cpmm_pool_keys(pair_address: str) -> Optional[CpmmPoolKeys]:
             logger.error("Pool state account not found.")
             return None
         pool_state_data = pool_state_account.data
-        if isinstance(pool_state_data, ParsedAccount):
-            pool_state_data = bytes(pool_state_data)
-        parsed_data = CPMM_POOL_STATE_LAYOUT.parse(pool_state_data)
+        parsed_data = CPMM_POOL_STATE_LAYOUT.parse(bytes(pool_state_data))
 
         pool_keys = CpmmPoolKeys(
             pool_state=pool_state,
@@ -750,14 +761,15 @@ def make_cpmm_swap_instruction(
         raise e
 
 
-def get_cpmm_reserves(pool_keys: CpmmPoolKeys):
-    """Get the reserves for a given Raydium CPMM pool.
+def get_cpmm_reserves(client: Client, pool_keys: CpmmPoolKeys) -> tuple:
+    """Get current token reserves from CPMM pool.
 
     Args:
-        pool_keys (CpmmPoolKeys): The pool keys
+        client (Client): The Solana RPC client
+        pool_keys (CpmmPoolKeys): Pool configuration data
 
     Returns:
-        tuple: The base reserve, quote reserve, and token decimal
+        tuple: (base_reserve, quote_reserve, token_decimal) or (None, None, None) if error
     """
     quote_vault = pool_keys.token_0_vault
     quote_decimal = pool_keys.mint_0_decimals
@@ -839,5 +851,8 @@ def tokens_for_sol(token_amount, base_vault_balance, quote_vault_balance, swap_f
 # main function to run the code
 if __name__ == "__main__":
     # Example usage
-    buy_tool = BuyTokenWithSolTool()
-    buy_tool.forward("ftNSdLt7wuF9kKz6BxiUVWYWeRYGyt1RgL5sSjCVnJ2", 0.05, 5)
+    init_logging(False)
+    wallet = SolanaWallet(key_path="keys.json")
+    buy_tool = BuyTokenWithSolTool(wallet)
+    res = buy_tool.forward("Hga48QXtpCgLSTsfysDirPJzq8aoBPjvePUgmXhFGDro", 0.0001, 5)
+    print(res)

@@ -1,12 +1,11 @@
-from typing import Dict
+from typing import Dict, Optional
 from typing import List
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, AsyncMock
 
 import pytest
 
 from galadriel import AgentRuntime, Agent, AgentInput, AgentOutput
 from galadriel import agent
-from galadriel.domain import validate_solana_payment
 from galadriel.entities import Message, PushOnlyQueue, Pricing
 from galadriel.errors import PaymentValidationError
 
@@ -18,7 +17,7 @@ class MockAgent(Agent):
     def __init__(self):
         self.called_messages: List[Message] = []
 
-    async def execute(self, request: Message) -> Message:
+    async def execute(self, request: Message, memory: Optional[str] = None) -> Message:
         self.called_messages.append(request)
         return RESPONSE_MESSAGE
 
@@ -58,7 +57,7 @@ async def test_publishes_proof():
         content="hello",
         conversation_id=CONVERSATION_ID,
     )
-    await runtime.run_request(request)
+    await runtime._run_request(request)
     agent.publish_proof.execute.assert_called_with(request, RESPONSE_MESSAGE, "mock_proof")
 
 
@@ -75,33 +74,31 @@ async def test_post_output_to_client():
         content="hello",
         conversation_id=CONVERSATION_ID,
     )
-    await runtime.run_request(request)
+    await runtime._run_request(request)
     assert output_client.output_requests[0] == request
     assert output_client.output_responses[0] == RESPONSE_MESSAGE
     # assert output_client.output_proofs[0] == "mock_proof"
 
 
-async def test_payment_validation(monkeypatch):
+async def test_payment_validation():
     """Test payment validation flow."""
     user_agent = MockAgent()
     pricing = Pricing(cost=0.1, wallet_address="HN7cABqLq46Es1jh92dQQisAq662SmxELLLsHHe4YWrH")
     runtime = AgentRuntime(inputs=[], outputs=[], agent=user_agent, pricing=pricing)
 
     # Mock successful payment validation
-    monkeypatch.setattr(
-        validate_solana_payment,
-        "execute",
-        MagicMock(return_value=MagicMock(task="validated task", signature="sig123")),
+    runtime.solana_payment_validator.execute = AsyncMock(
+        return_value=AsyncMock(task="validated task", signature="sig123")
     )
 
     request = Message(content="test with payment sig123")
-    await runtime.run_request(request)
+    await runtime._run_request(request)
 
     assert len(user_agent.called_messages) == 1
     assert user_agent.called_messages[0].content == "validated task"
 
 
-async def test_payment_validation_failure(monkeypatch):
+async def test_payment_validation_failure():
     """Test payment validation failure."""
     user_agent = MockAgent()
     output_client = MockAgentOutput()
@@ -109,13 +106,10 @@ async def test_payment_validation_failure(monkeypatch):
     runtime = AgentRuntime(inputs=[], outputs=[output_client], agent=user_agent, pricing=pricing)
 
     # Mock failed payment validation
-    monkeypatch.setattr(
-        "galadriel.domain.validate_solana_payment.execute",
-        MagicMock(side_effect=PaymentValidationError("Invalid payment")),
-    )
+    runtime.solana_payment_validator.execute = AsyncMock(side_effect=PaymentValidationError("Invalid payment"))
 
     request = Message(content="test with invalid payment")
-    await runtime.run_request(request)
+    await runtime._run_request(request)
 
     assert output_client.output_responses[0].content == "Invalid payment"
     assert len(user_agent.called_messages) == 0

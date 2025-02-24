@@ -4,10 +4,10 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-from galadriel import AgentRuntime, CodeAgent
+from galadriel import AgentRuntime, CodeAgent, LiteLLMModel
 from galadriel.clients import SimpleMessageClient
-from galadriel.core_agent import LiteLLMModel, DuckDuckGoSearchTool
-from galadriel.tools.web3 import dexscreener
+from galadriel.tools import DuckDuckGoSearchTool
+from galadriel.tools.web3.market_data import dexscreener
 
 load_dotenv(dotenv_path=Path(".") / ".env", override=True)
 model = LiteLLMModel(model_id="gpt-4o", api_key=os.getenv("OPENAI_API_KEY"))
@@ -15,7 +15,7 @@ model = LiteLLMModel(model_id="gpt-4o", api_key=os.getenv("OPENAI_API_KEY"))
 # Add agent with GPT-4o model and access to web search and market data
 agent = CodeAgent(
     model=model,
-    tools=[DuckDuckGoSearchTool(), dexscreener.fetch_market_data],
+    tools=[DuckDuckGoSearchTool(), dexscreener.GetTokenDataTool()],
     additional_authorized_imports=["json"],
 )
 

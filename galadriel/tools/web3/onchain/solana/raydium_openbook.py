@@ -57,7 +57,8 @@ from construct import (
 )
 from construct import Struct as cStruct
 
-from galadriel.tools.web3.wallet_tool import WalletTool
+from galadriel.tools.web3.onchain.solana.base_tool import SolanaBaseTool
+from galadriel.wallets.solana_wallet import SolanaWallet
 
 
 logger = logging.getLogger(__name__)
@@ -65,18 +66,26 @@ logger = logging.getLogger(__name__)
 UNIT_BUDGET = 150_000
 UNIT_PRICE = 1_000_000
 
-# Raydium AMM V4 devnet addresses
-RAYDIUM_AMM_V4 = Pubkey.from_string("HWy1jotHpo6UqeQxx49dpYYdQB8wj9Qk9MdxwjLvDHB8")
-OPENBOOK_MARKET = Pubkey.from_string("EoTcMgcDRTJVZDMZWBoU6rhYHZfkNTVEAfz3uUJRcYGj")
-RAYDIUM_AUTHORITY = Pubkey.from_string("DbQqP6ehDYmeYjcBaMRuA8tAJY1EjDUz9DpwSLjaQqfC")
-FEE_DESTINATION_ID = Pubkey.from_string("3XMrhbv989VxAMi3DErLV9eJht1pHppW5LbKxe9fkEFR")
+# Raydium AMM V4 program addresses
+# https://docs.raydium.io/raydium/protocol/developers/addresses
+# https://github.com/raydium-io/raydium-sdk-V2/blob/master/src/common/programId.ts
+if os.getenv("NETWORK") == "devnet":
+    RAYDIUM_AMM_V4 = Pubkey.from_string("HWy1jotHpo6UqeQxx49dpYYdQB8wj9Qk9MdxwjLvDHB8")
+    OPENBOOK_MARKET = Pubkey.from_string("EoTcMgcDRTJVZDMZWBoU6rhYHZfkNTVEAfz3uUJRcYGj")
+    RAYDIUM_AUTHORITY = Pubkey.from_string("DbQqP6ehDYmeYjcBaMRuA8tAJY1EjDUz9DpwSLjaQqfC")
+    FEE_DESTINATION_ID = Pubkey.from_string("3XMrhbv989VxAMi3DErLV9eJht1pHppW5LbKxe9fkEFR")
+else:
+    RAYDIUM_AMM_V4 = Pubkey.from_string("675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8")
+    OPENBOOK_MARKET = Pubkey.from_string("srmqPvymJeFKQ4zGQed1GFppgkRHL9kaELCbyksJtPX")
+    RAYDIUM_AUTHORITY = Pubkey.from_string("5Q544fKrFoe6tsEbD7S8EmxGTJYAKtTVhAW5Q5pge4j1")
+    FEE_DESTINATION_ID = Pubkey.from_string("7YttLkHDoNj9wyDur5pM1ejNaAvT9X4eqaYcHQqtj2G5")
+
 
 TOKEN_PROGRAM_ID = Pubkey.from_string("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA")
 ACCOUNT_LAYOUT_LEN = 165
 WSOL = Pubkey.from_string("So11111111111111111111111111111111111111112")
 SOL_DECIMAL = 1e9
 
-client = Client("https://api.devnet.solana.com")  # type: ignore
 
 LIQUIDITY_STATE_LAYOUT_V4 = cStruct(
     "status" / Int64ul,
@@ -221,7 +230,7 @@ class AmmV4PoolKeys:
     token_program_id: Pubkey
 
 
-class BuyTokenWithSolTool(WalletTool):
+class BuyTokenWithSolTool(SolanaBaseTool):
     """Tool for buying tokens using SOL on Raydium AMM V4.
 
     Enables users to swap SOL for any token available on Raydium AMM V4.
@@ -256,6 +265,9 @@ class BuyTokenWithSolTool(WalletTool):
     }
     output_type = "string"
 
+    def __init__(self, wallet: SolanaWallet, *args, **kwargs):
+        super().__init__(wallet, *args, **kwargs)
+
     def forward(self, pair_address: str, sol_in: float = 0.01, slippage: int = 5) -> str:  # pylint: disable=W0221
         """Execute a SOL to token swap transaction.
 
@@ -267,12 +279,12 @@ class BuyTokenWithSolTool(WalletTool):
         Returns:
             str: Transaction result message with signature
         """
-        payer_keypair = self.wallet_repository.get_wallet()
-        result = buy(payer_keypair, pair_address, sol_in, slippage)
+        payer_keypair = self.wallet.get_wallet()
+        result = buy(self.client, payer_keypair, pair_address, sol_in, slippage)
         return result
 
 
-class SellTokenForSolTool(WalletTool):
+class SellTokenForSolTool(SolanaBaseTool):
     """Tool for selling tokens for SOL on Raydium AMM V4.
 
     Enables users to swap any token for SOL using Raydium AMM V4.
@@ -296,14 +308,19 @@ class SellTokenForSolTool(WalletTool):
             "type": "integer",
             "description": "The percentage of token to sell",
             "default": 100,
+            "nullable": True,
         },
         "slippage": {
             "type": "integer",
             "description": "The slippage tolerance percentage",
             "default": 5,
+            "nullable": True,
         },
     }
     output_type = "string"
+
+    def __init__(self, wallet: SolanaWallet, *args, **kwargs):
+        super().__init__(wallet, *args, **kwargs)
 
     def forward(self, pair_address: str, percentage: int = 100, slippage: int = 5) -> str:  # pylint: disable=W0221
         """Execute a token to SOL swap transaction.
@@ -316,19 +333,26 @@ class SellTokenForSolTool(WalletTool):
         Returns:
             str: Transaction result message with signature
         """
-        payer_keypair = self.wallet_repository.get_wallet()
-        result = sell(payer_keypair, pair_address, percentage, slippage)
+        payer_keypair = self.wallet.get_wallet()
+        result = sell(self.client, payer_keypair, pair_address, percentage, slippage)
         return result
 
 
 # pylint: disable=R0914
-def buy(payer_keypair: Keypair, pair_address: str, sol_in: float = 0.01, slippage: int = 5) -> str:
+def buy(
+    client: Client,
+    payer_keypair: Keypair,
+    pair_address: str,
+    sol_in: float = 0.01,
+    slippage: int = 5,
+) -> str:
     """Buy tokens with SOL using Raydium AMM V4.
 
     Creates necessary token accounts, executes the swap, and handles cleanup
     of temporary accounts.
 
     Args:
+        client (Client): The Solana RPC client
         payer_keypair (Keypair): The transaction signer's keypair
         pair_address (str): The Raydium AMM V4 pair address
         sol_in (float, optional): Amount of SOL to swap. Defaults to 0.01
@@ -344,14 +368,14 @@ def buy(payer_keypair: Keypair, pair_address: str, sol_in: float = 0.01, slippag
         - Includes slippage protection
     """
     try:
-        pool_keys: Optional[AmmV4PoolKeys] = fetch_amm_v4_pool_keys(pair_address)
+        pool_keys: Optional[AmmV4PoolKeys] = fetch_amm_v4_pool_keys(client, pair_address)
         if pool_keys is None:
             return "Failed to fetch pool keys."
 
         mint = pool_keys.base_mint if pool_keys.base_mint != WSOL else pool_keys.quote_mint
         amount_in = int(sol_in * SOL_DECIMAL)
 
-        base_reserve, quote_reserve, token_decimal = get_amm_v4_reserves(pool_keys)
+        base_reserve, quote_reserve, token_decimal = get_amm_v4_reserves(client, pool_keys)
         amount_out = sol_for_tokens(sol_in, base_reserve, quote_reserve)
 
         slippage_adjustment = 1 - (slippage / 100)
@@ -438,7 +462,7 @@ def buy(payer_keypair: Keypair, pair_address: str, sol_in: float = 0.01, slippag
             opts=TxOpts(skip_preflight=False),
         ).value
 
-        confirmed = confirm_txn(txn_sig)
+        confirmed = confirm_txn(client, txn_sig)
 
         if confirmed:
             return f"Transaction successful. Signature: {txn_sig}"
@@ -448,12 +472,19 @@ def buy(payer_keypair: Keypair, pair_address: str, sol_in: float = 0.01, slippag
         return f"Error occurred during transaction: {e}"
 
 
-def sell(payer_keypair: Keypair, pair_address: str, percentage: int = 100, slippage: int = 5) -> str:
+def sell(
+    client: Client,
+    payer_keypair: Keypair,
+    pair_address: str,
+    percentage: int = 100,
+    slippage: int = 5,
+) -> str:
     """Sell tokens for SOL using Raydium AMM V4.
 
     Swaps specified percentage of token balance for SOL with slippage protection.
 
     Args:
+        client (Client): The Solana RPC client
         payer_keypair (Keypair): The transaction signer's keypair
         pair_address (str): The Raydium AMM V4 pair address
         percentage (int, optional): Percentage of token balance to sell. Defaults to 100
@@ -471,18 +502,18 @@ def sell(payer_keypair: Keypair, pair_address: str, percentage: int = 100, slipp
         if not 1 <= percentage <= 100:
             return "Percentage must be between 1 and 100."
 
-        pool_keys: Optional[AmmV4PoolKeys] = fetch_amm_v4_pool_keys(pair_address)
+        pool_keys: Optional[AmmV4PoolKeys] = fetch_amm_v4_pool_keys(client, pair_address)
         if pool_keys is None:
             return "Failed to fetch pool keys."
 
         mint = pool_keys.base_mint if pool_keys.base_mint != WSOL else pool_keys.quote_mint
-        token_balance = get_token_balance(payer_keypair.pubkey(), str(mint))
+        token_balance = get_token_balance(client, payer_keypair.pubkey(), str(mint))
 
         if token_balance == 0 or token_balance is None:
             return "No token balance available to sell."
 
         token_balance = token_balance * (percentage / 100)
-        base_reserve, quote_reserve, token_decimal = get_amm_v4_reserves(pool_keys)
+        base_reserve, quote_reserve, token_decimal = get_amm_v4_reserves(client, pool_keys)
         amount_out = tokens_for_sol(token_balance, base_reserve, quote_reserve)
 
         slippage_adjustment = 1 - (slippage / 100)
@@ -569,7 +600,7 @@ def sell(payer_keypair: Keypair, pair_address: str, percentage: int = 100, slipp
             opts=TxOpts(skip_preflight=False),
         ).value
 
-        confirmed = confirm_txn(txn_sig)
+        confirmed = confirm_txn(client, txn_sig)
 
         if confirmed:
             return f"Transaction successful. Signature: {txn_sig}"
@@ -595,12 +626,13 @@ def tokens_for_sol(token_amount, base_vault_balance, quote_vault_balance, swap_f
     return round(sol_received, 9)
 
 
-def fetch_amm_v4_pool_keys(pair_address: str) -> Optional[AmmV4PoolKeys]:
+def fetch_amm_v4_pool_keys(client: Client, pair_address: str) -> Optional[AmmV4PoolKeys]:
     """Fetch pool configuration for a Raydium AMM V4 pair.
 
     Retrieves and parses pool configuration data from the Solana blockchain.
 
     Args:
+        client (Client): The Solana RPC client
         pair_address (str): The Raydium AMM V4 pair address
 
     Returns:
@@ -655,16 +687,17 @@ def fetch_amm_v4_pool_keys(pair_address: str) -> Optional[AmmV4PoolKeys]:
         return None
 
 
-def get_amm_v4_reserves(pool_keys: AmmV4PoolKeys) -> tuple:
+def get_amm_v4_reserves(client: Client, pool_keys: AmmV4PoolKeys) -> tuple:
     """Get current token reserves from AMM pool.
 
     Fetches current balances of both tokens in the pool.
 
     Args:
+        client (Client): The Solana RPC client
         pool_keys (AmmV4PoolKeys): Pool configuration data
 
     Returns:
-        tuple: (base_reserve, quote_reserve, token_decimal)
+        tuple: (base_reserve, quote_reserve, token_decimal) or (None, None, None) if error
 
     Note:
         Handles WSOL wrapping/unwrapping automatically
@@ -771,10 +804,11 @@ def make_amm_v4_swap_instruction(
         return None
 
 
-def get_token_balance(pubkey: Pubkey, mint_str: str) -> float | None:
+def get_token_balance(client: Client, pubkey: Pubkey, mint_str: str) -> float | None:
     """Get the balance of a token for a given address.
 
     Args:
+        client (Client): The Solana RPC client
         pubkey (Pubkey): The address to get the token balance for
         mint_str (str): The mint address of the token
 
@@ -797,10 +831,11 @@ def get_token_balance(pubkey: Pubkey, mint_str: str) -> float | None:
     return None
 
 
-def confirm_txn(txn_sig: Signature, max_retries: int = 20, retry_interval: int = 3) -> bool:
+def confirm_txn(client: Client, txn_sig: Signature, max_retries: int = 20, retry_interval: int = 3) -> bool:
     """Confirm a transaction.
 
     Args:
+        client (Client): The Solana RPC client
         txn_sig (Signature): The signature of the transaction
         max_retries (int, optional): Maximum number of retries. Defaults to 20
         retry_interval (int, optional): Interval between retries in seconds. Defaults to 3
@@ -808,7 +843,7 @@ def confirm_txn(txn_sig: Signature, max_retries: int = 20, retry_interval: int =
     Returns:
         bool: True if transaction is confirmed, False otherwise
     """
-    retries = 1
+    retries = 5
 
     while retries < max_retries:
         try:
@@ -821,10 +856,10 @@ def confirm_txn(txn_sig: Signature, max_retries: int = 20, retry_interval: int =
             if txn_res.value and txn_res.value.transaction.meta:
                 txn_json = json.loads(txn_res.value.transaction.meta.to_json())
             else:
-                return False
+                raise Exception("Transaction not found.")
 
             if txn_json["err"] is None:
-                logger.info("Transaction confirmed... try count:", retries)
+                logger.info(f"Transaction confirmed... try count: {retries}")
                 return True
 
             logger.error("Error: Transaction not confirmed. Retrying...")
@@ -832,7 +867,7 @@ def confirm_txn(txn_sig: Signature, max_retries: int = 20, retry_interval: int =
                 logger.error("Transaction failed.")
                 return False
         except Exception:
-            logger.info("Awaiting confirmation... try count:", retries)
+            logger.info(f"Awaiting confirmation... try count: {retries}")
             retries += 1
             time.sleep(retry_interval)
 
@@ -842,6 +877,6 @@ def confirm_txn(txn_sig: Signature, max_retries: int = 20, retry_interval: int =
 
 # main function to run the code
 if __name__ == "__main__":
-    # buy_token
-    buy_token_with_sol_tool = BuyTokenWithSolTool()
-    buy_token_with_sol_tool.forward("FFBvVfBcZ8abyt9dgQ1dS9F49mzNTCQbEpppwE9mcReB", 0.05, 5)
+    wallet = SolanaWallet(key_path="solana_wallet.json")
+    buy_token_with_sol_tool = BuyTokenWithSolTool(wallet)
+    buy_token_with_sol_tool.forward("Hga48QXtpCgLSTsfysDirPJzq8aoBPjvePUgmXhFGDro", 0.0001, 5)

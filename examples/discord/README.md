@@ -52,3 +52,4 @@ python discord_agent.py
 ## Discord Bot Setup
 
 Follow the instructions in the [Discord API documentation](https://discordpy.readthedocs.io/en/stable/discord.html) to create a new application and bot.
+Make sure your bot has sufficient "Bot Permissions" - especially "Send Messages" and "Read Message History"

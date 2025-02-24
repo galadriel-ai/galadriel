@@ -2,24 +2,26 @@ import json
 import os
 from typing import Optional
 
-from solders.keypair import Keypair  # pylint: disable=E0401
+from solders.keypair import Keypair  # type: ignore
+
+from galadriel.wallets.wallet_base import WalletBase  # type: ignore # pylint: disable=E0401
 
 
-class WalletRepository:
+class SolanaWallet(WalletBase):
     def __init__(self, key_path: str):
         keypair = _get_private_key(key_path=key_path)
         if keypair is None:
-            raise ValueError("No admin key found")
-        self.wallet = keypair
+            raise ValueError("No key found")
+        self.keypair = keypair
 
-    def get_wallet_address(self) -> str:
+    def get_address(self) -> str:
         """
         Get the wallet address.
 
         Returns:
             str: The wallet address.
         """
-        return str(self.wallet.pubkey())
+        return str(self.keypair.pubkey())
 
     def get_wallet(self) -> Keypair:
         """
@@ -28,7 +30,7 @@ class WalletRepository:
         Returns:
             Keypair: The wallet keypair.
         """
-        return self.wallet
+        return self.keypair
 
 
 def _get_private_key(key_path: str) -> Optional[Keypair]:

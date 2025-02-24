@@ -8,6 +8,12 @@ from .agent import (
 )
 from .entities import AgentState
 
+from smolagents import (
+    LiteLLMModel,
+)
+
+from smolagents.agents import LogLevel
+
 __all__ = [
     "Agent",
     "AgentInput",
@@ -16,4 +22,6 @@ __all__ = [
     "AgentRuntime",
     "CodeAgent",
     "ToolCallingAgent",
+    "LiteLLMModel",
+    "LogLevel",
 ]

@@ -17,6 +17,8 @@ class GradioClient(AgentInput, AgentOutput):
 
     Attributes:
         message_queue (Optional[PushOnlyQueue]): Queue for storing messages to be processed
+        is_public (bool): Whether to share the Gradio interface publicly
+        server_port (int): The port on which to run the Gradio interface
         logger (logging.Logger): Logger instance for tracking client activities
         conversation_id (str): Identifier for the chat conversation
         input_queue (asyncio.Queue[str]): Queue for storing user inputs
@@ -25,7 +27,12 @@ class GradioClient(AgentInput, AgentOutput):
         chatbot (gr.Chatbot): The chat interface component
     """
 
-    def __init__(self, logger: Optional[logging.Logger] = None):
+    def __init__(
+        self,
+        logger: Optional[logging.Logger] = None,
+        is_public: Optional[bool] = False,
+        server_port: Optional[int] = 7860,
+    ):
         """Initialize the Gradio client interface.
 
         Args:
@@ -33,6 +40,8 @@ class GradioClient(AgentInput, AgentOutput):
                                              creates a default logger
         """
         self.message_queue: Optional[PushOnlyQueue] = None
+        self.is_public = is_public
+        self.server_port = server_port
         self.logger = logger or logging.getLogger("gradio_client")
         self.conversation_id = "gradio"
         self.input_queue: asyncio.Queue[str] = asyncio.Queue()
@@ -42,9 +51,9 @@ class GradioClient(AgentInput, AgentOutput):
         with gr.Blocks() as self.interface:
             self.chatbot = gr.Chatbot(
                 value=[],
-                label="Chat History",
-                height=400,
-                show_label=False,
+                label="Agent",
+                resizeable=True,
+                scale=1,
             )
             with gr.Row():
                 self.msg = gr.Textbox(
@@ -114,9 +123,12 @@ class GradioClient(AgentInput, AgentOutput):
 
         # Launch Gradio interface in a background thread
         self.interface.queue()
-        self.interface.launch(server_name="0.0.0.0", share=False, prevent_thread_lock=True)
+        self.interface.launch(
+            server_name="0.0.0.0", server_port=self.server_port, share=self.is_public, prevent_thread_lock=True
+        )
         # Log the local URL for accessing the Gradio interface
-        self.logger.info("Gradio interface available at: http://0.0.0.0:7860")
+        if not self.is_public:
+            self.logger.info(f"Gradio interface available at: http://0.0.0.0:{self.server_port}")
 
         # Process messages from input queue
         while True:

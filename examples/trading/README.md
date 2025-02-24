@@ -18,11 +18,12 @@ It uses:
     - If the strategy is to hold, it does nothing.
 
 ## Running the agent
-1. Setup local env and install dependencies.
+1. Setup local env and install `galadriel`.
+
 ```shell
 python3 -m venv venv
 source venv/bin/activate
-pip install -r requirements.txt
+pip install galadriel
 ```
 
 2. Rename `template.env` to `.env` and add your OpenAI API and Coingecko API keys.

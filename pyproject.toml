@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "galadriel"
-version = "0.0.9"
+version = "0.0.11"
 description = ""
 authors = [
     "Kaspar Peterson <kaspar@galadriel.com>",
@@ -27,9 +27,11 @@ aiofiles = "^22.0.0"
 rich = "^13.9.4"
 boto3 = "^1.35.0"
 python-json-logger = "^2.0.7"
-smolagents = "^1.8.1"
+smolagents = "^1.9.2"
 composio-langchain = "^0.6.19"
 langchain-community = "^0.3.16"
+langchain-openai = "^0.3.6"
+faiss-cpu = "^1.10.0"
 types-aiofiles = "^24.1.0.20241221"
 "discord.py" = "^2.4.0"
 pyTelegramBotAPI = "^4.26.0"
@@ -52,7 +54,7 @@ build = { version = "^1.2.2", optional = true }
 types-requests = { version = "^2.32.0.20241016", optional = true }
 
 [tool.poetry.extras]
-dev = ["ruff", "mypy", "pytest", "pytest-asyncio", "pytest-mock", "pytest-xprocess", "twine", "build", "types-requests"]
+dev = ["ruff", "mypy", "pytest", "py", "pytest-asyncio", "pytest-mock", "pytest-xprocess", "twine", "build", "types-requests"]
 
 [build-system]
 requires = ["poetry-core"]
