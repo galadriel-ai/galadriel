@@ -183,7 +183,7 @@ async def swap(
 
 
 if __name__ == "__main__":
-    wallet = SolanaWallet(key_path=os.getenv("SOLANA_KEY_PATH"))
+    wallet = SolanaWallet(key_path=os.getenv("SOLANA_KEY_PATH"))  # type: ignore
     swap_tool = SwapTokenTool(wallet)
     print(
         swap_tool.forward(
