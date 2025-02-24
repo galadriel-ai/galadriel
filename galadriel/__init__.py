@@ -5,8 +5,8 @@ from .agent import (
     ToolCallingAgent,
     AgentInput,
     AgentOutput,
-    AgentState,
 )
+from .entities import AgentState
 
 from smolagents import (
     LiteLLMModel,

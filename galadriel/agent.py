@@ -9,8 +9,8 @@ from typing import Optional
 
 from dotenv import load_dotenv as _load_dotenv
 
-from smolagents import CodeAgent as InternalCodeAgent
-from smolagents import ToolCallingAgent as InternalToolCallingAgent
+from galadriel.core_agent import CodeAgent as InternalCodeAgent
+from galadriel.core_agent import ToolCallingAgent as InternalToolCallingAgent
 
 from galadriel.domain import generate_proof
 from galadriel.domain import publish_proof
@@ -85,11 +85,6 @@ class AgentOutput:
             request (Message): The original request that generated the response
             response (Message): The response to be delivered
         """
-
-
-class AgentState:
-    # TODO: knowledge_base: KnowledgeBase
-    pass
 
 
 # pylint:disable=E0102
