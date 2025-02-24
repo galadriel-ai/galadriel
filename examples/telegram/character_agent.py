@@ -22,6 +22,9 @@ TELEGRAM_SYSTEM_PROMPT = """
 # Task: You received a new message on telegram from {{user_name}}. You must reply in the voice and style of {{agent_name}}, here's the message:
 {{message}}
 
+# Chat History:
+{{chat_history}}
+
 Be very brief, and concise, add a statement in your voice.
 Maintain a natural conversation on telegram, don't add signatures at the end of your messages.
 Don't overuse emojis.

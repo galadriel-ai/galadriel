@@ -6,7 +6,6 @@ from pathlib import Path
 from typing import Dict, List
 from typing import Optional
 
-from pprint import pformat
 
 from dotenv import load_dotenv as _load_dotenv
 
@@ -23,10 +22,18 @@ from galadriel.entities import PushOnlyQueue
 from galadriel.errors import PaymentValidationError
 from galadriel.logging_utils import init_logging
 from galadriel.logging_utils import get_agent_logger
+from galadriel.memory.memory_repository import MemoryRepository
 
 logger = get_agent_logger()
 
 DEFAULT_PROMPT_TEMPLATE = "{{request}}"
+
+DEFAULT_PROMPT_TEMPLATE_WITH_CHAT_MEMORY = """
+You are a helpful chatbot assistant.
+Here is the chat history: \n\n {{chat_history}} \n
+Answer the following question: \n\n {{request}} \n
+Please remember the chat history and use it to answer the question, if relevant to the question.
+"""
 
 
 class Agent(ABC):
@@ -36,7 +43,7 @@ class Agent(ABC):
     """
 
     @abstractmethod
-    async def execute(self, request: Message) -> Message:
+    async def execute(self, request: Message, memory: Optional[str] = None) -> Message:
         """Process a single request and generate a response.
         The processing can be a single LLM call or involve multiple agentic steps, like CodeAgent.
 
@@ -97,7 +104,7 @@ class CodeAgent(Agent, InternalCodeAgent):
     def __init__(
         self,
         prompt_template: Optional[str] = None,
-        flush_memory: Optional[bool] = False,
+        chat_memory: Optional[bool] = True,
         **kwargs,
     ):
         """Initialize the CodeAgent.
@@ -118,16 +125,15 @@ class CodeAgent(Agent, InternalCodeAgent):
             response = await agent.execute(Message(content="What is Python?"))
         """
         InternalCodeAgent.__init__(self, **kwargs)
-        self.prompt_template = prompt_template or DEFAULT_PROMPT_TEMPLATE
-        self.flush_memory = flush_memory
-
-    async def execute(self, request: Message) -> Message:
-        request_dict = {"request": request.content}
-        answer = InternalCodeAgent.run(
-            self,
-            task=format_prompt.execute(self.prompt_template, request_dict),
-            reset=self.flush_memory,  # retain memory
+        self.chat_memory = chat_memory
+        self.prompt_template = (
+            prompt_template or DEFAULT_PROMPT_TEMPLATE_WITH_CHAT_MEMORY if chat_memory else DEFAULT_PROMPT_TEMPLATE
         )
+        format_prompt.validate_prompt_template(self.prompt_template)
+
+    async def execute(self, request: Message, memory: Optional[str] = None) -> Message:
+        request_dict = {"request": request.content, "chat_history": memory}
+        answer = InternalCodeAgent.run(self, task=format_prompt.execute(self.prompt_template, request_dict))
         return Message(
             content=str(answer),
             conversation_id=request.conversation_id,
@@ -146,7 +152,7 @@ class ToolCallingAgent(Agent, InternalToolCallingAgent):
     def __init__(
         self,
         prompt_template: Optional[str] = None,
-        flush_memory: Optional[bool] = False,
+        chat_memory: Optional[bool] = True,
         **kwargs,
     ):
         """
@@ -168,16 +174,15 @@ class ToolCallingAgent(Agent, InternalToolCallingAgent):
             response = await agent.execute(Message(content="What's the weather in Paris?"))
         """
         InternalToolCallingAgent.__init__(self, **kwargs)
-        self.prompt_template = prompt_template or DEFAULT_PROMPT_TEMPLATE
-        self.flush_memory = flush_memory
-
-    async def execute(self, request: Message) -> Message:
-        request_dict = {"request": request.content}
-        answer = InternalToolCallingAgent.run(
-            self,
-            task=format_prompt.execute(self.prompt_template, request_dict),
-            reset=self.flush_memory,  # retain memory
+        self.chat_memory = chat_memory
+        self.prompt_template = (
+            prompt_template or DEFAULT_PROMPT_TEMPLATE_WITH_CHAT_MEMORY if chat_memory else DEFAULT_PROMPT_TEMPLATE
         )
+        format_prompt.validate_prompt_template(self.prompt_template)
+
+    async def execute(self, request: Message, memory: Optional[str] = None) -> Message:
+        request_dict = {"request": request.content, "chat_history": memory}
+        answer = InternalToolCallingAgent.run(self, task=format_prompt.execute(self.prompt_template, request_dict))
         return Message(
             content=str(answer),
             conversation_id=request.conversation_id,
@@ -199,6 +204,7 @@ class AgentRuntime:
         outputs: List[AgentOutput],
         agent: Agent,
         pricing: Optional[Pricing] = None,
+        memory_repository: Optional[MemoryRepository] = None,
         debug: bool = False,
         enable_logs: bool = False,
     ):
@@ -216,6 +222,7 @@ class AgentRuntime:
         self.outputs = outputs
         self.agent = agent
         self.solana_payment_validator = SolanaPaymentValidator(pricing)  # type: ignore
+        self.memory_repository = memory_repository
         self.debug = debug
         self.enable_logs = enable_logs
         self.shutdown_event = asyncio.Event()
@@ -284,23 +291,41 @@ class AgentRuntime:
                 response = Message(content=str(e))
         if not response:
             # Run the agent if no errors occurred so far
-            response = await self.agent.execute(request)
-            if self.debug and self.enable_logs:
-                memory = await self._get_memory()
-                logger.info(f"Current agent memory: {pformat(memory)}")
+            memories = None
+            if self.memory_repository:
+                try:
+                    memories = await self.memory_repository.get_memories(prompt=request.content)
+                except Exception as e:
+                    logger.error(f"Error getting memories: {e}")
+            response = await self.agent.execute(request, memories)
         if response:
             # proof = await self._generate_proof(request, response)
             # await self._publish_proof(request, response, proof)
+            if self.memory_repository:
+                try:
+                    await self.memory_repository.add_memory(request=request, response=response)
+                except Exception as e:
+                    logger.error(f"Error adding memory: {e}")
             for output in self.outputs:
                 await output.send(request, response)
 
-    async def _get_memory(self) -> List[Dict[str, str]]:
-        """Retrieve the current state of the agent's memory.
+    async def _get_agent_memory(self) -> List[Dict[str, str]]:
+        """Retrieve the current state of the agent's inner memory. This is not the chat memories.
 
         Returns:
             List[Dict[str, str]]: The agent's memory in a serializable format
         """
         return self.agent.write_memory_to_messages(summary_mode=True)  # type: ignore
+
+    async def _save_chat_memories(self, file_name: str) -> None:
+        """Save the current state of the agent's chat memories.
+
+        Returns:
+            str: The agent's chat memories
+        """
+        if self.memory_repository:
+            return self.memory_repository.save_data_locally(file_name)
+        return None
 
     async def _generate_proof(self, request: Message, response: Message) -> str:
         return generate_proof.execute(request, response)
