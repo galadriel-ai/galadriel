@@ -1,6 +1,8 @@
 import asyncio
 import base64
 import json
+import os
+import nest_asyncio
 
 from solana.rpc.async_api import AsyncClient
 from solana.rpc.commitment import Processed, Confirmed
@@ -18,6 +20,7 @@ from jupiter_python_sdk.jupiter import Jupiter
 from galadriel.tools.web3.onchain.solana.base_tool import Network, SolanaBaseTool
 from galadriel.wallets.solana_wallet import SolanaWallet
 
+nest_asyncio.apply()
 
 # API endpoints for Jupiter Protocol
 SOLANA_API_URL = "https://api.mainnet-beta.solana.com"
@@ -44,7 +47,7 @@ class SwapTokenTool(SolanaBaseTool):
     """
 
     name = "jupiter_swap_token"
-    description = "Swaps one token for another on Jupiter Swap."
+    description = "Swaps one token for another on Jupiter Swap. It also supports Meteora, Fluxbeam, 1Intro, Pump.Fun, Raydium and Whirlpools."
     inputs = {
         "token1": {"type": "string", "description": "The address of the token to sell"},
         "token2": {"type": "string", "description": "The address of the token to buy"},
@@ -62,7 +65,7 @@ class SwapTokenTool(SolanaBaseTool):
         if self.network is not Network.MAINNET:
             raise NotImplementedError("Jupiter tool is not available on devnet")
 
-    def forward(self, token1: str, token2: str, amount: float, slippage_bps: int = 300) -> str:  # pylint: disable=W0221
+    def forward(self, token1: str, token2: str, amount: float, slippage_bps: int = 300) -> str:
         """Execute a token swap transaction.
 
         Args:
@@ -79,7 +82,7 @@ class SwapTokenTool(SolanaBaseTool):
         """
         wallet = self.wallet.get_wallet()
 
-        result = asyncio.run(
+        result = asyncio.get_event_loop().run_until_complete(
             swap(
                 async_client=self.async_client,
                 wallet=wallet,
@@ -180,12 +183,12 @@ async def swap(
 
 
 if __name__ == "__main__":
-    wallet = SolanaWallet(key_path="path/to/keypair.json")
+    wallet = SolanaWallet(key_path=os.getenv("SOLANA_KEY_PATH"))
     swap_tool = SwapTokenTool(wallet)
     print(
         swap_tool.forward(
             "So11111111111111111111111111111111111111112",
-            "3iQL8BFS2vE7mww4ehAqQHAsbmRNCrPxizWAT2Zfyr9y",
+            "JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN",
             0.0001,
             300,
         )
