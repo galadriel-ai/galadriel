@@ -218,13 +218,14 @@ class AgentRuntime:
         self.solana_payment_validator = SolanaPaymentValidator(pricing)  # type: ignore
         self.debug = debug
         self.enable_logs = enable_logs
-        self.is_running: bool = False
+        self.shutdown_event = asyncio.Event()
 
         env_path = Path(".") / ".env"
         _load_dotenv(dotenv_path=env_path)
         # AgentConfig should have some settings for debug?
         if self.enable_logs:
             init_logging(self.debug)
+        self._listen_for_stop()
 
     async def run(self):
         """Start the agent runtime loop.
@@ -233,7 +234,6 @@ class AgentRuntime:
         Al agent inputs receive the same instance of the queue and append requests to it.
         """
         try:
-            self.is_running = True
             input_queue = asyncio.Queue()
             push_only_queue = PushOnlyQueue(input_queue)
 
@@ -241,7 +241,7 @@ class AgentRuntime:
                 # Each agent input receives a queue it can push messages to
                 asyncio.create_task(agent_input.start(push_only_queue))
 
-            while self.is_running:
+            while not self.shutdown_event.is_set():
                 # Get the next request from the queue
                 request = await input_queue.get()
                 # Process the request
@@ -255,10 +255,9 @@ class AgentRuntime:
 
     async def _listen_for_stop(self):
         loop = asyncio.get_running_loop()
-        shutdown_event = asyncio.Event()
 
         def _shutdown_handler():
-            shutdown_event.set()
+            self.shutdown_event.set()
 
         try:
             loop.add_signal_handler(signal.SIGTERM, _shutdown_handler)
