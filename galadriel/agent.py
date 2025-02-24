@@ -213,7 +213,7 @@ class AgentRuntime:
             inputs (List[AgentInput]): Input sources for the agent
             outputs (List[AgentOutput]): Output destinations for responses
             agent (Agent): The agent implementation to use
-            pricing (Optional[Pricing]): Payment configuration if required
+            solana_payment_validator (SolanaPaymentValidator): Payment validator
             debug (bool): Enable debug mode
             enable_logs (bool): Enable logging
         """
@@ -240,13 +240,20 @@ class AgentRuntime:
         input_queue = asyncio.Queue()
         push_only_queue = PushOnlyQueue(input_queue)
 
-        for agent_input in self.inputs:
-            # Each agent input receives a queue it can push messages to
-            asyncio.create_task(agent_input.start(push_only_queue))
+        # Create tasks for all inputs and track them
+        input_tasks = [
+            asyncio.create_task(self._safe_client_start(agent_input, push_only_queue)) for agent_input in self.inputs
+        ]
 
         while True:
+            active_tasks = [task for task in input_tasks if not task.done()]
+            if not active_tasks:
+                raise RuntimeError("All input clients died")
             # Get the next request from the queue
-            request = await input_queue.get()
+            try:
+                request = await asyncio.wait_for(input_queue.get(), timeout=1.0)
+            except asyncio.TimeoutError:
+                continue
             # Process the request
             await self._run_request(request)
             # await self.upload_state()
@@ -259,23 +266,30 @@ class AgentRuntime:
         Args:
             request (Message): The request to process
         """
-        response = None
+        task_and_payment, response = None, None
         # Handle payment validation
         if self.solana_payment_validator.pricing:
             try:
                 task_and_payment = await self.solana_payment_validator.execute(request)
                 request.content = task_and_payment.task
-            except PaymentValidationError as e:
-                response = Message(content=str(e))
-        if not response:
-            # Run the agent if no errors occurred so far
+            except PaymentValidationError:
+                logger.error("Payment validation error", exc_info=True)
+            except Exception:
+                logger.error("Unexpected error during payment validation", exc_info=True)
+        # Run the agent if payment validation passed or not required
+        if task_and_payment or not self.solana_payment_validator.pricing:
             memories = None
             if self.memory_repository:
                 try:
                     memories = await self.memory_repository.get_memories(prompt=request.content)
                 except Exception as e:
                     logger.error(f"Error getting memories: {e}")
-            response = await self.agent.execute(request, memories)
+            try:
+                response = await self.agent.execute(request, memories)
+            except Exception as e:
+                logger.error("Error during agent execution", exc_info=True)
+                response = Message(content=f"An error occurred while processing your request: {str(e)}")
+        # Send the response to the outputs
         if response:
             # proof = await self._generate_proof(request, response)
             # await self._publish_proof(request, response, proof)
@@ -285,7 +299,10 @@ class AgentRuntime:
                 except Exception as e:
                     logger.error(f"Error adding memory: {e}")
             for output in self.outputs:
-                await output.send(request, response)
+                try:
+                    await output.send(request, response)
+                except Exception:
+                    logger.error("Failed to send response via output", exc_info=True)
 
     async def _get_agent_memory(self) -> List[Dict[str, str]]:
         """Retrieve the current state of the agent's inner memory. This is not the chat memories.
@@ -294,6 +311,13 @@ class AgentRuntime:
             List[Dict[str, str]]: The agent's memory in a serializable format
         """
         return self.agent.write_memory_to_messages(summary_mode=True)  # type: ignore
+
+    async def _safe_client_start(self, agent_input: AgentInput, queue: PushOnlyQueue):
+        try:
+            await agent_input.start(queue)
+        except Exception as e:
+            logger.error(f"Input client {agent_input.__class__.__name__} failed", exc_info=True)
+            raise e
 
     async def _save_chat_memories(self, file_name: str) -> None:
         """Save the current state of the agent's chat memories.
