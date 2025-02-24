@@ -38,9 +38,12 @@ def _get_private_key(key_path: Optional[str]) -> Optional[Keypair]:
         raise ValueError("Key path cannot be an empty string")
         
     if key_path is None:
-        if not os.path.exists(DEFAULT_SOLANA_KEY_PATH):
-            raise ValueError(f"No key path provided and default key missing at: {DEFAULT_SOLANA_KEY_PATH}")
-        key_path = DEFAULT_SOLANA_KEY_PATH
+        default_path = os.path.expanduser(DEFAULT_SOLANA_KEY_PATH)
+        if not os.path.exists(default_path):
+            raise ValueError(f"No key path provided and default key missing at: {default_path}")
+        key_path = default_path
+    else:
+        key_path = os.path.expanduser(key_path)
 
     if not os.path.exists(key_path):
         raise ValueError(f"Key file not found at: {key_path}")
