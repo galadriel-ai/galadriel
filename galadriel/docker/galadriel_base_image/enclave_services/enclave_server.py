@@ -5,7 +5,7 @@ from enum import Enum
 
 # pylint: disable=E0401
 from attestation_manager import AttestationManager
-from agent_manager import AgentManager
+from agent_manager import stop_agent
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(message)s")
@@ -35,9 +35,7 @@ class EnclaveServer:
                 while True:
                     try:
                         conn, _ = server.accept()
-                        threading.Thread(
-                            target=self._handle_client, args=(conn,)
-                        ).start()
+                        threading.Thread(target=self._handle_client, args=(conn,)).start()
                     except Exception as e:
                         logger.error(f"Error accepting connection: {e}")
         except Exception as e:
@@ -58,8 +56,8 @@ class EnclaveServer:
                     conn.sendall(response.encode())
                 elif data == RequestType.SHUTDOWN.value:
                     logger.info("Shutdown request received")
+                    stop_agent()
                     conn.sendall(b"OK")
-                    self._shutdown_event.set()
                 else:
                     logger.warning(f"Unknown request type: {data}")
                     conn.sendall(b"Unknown request type")

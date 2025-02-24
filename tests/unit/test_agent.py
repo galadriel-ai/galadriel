@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Dict, Optional
 from typing import List
 from unittest.mock import MagicMock, AsyncMock
 
@@ -17,7 +17,7 @@ class MockAgent(Agent):
     def __init__(self):
         self.called_messages: List[Message] = []
 
-    async def execute(self, request: Message) -> Message:
+    async def execute(self, request: Message, memory: Optional[str] = None) -> Message:
         self.called_messages.append(request)
         return RESPONSE_MESSAGE
 

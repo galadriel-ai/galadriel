@@ -44,16 +44,12 @@ def stop_agent(timeout: float = 60.0) -> bool:
         start_time = time.time()
         while time.time() - start_time < timeout:
             if not agent_process.is_running():
-                logger.info(
-                    f"Agent process (PID: {agent_process.pid}) terminated successfully"
-                )
+                logger.info(f"Agent process (PID: {agent_process.pid}) terminated successfully")
                 return True
             time.sleep(0.1)
 
         # Process didn't terminate within timeout
-        logger.warning(
-            f"Agent process (PID: {agent_process.pid}) did not terminate within {timeout} seconds"
-        )
+        logger.warning(f"Agent process (PID: {agent_process.pid}) did not terminate within {timeout} seconds")
         return False
 
     except Exception as e:
