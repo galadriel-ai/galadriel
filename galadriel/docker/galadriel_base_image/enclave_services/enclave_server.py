@@ -1,13 +1,20 @@
 import logging
 import socket
 import threading
+from enum import Enum
 
 # pylint: disable=E0401
 from attestation_manager import AttestationManager
+from agent_manager import stop_agent
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(message)s")
 logger = logging.getLogger()
+
+
+class RequestType(Enum):
+    GET_ATTESTATION = "GET_ATTESTATION_DOC"
+    SHUTDOWN = "SHUTDOWN"
 
 
 class EnclaveServer:
@@ -43,6 +50,18 @@ class EnclaveServer:
                     logger.info("Client disconnected")
                     return
                 logger.info(f"Received data: {data}")
+                # Handle different request types
+                if data == RequestType.GET_ATTESTATION.value:
+                    response = self.attestation_manager.handle_request(data)
+                    conn.sendall(response.encode())
+                elif data == RequestType.SHUTDOWN.value:
+                    logger.info("Shutdown request received")
+                    stop_agent()
+                    conn.sendall(b"OK")
+                else:
+                    logger.warning(f"Unknown request type: {data}")
+                    conn.sendall(b"Unknown request type")
+
                 response = self.attestation_manager.handle_request(data)
                 conn.sendall(response.encode())
         except Exception as e:

@@ -1,4 +1,5 @@
 import asyncio
+import signal
 from abc import ABC
 from abc import abstractmethod
 from pathlib import Path
@@ -224,6 +225,7 @@ class AgentRuntime:
         self.memory_repository = memory_repository
         self.debug = debug
         self.enable_logs = enable_logs
+        self.shutdown_event = asyncio.Event()
 
         env_path = Path(".") / ".env"
         _load_dotenv(dotenv_path=env_path)
@@ -240,16 +242,34 @@ class AgentRuntime:
         input_queue = asyncio.Queue()
         push_only_queue = PushOnlyQueue(input_queue)
 
+        # Listen for shutdown event
+        await self._listen_for_stop()
+
+        # Start agent inputs
         for agent_input in self.inputs:
             # Each agent input receives a queue it can push messages to
             asyncio.create_task(agent_input.start(push_only_queue))
 
-        while True:
+        while not self.shutdown_event.is_set():
             # Get the next request from the queue
             request = await input_queue.get()
             # Process the request
             await self._run_request(request)
-            # await self.upload_state()
+
+    def stop(self):
+        self.shutdown_event.set()
+
+    async def _listen_for_stop(self):
+        loop = asyncio.get_running_loop()
+
+        def _shutdown_handler():
+            self.stop()
+
+        try:
+            loop.add_signal_handler(signal.SIGTERM, _shutdown_handler)
+        except NotImplementedError:
+            # Signal handling may not be supported on some platforms (e.g., Windows)
+            logger.warning("SIGTERM signal handling is not supported on this platform.")
 
     async def _run_request(self, request: Message):
         """Process a single request through the agent pipeline.
