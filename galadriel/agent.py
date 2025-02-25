@@ -232,7 +232,6 @@ class AgentRuntime:
         # AgentConfig should have some settings for debug?
         if self.enable_logs:
             init_logging(self.debug)
-        self._listen_for_stop()
 
     async def run(self):
         """Start the agent runtime loop.
@@ -240,31 +239,31 @@ class AgentRuntime:
         Creates an single queue and continuously processes incoming requests.
         Al agent inputs receive the same instance of the queue and append requests to it.
         """
-        try:
-            input_queue = asyncio.Queue()
-            push_only_queue = PushOnlyQueue(input_queue)
+        input_queue = asyncio.Queue()
+        push_only_queue = PushOnlyQueue(input_queue)
 
-            for agent_input in self.inputs:
-                # Each agent input receives a queue it can push messages to
-                asyncio.create_task(agent_input.start(push_only_queue))
+        # Listen for shutdown event
+        await self._listen_for_stop()
 
-            while not self.shutdown_event.is_set():
-                # Get the next request from the queue
-                request = await input_queue.get()
-                # Process the request
-                await self._run_request(request)
-        finally:
-            self.is_running = False
-            await self.upload_state()
+        # Start agent inputs
+        for agent_input in self.inputs:
+            # Each agent input receives a queue it can push messages to
+            asyncio.create_task(agent_input.start(push_only_queue))
 
-    async def stop(self):
-        self.is_running = False
+        while not self.shutdown_event.is_set():
+            # Get the next request from the queue
+            request = await input_queue.get()
+            # Process the request
+            await self._run_request(request)
+
+    def stop(self):
+        self.shutdown_event.set()
 
     async def _listen_for_stop(self):
         loop = asyncio.get_running_loop()
 
         def _shutdown_handler():
-            self.shutdown_event.set()
+            self.stop()
 
         try:
             loop.add_signal_handler(signal.SIGTERM, _shutdown_handler)
