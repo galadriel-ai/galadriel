@@ -153,7 +153,8 @@ class TransferTokenTool(SolanaBaseTool):
             sender_token_balance = self.client.get_token_account_balance(sender_ata)
 
             # Verify sender has sufficient balance
-            if sender_token_balance.value.ui_amount < amount:
+            sender_ui_amount = sender_token_balance.value.ui_amount
+            if sender_ui_amount is not None and sender_ui_amount < amount:
                 raise ValueError("Insufficient balance to transfer tokens.")
 
             # Calculate amount in UI format
@@ -178,17 +179,17 @@ class TransferTokenTool(SolanaBaseTool):
 
 if __name__ == "__main__":
     wallet = SolanaWallet(key_path=os.getenv("SOLANA_KEY_PATH"))
-    get_balance_tool = GetTokenBalanceTool(wallet)
+    get_balance_tool = GetTokenBalanceTool(wallet)  # type: ignore
     data = get_balance_tool.forward(
         "4kbGbZtfkfkRVGunkbKX4M7dGPm9MghJZodjbnRZbmug",
         "J1Wpmugrooj1yMyQKrdZ2vwRXG5rhfx3vTnYE39gpump",
     )
     print(data)
 
-    transfer_tool = TransferTokenTool(wallet)
-    data = transfer_tool.forward(
+    transfer_tool = TransferTokenTool(wallet)  # type: ignore
+    transfer_res = transfer_tool.forward(
         "J7DYsxt2mGt3XGpk8rAwcc5qfjPP14FgmiAsEeAsMEMY",
         "J1Wpmugrooj1yMyQKrdZ2vwRXG5rhfx3vTnYE39gpump",
         0.1,
     )
-    print(data)
+    print(transfer_res)
