@@ -6,7 +6,6 @@ from .agent import (
     AgentInput,
     AgentOutput,
 )
-from .entities import AgentState
 
 from smolagents import (
     LiteLLMModel,

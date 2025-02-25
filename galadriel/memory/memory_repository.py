@@ -24,6 +24,7 @@ class MemoryRepository:
         short_term_memory_limit: int = 20,
         embedding_model: Optional[str] = "text-embedding-3-large",
         agent_name: Optional[str] = "agent",
+        memory_folder_path: Optional[str] = None,
     ):
         """Initialize the memory repository.
 
@@ -32,9 +33,13 @@ class MemoryRepository:
             short_term_memory_limit: Maximum number of memories to keep in short-term memory
             embedding_model: Name of the OpenAI embedding model to use
             agent_name: Name identifier for the agent using this repository
+            memory_folder_path: Path to the folder to load the vector store from
         """
         self.agent_name = agent_name
-        self.vector_store = self._initialize_vector_database(embedding_model, api_key)  # type: ignore
+        self.api_key = api_key
+        self.embedding_model = embedding_model
+        self.memory_folder_path = memory_folder_path
+        self.vector_store = self._initialize_vector_database(embedding_model, api_key, memory_folder_path)  # type: ignore
         self.short_term_memory = []  # type: ignore
         self.short_term_memory_limit = short_term_memory_limit
 
@@ -133,30 +138,31 @@ class MemoryRepository:
             messages.append(message)
         return messages
 
-    def save_data_locally(self, file_name: str) -> None:
-        """Save the vector store to a local file.
+    def save_data_locally(self, folder_path: str) -> None:
+        """Save the vector store to a local folder.
 
         Args:
             file_name: Path where the vector store should be saved
         """
-        self.vector_store.save_local(file_name)
+        self.vector_store.save_local(folder_path)
 
-    def _initialize_vector_database(self, embedding_model: str, api_key: str, file_name: Optional[str] = None) -> FAISS:
+    def _initialize_vector_database(
+        self, embedding_model: str, api_key: str, folder_path: Optional[str] = None
+    ) -> Optional[FAISS]:
         """Initialize or load the vector database for long-term memory storage.
 
         Args:
             embedding_model: Name of the OpenAI embedding model to use
             api_key: OpenAI API key for embeddings
-            file_name: Optional path to load an existing vector store from
+            folder_path: Optional path to load an existing vector store from
 
         Returns:
             Initialized FAISS vector store
         """
         embeddings = OpenAIEmbeddings(model=embedding_model, api_key=api_key)  # type: ignore
         vector_store = None
-        if file_name:
-            if os.path.exists(file_name):
-                vector_store = FAISS.load_local(file_name, embeddings=embeddings, allow_dangerous_deserialization=True)
+        if folder_path and os.path.exists(folder_path):
+            vector_store = FAISS.load_local(folder_path, embeddings=embeddings, allow_dangerous_deserialization=True)
         else:
             index = faiss.IndexFlatL2(len(embeddings.embed_query(" ")))
             vector_store = FAISS(

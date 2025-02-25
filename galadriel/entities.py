@@ -1,7 +1,5 @@
 import asyncio
-from typing import Any
 from typing import Dict
-from typing import List
 from typing import Optional
 from uuid import uuid4
 
@@ -28,9 +26,7 @@ class AgentMessage(Message):
 
 
 class AgentState(BaseModel):
-    agent_id: str
-    type: str
-    steps: List[Dict[str, Any]]
+    memory_folder_path: Optional[str] = None
 
 
 class PushOnlyQueue:

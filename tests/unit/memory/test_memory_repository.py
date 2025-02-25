@@ -122,3 +122,29 @@ async def test_get_short_term_memory(memory_repo):
     # Verify
     assert len(memories) == 1
     assert memories[0].content == "User: Test\n Assistant: Response"
+
+
+"""
+def test_initialize_with_existing_memory_file(mock_embeddings, mock_faiss, tmp_path):
+    """
+# Test initialization when memory file exists
+"""
+    # Setup
+    memory_file = tmp_path / "test_memory.faiss"
+    # Create an empty file
+    memory_file.touch()
+    
+    # Create repository with memory file
+    repository = MemoryRepository(
+        api_key="test-key",
+        memory_file_path=str(memory_file)
+    )
+    
+    # Assert
+    mock_faiss.load_local.assert_called_once_with(
+        str(memory_file),
+        embeddings=mock_embeddings,
+        allow_dangerous_deserialization=True
+    )
+    assert repository.vector_store == mock_faiss.load_local.return_value
+"""

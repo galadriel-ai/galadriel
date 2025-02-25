@@ -8,8 +8,8 @@ from typing import Optional
 
 from dotenv import load_dotenv as _load_dotenv
 
-from galadriel.core_agent import CodeAgent as InternalCodeAgent
-from galadriel.core_agent import ToolCallingAgent as InternalToolCallingAgent
+from smolagents import CodeAgent as InternalCodeAgent
+from smolagents import ToolCallingAgent as InternalToolCallingAgent
 
 from galadriel.domain import generate_proof
 from galadriel.domain import publish_proof
@@ -299,6 +299,12 @@ class AgentRuntime:
         if self.memory_repository:
             return self.memory_repository.save_data_locally(file_name)
         return None
+
+    async def _upload_agent_state(self) -> None:
+        pass
+
+    async def _download_agent_state(self) -> None:
+        pass
 
     async def _generate_proof(self, request: Message, response: Message) -> str:
         return generate_proof.execute(request, response)
