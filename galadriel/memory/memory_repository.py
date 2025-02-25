@@ -88,12 +88,8 @@ class MemoryRepository:
         long_term = await self._query_long_term_memory(prompt, top_k, filter)
 
         return template.format(
-            short_term_memory="\n".join(
-                [f"[{memory.additional_kwargs['date']}]\n {memory.content}" for memory in short_term]  # type: ignore
-            ),
-            long_term_memory="\n".join(
-                [f"[{memory.additional_kwargs['date']}]\n {memory.content}" for memory in long_term]  # type: ignore
-            ),
+            short_term_memory=_format_memories(short_term),
+            long_term_memory=_format_memories(long_term),
         )
 
     async def _get_short_term_memory(self) -> List[Message]:
@@ -166,3 +162,8 @@ class MemoryRepository:
                 index_to_docstore_id={},
             )
         return vector_store  # type: ignore
+
+def _format_memories(memories):
+    return "\n".join(
+        [f"[{memory.additional_kwargs['date']}]\n {memory.content}" for memory in memories]  # type: ignore
+    )
