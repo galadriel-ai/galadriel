@@ -42,4 +42,4 @@ runtime = AgentRuntime(
 )
 
 # Run the agent
-asyncio.run(runtime.run(stream=True))
+asyncio.run(runtime.run())

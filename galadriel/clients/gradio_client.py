@@ -65,11 +65,7 @@ class GradioClient(AgentInput, AgentOutput):
             # Hidden refresh button to update the UI state.
             # Its click action calls refresh_chat, which returns the latest chat history.
             refresh_btn = gr.Button("Refresh", visible=False, elem_id="refresh-btn")
-            refresh_btn.click(
-                self._refresh_chat,
-                inputs=[chatbot, stored_messages],
-                outputs=[chatbot, stored_messages]
-            )
+            refresh_btn.click(self._refresh_chat, inputs=[chatbot, stored_messages], outputs=[chatbot, stored_messages])
             # JavaScript to click the hidden refresh button every 0.1 second
             gr.HTML("""
             <script>
@@ -102,14 +98,14 @@ class GradioClient(AgentInput, AgentOutput):
             return stored_messages, "", chatbot
 
         await self.input_queue.put(message)
-        
+
         # Add user message to chat
         chatbot.append(gr.ChatMessage(role="user", content=message))
-        
+
         # Wait for and process the response
         while self.output_queue.empty():
             await asyncio.sleep(0.01)
-        
+
         # Get and display the response
         while not self.output_queue.empty():
             new_message = await self.output_queue.get()
