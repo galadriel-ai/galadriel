@@ -16,6 +16,7 @@ from spl.token.constants import TOKEN_PROGRAM_ID
 from jupiter_python_sync_sdk.jupiter import Jupiter
 
 from galadriel.tools.web3.onchain.solana.base_tool import Network, SolanaBaseTool
+from galadriel.logging_utils import get_agent_logger
 from galadriel.wallets.solana_wallet import SolanaWallet
 
 
@@ -28,6 +29,8 @@ JUPITER_CANCEL_ORDERS_API_URL = "https://jup.ag/api/limit/v1/cancelOrders"
 JUPITER_QUERY_OPEN_ORDERS_API_URL = "https://jup.ag/api/limit/v1/openOrders?wallet="
 JUPITER_QUERY_ORDER_HISTORY_API_URL = "https://jup.ag/api/limit/v1/orderHistory"
 JUPITER_QUERY_TRADE_HISTORY_API_URL = "https://jup.ag/api/limit/v1/tradeHistory"
+
+logger = get_agent_logger()
 
 
 class SwapTokenTool(SolanaBaseTool):
@@ -121,7 +124,7 @@ def swap(
         - Uses Jupiter's quote API for price discovery
         - Handles token decimal conversion
         - Confirms transaction completion
-        - Prints transaction URLs for monitoring
+        - Logs transaction URLs for monitoring
     """
     jupiter = Jupiter(
         client=client,
@@ -163,25 +166,26 @@ def swap(
         # Send and confirm transaction
         opts = TxOpts(skip_preflight=False, preflight_commitment=Processed)
         result = client.send_raw_transaction(txn=bytes(signed_txn), opts=opts)
-        print(f"Transaction sent: {json.loads(result.to_json())}")
-        transaction_id = json.loads(result.to_json())["result"]
-        print(f"Transaction sent: https://explorer.solana.com/tx/{transaction_id}")
+        transaction_result = json.loads(result.to_json())
+        logger.info(f"Transaction sent: {transaction_result}")
+        transaction_id = transaction_result["result"]
+        logger.info(f"Transaction sent: https://explorer.solana.com/tx/{transaction_id}")
         client.confirm_transaction(signature, commitment=Confirmed)
-        print(f"Transaction confirmed: https://explorer.solana.com/tx/{transaction_id}")
+        logger.info(f"Transaction confirmed: https://explorer.solana.com/tx/{transaction_id}")
         return str(signature)
 
     except Exception as e:
+        logger.error(f"Swap failed: {str(e)}")
         raise Exception(f"Swap failed: {str(e)}")  # pylint: disable=W0719
 
 
 if __name__ == "__main__":
     wallet = SolanaWallet(key_path=os.getenv("SOLANA_KEY_PATH"))  # type: ignore
     swap_tool = SwapTokenTool(wallet)
-    print(
-        swap_tool.forward(
-            "So11111111111111111111111111111111111111112",
-            "JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN",
-            0.0001,
-            300,
-        )
+    result = swap_tool.forward(
+        "So11111111111111111111111111111111111111112",
+        "JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN",
+        0.0001,
+        300,
     )
+    print(result)
