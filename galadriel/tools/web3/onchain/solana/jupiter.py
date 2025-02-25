@@ -58,7 +58,7 @@ class SwapTokenTool(SolanaBaseTool):
     output_type = "string"
 
     def __init__(self, wallet: SolanaWallet, *args, **kwargs):
-        super().__init__(wallet=wallet, is_async_client=False, *args, **kwargs)  # type: ignore
+        super().__init__(wallet=wallet, *args, **kwargs)  # type: ignore
         if self.network is not Network.MAINNET:
             raise NotImplementedError("Jupiter tool is not available on devnet")
 
