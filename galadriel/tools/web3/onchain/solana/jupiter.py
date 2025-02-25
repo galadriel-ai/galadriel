@@ -1,10 +1,8 @@
-import asyncio
 import base64
 import json
 import os
-import nest_asyncio
 
-from solana.rpc.async_api import AsyncClient
+from solana.rpc.api import Client
 from solana.rpc.commitment import Processed, Confirmed
 from solana.rpc.types import TxOpts
 from solders import message
@@ -12,15 +10,14 @@ from solders.keypair import Keypair  # pylint: disable=E0401 # type: ignore
 from solders.pubkey import Pubkey  # pylint: disable=E0401 # type: ignore
 from solders.transaction import VersionedTransaction  # pylint: disable=E0401 # type: ignore
 
-from spl.token.async_client import AsyncToken
+from spl.token.client import Token
 from spl.token.constants import TOKEN_PROGRAM_ID
 
-from jupiter_python_sdk.jupiter import Jupiter
+from jupiter_python_sync_sdk.jupiter import Jupiter
 
 from galadriel.tools.web3.onchain.solana.base_tool import Network, SolanaBaseTool
 from galadriel.wallets.solana_wallet import SolanaWallet
 
-nest_asyncio.apply()
 
 # API endpoints for Jupiter Protocol
 SOLANA_API_URL = "https://api.mainnet-beta.solana.com"
@@ -61,7 +58,7 @@ class SwapTokenTool(SolanaBaseTool):
     output_type = "string"
 
     def __init__(self, wallet: SolanaWallet, *args, **kwargs):
-        super().__init__(wallet=wallet, is_async_client=True, *args, **kwargs)  # type: ignore
+        super().__init__(wallet=wallet, is_async_client=False, *args, **kwargs)  # type: ignore
         if self.network is not Network.MAINNET:
             raise NotImplementedError("Jupiter tool is not available on devnet")
 
@@ -76,29 +73,24 @@ class SwapTokenTool(SolanaBaseTool):
 
         Returns:
             str: A success message containing the transaction signature
-
-        Note:
-            Uses asyncio to run the swap operation in an event loop
         """
         wallet = self.wallet.get_wallet()
 
-        result = asyncio.get_event_loop().run_until_complete(
-            swap(
-                async_client=self.async_client,
-                wallet=wallet,
-                input_mint=token1,
-                output_mint=token2,
-                input_amount=amount,
-                slippage_bps=slippage_bps,
-            )
+        result = swap(
+            client=self.client,
+            wallet=wallet,
+            input_mint=token1,
+            output_mint=token2,
+            input_amount=amount,
+            slippage_bps=slippage_bps,
         )
 
         return f"Successfully swapped {amount} {token1} for {token2}, tx sig: {result}."
 
 
 # pylint: disable=R0914
-async def swap(
-    async_client: AsyncClient,
+def swap(
+    client: Client,
     wallet: Keypair,
     input_mint: str,
     output_mint: str,
@@ -111,7 +103,7 @@ async def swap(
     routing and pricing. Handles transaction construction, signing, and confirmation.
 
     Args:
-        async_client (AsyncClient): The Solana RPC client
+        client (Client): The Solana RPC client
         wallet (Keypair): The signer wallet for the transaction
         input_mint (str): Source token mint address
         output_mint (str): Target token mint address
@@ -132,7 +124,7 @@ async def swap(
         - Prints transaction URLs for monitoring
     """
     jupiter = Jupiter(
-        async_client=async_client,
+        client=client,
         keypair=wallet,
         quote_api_url=JUPITER_QUOTE_API_URL,
         swap_api_url=JUPITER_SWAP_API_URL,
@@ -148,14 +140,14 @@ async def swap(
     output_mint = str(output_mint)
 
     # Get token decimals and adjust amount
-    spl_client = AsyncToken(async_client, Pubkey.from_string(input_mint), TOKEN_PROGRAM_ID, wallet)
-    mint = await spl_client.get_mint_info()
+    spl_client = Token(client, Pubkey.from_string(input_mint), TOKEN_PROGRAM_ID, wallet)
+    mint = spl_client.get_mint_info()
     decimals = mint.decimals
     input_amount = int(input_amount * 10**decimals)
 
     try:
         # Get swap transaction data
-        transaction_data = await jupiter.swap(
+        transaction_data = jupiter.swap(
             input_mint,
             output_mint,
             input_amount,
@@ -170,11 +162,11 @@ async def swap(
 
         # Send and confirm transaction
         opts = TxOpts(skip_preflight=False, preflight_commitment=Processed)
-        result = await async_client.send_raw_transaction(txn=bytes(signed_txn), opts=opts)
+        result = client.send_raw_transaction(txn=bytes(signed_txn), opts=opts)
         print(f"Transaction sent: {json.loads(result.to_json())}")
         transaction_id = json.loads(result.to_json())["result"]
         print(f"Transaction sent: https://explorer.solana.com/tx/{transaction_id}")
-        await async_client.confirm_transaction(signature, commitment=Confirmed)
+        client.confirm_transaction(signature, commitment=Confirmed)
         print(f"Transaction confirmed: https://explorer.solana.com/tx/{transaction_id}")
         return str(signature)
 
