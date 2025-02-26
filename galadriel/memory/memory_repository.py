@@ -163,6 +163,7 @@ class MemoryRepository:
             )
         return vector_store  # type: ignore
 
+
 def _format_memories(memories):
     return "\n".join(
         [f"[{memory.additional_kwargs['date']}]\n {memory.content}" for memory in memories]  # type: ignore
