@@ -2,7 +2,7 @@ import asyncio
 from abc import ABC
 from abc import abstractmethod
 from pathlib import Path
-from typing import Dict, List
+from typing import AsyncGenerator, Dict, List
 from typing import Optional
 
 
@@ -10,9 +10,11 @@ from dotenv import load_dotenv as _load_dotenv
 
 from smolagents import CodeAgent as InternalCodeAgent
 from smolagents import ToolCallingAgent as InternalToolCallingAgent
+from smolagents import ActionStep
 
 from galadriel.domain import generate_proof
 from galadriel.domain import publish_proof
+from galadriel.domain.extract_step_logs import pull_messages_from_step
 from galadriel.domain.validate_solana_payment import SolanaPaymentValidator
 from galadriel.domain.prompts import format_prompt
 from galadriel.entities import Message
@@ -42,7 +44,9 @@ class Agent(ABC):
     """
 
     @abstractmethod
-    async def execute(self, request: Message, memory: Optional[str] = None) -> Message:
+    async def execute(
+        self, request: Message, memory: Optional[str] = None, stream: bool = False
+    ) -> AsyncGenerator[Message, None]:
         """Process a single request and generate a response.
         The processing can be a single LLM call or involve multiple agentic steps, like CodeAgent.
 
@@ -130,14 +134,28 @@ class CodeAgent(Agent, InternalCodeAgent):
         )
         format_prompt.validate_prompt_template(self.prompt_template)
 
-    async def execute(self, request: Message, memory: Optional[str] = None) -> Message:
+    async def execute(  # type: ignore
+        self, request: Message, memory: Optional[str] = None, stream: bool = False
+    ) -> AsyncGenerator[Message, None]:
         request_dict = {"request": request.content, "chat_history": memory}
-        answer = InternalCodeAgent.run(self, task=format_prompt.execute(self.prompt_template, request_dict))
-        return Message(
-            content=str(answer),
-            conversation_id=request.conversation_id,
+        formatted_task = format_prompt.execute(self.prompt_template, request_dict)
+
+        if not stream:
+            answer = InternalCodeAgent.run(self, task=formatted_task)
+            yield Message(
+                content=str(answer),
+                conversation_id=request.conversation_id,
+                additional_kwargs=request.additional_kwargs,
+            )
+            return
+        # Stream is enabled
+        async for message in stream_agent_response(
+            agent_run=InternalCodeAgent.run(self, task=formatted_task, stream=True),
+            conversation_id=request.conversation_id,  # type: ignore
             additional_kwargs=request.additional_kwargs,
-        )
+            model=self.model,
+        ):
+            yield message
 
 
 # pylint:disable=E0102
@@ -179,14 +197,28 @@ class ToolCallingAgent(Agent, InternalToolCallingAgent):
         )
         format_prompt.validate_prompt_template(self.prompt_template)
 
-    async def execute(self, request: Message, memory: Optional[str] = None) -> Message:
+    async def execute(  # type: ignore
+        self, request: Message, memory: Optional[str] = None, stream: bool = False
+    ) -> AsyncGenerator[Message, None]:
         request_dict = {"request": request.content, "chat_history": memory}
-        answer = InternalToolCallingAgent.run(self, task=format_prompt.execute(self.prompt_template, request_dict))
-        return Message(
-            content=str(answer),
-            conversation_id=request.conversation_id,
+        formatted_task = format_prompt.execute(self.prompt_template, request_dict)
+
+        if not stream:
+            answer = InternalToolCallingAgent.run(self, task=formatted_task)
+            yield Message(
+                content=str(answer),
+                conversation_id=request.conversation_id,
+                additional_kwargs=request.additional_kwargs,
+            )
+            return
+        # Stream is enabled
+        async for message in stream_agent_response(
+            agent_run=InternalToolCallingAgent.run(self, task=formatted_task, stream=True),
+            conversation_id=request.conversation_id,  # type: ignore
             additional_kwargs=request.additional_kwargs,
-        )
+            model=self.model,
+        ):
+            yield message
 
 
 class AgentRuntime:
@@ -231,13 +263,13 @@ class AgentRuntime:
         if self.enable_logs:
             init_logging(self.debug)
 
-    async def run(self):
+    async def run(self, stream: bool = False):
         """Start the agent runtime loop.
 
         Creates an single queue and continuously processes incoming requests.
         Al agent inputs receive the same instance of the queue and append requests to it.
         """
-        input_queue = asyncio.Queue()
+        input_queue = asyncio.Queue()  # type: ignore
         push_only_queue = PushOnlyQueue(input_queue)
 
         # Create tasks for all inputs and track them
@@ -255,10 +287,10 @@ class AgentRuntime:
             except asyncio.TimeoutError:
                 continue
             # Process the request
-            await self._run_request(request)
+            await self._run_request(request, stream)
             # await self.upload_state()
 
-    async def _run_request(self, request: Message):
+    async def _run_request(self, request: Message, stream: bool):
         """Process a single request through the agent pipeline.
 
         Handles payment validation, agent execution, and response delivery.
@@ -285,10 +317,14 @@ class AgentRuntime:
                 except Exception as e:
                     logger.error(f"Error getting memories: {e}")
             try:
-                response = await self.agent.execute(request, memories)
-            except Exception as e:
+                async for response in self.agent.execute(request, memories, stream=stream):  # type: ignore
+                    for output in self.outputs:
+                        try:
+                            await output.send(request, response)
+                        except Exception:
+                            logger.error("Failed to send streaming response via output", exc_info=True)
+            except Exception:
                 logger.error("Error during agent execution", exc_info=True)
-                response = Message(content=f"An error occurred while processing your request: {str(e)}")
         # Send the response to the outputs
         if response:
             # proof = await self._generate_proof(request, response)
@@ -298,11 +334,6 @@ class AgentRuntime:
                     await self.memory_repository.add_memory(request=request, response=response)
                 except Exception as e:
                     logger.error(f"Error adding memory: {e}")
-            for output in self.outputs:
-                try:
-                    await output.send(request, response)
-                except Exception:
-                    logger.error("Failed to send response via output", exc_info=True)
 
     async def _get_agent_memory(self) -> List[Dict[str, str]]:
         """Retrieve the current state of the agent's inner memory. This is not the chat memories.
@@ -334,3 +365,36 @@ class AgentRuntime:
 
     async def _publish_proof(self, request: Message, response: Message, proof: str):
         publish_proof.execute(request, response, proof)
+
+
+async def stream_agent_response(
+    agent_run, conversation_id: str, additional_kwargs: Optional[Dict] = None, model=None
+) -> AsyncGenerator[Message, None]:
+    """Stream responses from an agent run.
+
+    Args:
+        agent_run: Iterator from agent.run(task, stream=True)
+        conversation_id: ID to maintain conversation context
+        additional_kwargs: Additional message parameters
+        model: Optional model instance for token tracking
+    """
+    total_input_tokens = 0
+    total_output_tokens = 0
+    for step_log in agent_run:
+        # Track tokens if model provides them
+        if model and getattr(model, "last_input_token_count", None) is not None:
+            total_input_tokens += model.last_input_token_count
+            total_output_tokens += model.last_output_token_count
+            if isinstance(step_log, ActionStep):
+                step_log.input_token_count = model.last_input_token_count
+                step_log.output_token_count = model.last_output_token_count
+        async for message in pull_messages_from_step(
+            step_log, conversation_id=conversation_id, additional_kwargs=additional_kwargs
+        ):
+            yield message
+    final_answer = step_log  # Last log is the run's final_answer
+    yield Message(
+        content=f"**Final answer:** {str(final_answer)}",
+        conversation_id=conversation_id,
+        additional_kwargs=additional_kwargs,
+    )

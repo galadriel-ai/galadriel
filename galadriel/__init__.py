@@ -6,6 +6,7 @@ from .agent import (
     AgentInput,
     AgentOutput,
     AgentState,
+    stream_agent_response,
 )
 
 from smolagents import (
@@ -24,4 +25,5 @@ __all__ = [
     "ToolCallingAgent",
     "LiteLLMModel",
     "LogLevel",
+    "stream_agent_response",
 ]
