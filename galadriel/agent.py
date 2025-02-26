@@ -91,11 +91,6 @@ class AgentOutput:
         """
 
 
-class AgentState:
-    # TODO: knowledge_base: KnowledgeBase
-    pass
-
-
 # pylint:disable=E0102
 class CodeAgent(Agent, InternalCodeAgent):
     """
@@ -379,6 +374,12 @@ class AgentRuntime:
         if self.memory_repository:
             return self.memory_repository.save_data_locally(file_name)
         return None
+
+    async def _upload_agent_state(self) -> None:
+        pass
+
+    async def _download_agent_state(self) -> None:
+        pass
 
     async def _generate_proof(self, request: Message, response: Message) -> str:
         return generate_proof.execute(request, response)
