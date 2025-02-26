@@ -11,7 +11,7 @@ from galadriel.wallets.solana_wallet import SolanaWallet
 from galadriel.tools.web3.market_data import coingecko, dexscreener
 from galadriel.tools.web3.onchain.solana import (
     jupiter,
-    raydium_openbook,
+    raydium,
     native as solana_native,
     spl_token,
 )
@@ -52,7 +52,7 @@ Otherwise, if it’s available on Jupiter, use the Jupiter swap API.
 Ensure the transaction parameters are correctly set, including the restriction that the maximum SOL output per swap is 0.006 SOL.
 Log and Monitor:
 
-Once a swap is executed, log the transaction details for further analysis and monitor the performance of the swap.
+Once a swap is executed, log the transaction details for further analysis and monitor the performance of the swap.{{request}}
         """
 
 load_dotenv(dotenv_path=Path(".") / ".env", override=True)
@@ -73,8 +73,7 @@ tools = [
     dexscreener.GetTokenDataTool(),
     solana_native.GetSOLBalanceTool(solana_wallet),
     spl_token.GetTokenBalanceTool(solana_wallet),
-    raydium_openbook.BuyTokenWithSolTool(solana_wallet),
-    raydium_openbook.SellTokenForSolTool(solana_wallet),
+    raydium.SwapTokenTool(solana_wallet),
     jupiter.SwapTokenTool(solana_wallet),
 ]
 

@@ -3,7 +3,7 @@ import signal
 from abc import ABC
 from abc import abstractmethod
 from pathlib import Path
-from typing import Dict, List
+from typing import AsyncGenerator, Dict, List
 from typing import Optional
 
 
@@ -11,9 +11,11 @@ from dotenv import load_dotenv as _load_dotenv
 
 from smolagents import CodeAgent as InternalCodeAgent
 from smolagents import ToolCallingAgent as InternalToolCallingAgent
+from smolagents import ActionStep
 
 from galadriel.domain import generate_proof
 from galadriel.domain import publish_proof
+from galadriel.domain.extract_step_logs import pull_messages_from_step
 from galadriel.domain.validate_solana_payment import SolanaPaymentValidator
 from galadriel.domain.prompts import format_prompt
 from galadriel.entities import Message
@@ -43,7 +45,9 @@ class Agent(ABC):
     """
 
     @abstractmethod
-    async def execute(self, request: Message, memory: Optional[str] = None) -> Message:
+    async def execute(
+        self, request: Message, memory: Optional[str] = None, stream: bool = False
+    ) -> AsyncGenerator[Message, None]:
         """Process a single request and generate a response.
         The processing can be a single LLM call or involve multiple agentic steps, like CodeAgent.
 
@@ -131,14 +135,28 @@ class CodeAgent(Agent, InternalCodeAgent):
         )
         format_prompt.validate_prompt_template(self.prompt_template)
 
-    async def execute(self, request: Message, memory: Optional[str] = None) -> Message:
+    async def execute(  # type: ignore
+        self, request: Message, memory: Optional[str] = None, stream: bool = False
+    ) -> AsyncGenerator[Message, None]:
         request_dict = {"request": request.content, "chat_history": memory}
-        answer = InternalCodeAgent.run(self, task=format_prompt.execute(self.prompt_template, request_dict))
-        return Message(
-            content=str(answer),
-            conversation_id=request.conversation_id,
+        formatted_task = format_prompt.execute(self.prompt_template, request_dict)
+
+        if not stream:
+            answer = InternalCodeAgent.run(self, task=formatted_task)
+            yield Message(
+                content=str(answer),
+                conversation_id=request.conversation_id,
+                additional_kwargs=request.additional_kwargs,
+            )
+            return
+        # Stream is enabled
+        async for message in stream_agent_response(
+            agent_run=InternalCodeAgent.run(self, task=formatted_task, stream=True),
+            conversation_id=request.conversation_id,  # type: ignore
             additional_kwargs=request.additional_kwargs,
-        )
+            model=self.model,
+        ):
+            yield message
 
 
 # pylint:disable=E0102
@@ -180,14 +198,28 @@ class ToolCallingAgent(Agent, InternalToolCallingAgent):
         )
         format_prompt.validate_prompt_template(self.prompt_template)
 
-    async def execute(self, request: Message, memory: Optional[str] = None) -> Message:
+    async def execute(  # type: ignore
+        self, request: Message, memory: Optional[str] = None, stream: bool = False
+    ) -> AsyncGenerator[Message, None]:
         request_dict = {"request": request.content, "chat_history": memory}
-        answer = InternalToolCallingAgent.run(self, task=format_prompt.execute(self.prompt_template, request_dict))
-        return Message(
-            content=str(answer),
-            conversation_id=request.conversation_id,
+        formatted_task = format_prompt.execute(self.prompt_template, request_dict)
+
+        if not stream:
+            answer = InternalToolCallingAgent.run(self, task=formatted_task)
+            yield Message(
+                content=str(answer),
+                conversation_id=request.conversation_id,
+                additional_kwargs=request.additional_kwargs,
+            )
+            return
+        # Stream is enabled
+        async for message in stream_agent_response(
+            agent_run=InternalToolCallingAgent.run(self, task=formatted_task, stream=True),
+            conversation_id=request.conversation_id,  # type: ignore
             additional_kwargs=request.additional_kwargs,
-        )
+            model=self.model,
+        ):
+            yield message
 
 
 class AgentRuntime:
@@ -214,7 +246,7 @@ class AgentRuntime:
             inputs (List[AgentInput]): Input sources for the agent
             outputs (List[AgentOutput]): Output destinations for responses
             agent (Agent): The agent implementation to use
-            pricing (Optional[Pricing]): Payment configuration if required
+            solana_payment_validator (SolanaPaymentValidator): Payment validator
             debug (bool): Enable debug mode
             enable_logs (bool): Enable logging
         """
@@ -233,28 +265,35 @@ class AgentRuntime:
         if self.enable_logs:
             init_logging(self.debug)
 
-    async def run(self):
+    async def run(self, stream: bool = False):
         """Start the agent runtime loop.
 
         Creates an single queue and continuously processes incoming requests.
         Al agent inputs receive the same instance of the queue and append requests to it.
         """
-        input_queue = asyncio.Queue()
+        input_queue = asyncio.Queue()  # type: ignore
         push_only_queue = PushOnlyQueue(input_queue)
 
         # Listen for shutdown event
         await self._listen_for_stop()
 
         # Start agent inputs
-        for agent_input in self.inputs:
-            # Each agent input receives a queue it can push messages to
-            asyncio.create_task(agent_input.start(push_only_queue))
+        # Create tasks for all inputs and track them
+        input_tasks = [
+            asyncio.create_task(self._safe_client_start(agent_input, push_only_queue)) for agent_input in self.inputs
+        ]
 
         while not self.shutdown_event.is_set():
+            active_tasks = [task for task in input_tasks if not task.done()]
+            if not active_tasks:
+                raise RuntimeError("All input clients died")
             # Get the next request from the queue
-            request = await input_queue.get()
+            try:
+                request = await asyncio.wait_for(input_queue.get(), timeout=1.0)
+            except asyncio.TimeoutError:
+                continue
             # Process the request
-            await self._run_request(request)
+            await self._run_request(request, stream)
 
     def stop(self):
         self.shutdown_event.set()
@@ -271,7 +310,7 @@ class AgentRuntime:
             # Signal handling may not be supported on some platforms (e.g., Windows)
             logger.warning("SIGTERM signal handling is not supported on this platform.")
 
-    async def _run_request(self, request: Message):
+    async def _run_request(self, request: Message, stream: bool):
         """Process a single request through the agent pipeline.
 
         Handles payment validation, agent execution, and response delivery.
@@ -279,23 +318,34 @@ class AgentRuntime:
         Args:
             request (Message): The request to process
         """
-        response = None
+        task_and_payment, response = None, None
         # Handle payment validation
         if self.solana_payment_validator.pricing:
             try:
                 task_and_payment = await self.solana_payment_validator.execute(request)
                 request.content = task_and_payment.task
-            except PaymentValidationError as e:
-                response = Message(content=str(e))
-        if not response:
-            # Run the agent if no errors occurred so far
+            except PaymentValidationError:
+                logger.error("Payment validation error", exc_info=True)
+            except Exception:
+                logger.error("Unexpected error during payment validation", exc_info=True)
+        # Run the agent if payment validation passed or not required
+        if task_and_payment or not self.solana_payment_validator.pricing:
             memories = None
             if self.memory_repository:
                 try:
                     memories = await self.memory_repository.get_memories(prompt=request.content)
                 except Exception as e:
                     logger.error(f"Error getting memories: {e}")
-            response = await self.agent.execute(request, memories)
+            try:
+                async for response in self.agent.execute(request, memories, stream=stream):  # type: ignore
+                    for output in self.outputs:
+                        try:
+                            await output.send(request, response)
+                        except Exception:
+                            logger.error("Failed to send streaming response via output", exc_info=True)
+            except Exception:
+                logger.error("Error during agent execution", exc_info=True)
+        # Send the response to the outputs
         if response:
             # proof = await self._generate_proof(request, response)
             # await self._publish_proof(request, response, proof)
@@ -304,8 +354,6 @@ class AgentRuntime:
                     await self.memory_repository.add_memory(request=request, response=response)
                 except Exception as e:
                     logger.error(f"Error adding memory: {e}")
-            for output in self.outputs:
-                await output.send(request, response)
 
     async def _get_agent_memory(self) -> List[Dict[str, str]]:
         """Retrieve the current state of the agent's inner memory. This is not the chat memories.
@@ -314,6 +362,13 @@ class AgentRuntime:
             List[Dict[str, str]]: The agent's memory in a serializable format
         """
         return self.agent.write_memory_to_messages(summary_mode=True)  # type: ignore
+
+    async def _safe_client_start(self, agent_input: AgentInput, queue: PushOnlyQueue):
+        try:
+            await agent_input.start(queue)
+        except Exception as e:
+            logger.error(f"Input client {agent_input.__class__.__name__} failed", exc_info=True)
+            raise e
 
     async def _save_chat_memories(self, file_name: str) -> None:
         """Save the current state of the agent's chat memories.
@@ -330,3 +385,36 @@ class AgentRuntime:
 
     async def _publish_proof(self, request: Message, response: Message, proof: str):
         publish_proof.execute(request, response, proof)
+
+
+async def stream_agent_response(
+    agent_run, conversation_id: str, additional_kwargs: Optional[Dict] = None, model=None
+) -> AsyncGenerator[Message, None]:
+    """Stream responses from an agent run.
+
+    Args:
+        agent_run: Iterator from agent.run(task, stream=True)
+        conversation_id: ID to maintain conversation context
+        additional_kwargs: Additional message parameters
+        model: Optional model instance for token tracking
+    """
+    total_input_tokens = 0
+    total_output_tokens = 0
+    for step_log in agent_run:
+        # Track tokens if model provides them
+        if model and getattr(model, "last_input_token_count", None) is not None:
+            total_input_tokens += model.last_input_token_count
+            total_output_tokens += model.last_output_token_count
+            if isinstance(step_log, ActionStep):
+                step_log.input_token_count = model.last_input_token_count
+                step_log.output_token_count = model.last_output_token_count
+        async for message in pull_messages_from_step(
+            step_log, conversation_id=conversation_id, additional_kwargs=additional_kwargs
+        ):
+            yield message
+    final_answer = step_log  # Last log is the run's final_answer
+    yield Message(
+        content=f"**Final answer:** {str(final_answer)}",
+        conversation_id=conversation_id,
+        additional_kwargs=additional_kwargs,
+    )
