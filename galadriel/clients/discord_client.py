@@ -7,7 +7,6 @@ from discord.ext import commands
 
 from galadriel import AgentInput
 from galadriel import AgentOutput
-from galadriel.entities import HumanMessage
 from galadriel.entities import Message
 from galadriel.entities import PushOnlyQueue
 
@@ -72,7 +71,7 @@ class DiscordClient(commands.Bot, AgentInput, AgentOutput):
     async def on_message(self, message: discord.Message):
         """Event handler for processing incoming Discord messages.
 
-        Converts Discord messages to HumanMessage objects and adds them to the
+        Converts Discord messages to Message objects and adds them to the
         message queue. Ignores messages sent by the bot itself.
 
         Args:
@@ -87,7 +86,7 @@ class DiscordClient(commands.Bot, AgentInput, AgentOutput):
 
         # Create Message object and add to queue
         try:
-            msg = HumanMessage(
+            msg = Message(
                 content=message.content,
                 conversation_id=str(message.channel.id),
                 additional_kwargs={
