@@ -9,12 +9,6 @@ class GetProtocolTVLTool(Tool):
     """Tool for retrieving Total Value Locked (TVL) data for DeFi protocols.
 
     Fetches current TVL data for a specified protocol using the DeFi Llama API.
-
-    Attributes:
-        name (str): Tool identifier for the agent system
-        description (str): Description of the tool's functionality
-        inputs (dict): Schema for the required input parameters
-        output_type (str): Type of data returned by the tool
     """
 
     name = "get_protocol_tvl"
@@ -34,7 +28,7 @@ class GetProtocolTVLTool(Tool):
             protocol_name (str): The name of the protocol (e.g., 'uniswap')
 
         Returns:
-            str: JSON string containing TVL data
+            str: JSON string containing TVL data. Returns "Protocol not found" if the token doesn't exist
 
         Note:
             Returns data including:
