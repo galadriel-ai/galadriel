@@ -16,15 +16,6 @@ class Message(BaseModel):
     type: Optional[str] = None
     additional_kwargs: Optional[Dict] = None
 
-
-class HumanMessage(Message):
-    type: str = "human"
-
-
-class AgentMessage(Message):
-    type: str = "agent"
-
-
 class PushOnlyQueue:
     def __init__(self, queue: asyncio.Queue):
         self._queue = queue
