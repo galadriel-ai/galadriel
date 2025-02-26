@@ -1,10 +1,9 @@
 """Cookie.fun API tools for market data."""
 
 from abc import ABC
+from enum import Enum
 import json
-import logging
 import os
-from typing import Dict, List, Optional
 
 import requests
 
@@ -18,22 +17,14 @@ COOKIE_FUN_API_BASE = "https://api.cookie.fun/v2"
 COOKIE_FUN_API_KEY = os.getenv("COOKIE_FUN_API_KEY")
 
 
-# Time intervals supported by the API
-class TimeInterval:
+class TimeInterval(str, Enum):
     """Time intervals for Cookie.fun API."""
 
     THREE_DAYS = "_3Days"
     SEVEN_DAYS = "_7Days"
 
-
-class ChainId:
-    """Chain identifiers for different blockchains."""
-
-    SOLANA = -2  # Special identifier for Solana
-    ETHEREUM = 1
-    BSC = 56
-    ARBITRUM = 42161
-    # Add more chains as needed
+    def __str__(self) -> str:
+        return self.value
 
 
 class CookieFunBase(Tool, ABC):
@@ -59,18 +50,18 @@ class GetAgentByTwitterTool(CookieFunBase):
         "interval": {
             "type": "string",
             "description": "Time interval (_3Days, _7Days)",
-            "default": "_7Days",
+            "default": TimeInterval.SEVEN_DAYS,
             "nullable": True,
         },
     }
     output_type = "string"
 
-    def forward(self, twitter_username: str, interval: str = TimeInterval.SEVEN_DAYS) -> str:
+    def forward(self, twitter_username: str, interval: TimeInterval = TimeInterval.SEVEN_DAYS) -> str:
         """Fetch agent data by Twitter username.
 
         Args:
             twitter_username (str): Twitter username of the agent
-            interval (str, optional): Time interval. Defaults to "_7Days".
+            interval (TimeInterval, optional): Time interval. Defaults to SEVEN_DAYS.
 
         Returns:
             str: Agent data including trading history and performance as JSON string
@@ -81,7 +72,7 @@ class GetAgentByTwitterTool(CookieFunBase):
         try:
             response = requests.get(
                 f"{COOKIE_FUN_API_BASE}/agents/twitterUsername/{twitter_username}",
-                params={"interval": interval},
+                params={"interval": str(interval)},
                 headers=self.headers,
                 timeout=10,
             )
@@ -105,18 +96,18 @@ class GetAgentByAddressTool(CookieFunBase):
         "interval": {
             "type": "string",
             "description": "Time interval (_3Days, _7Days)",
-            "default": "_7Days",
+            "default": TimeInterval.SEVEN_DAYS,
             "nullable": True,
         },
     }
     output_type = "string"
 
-    def forward(self, contract_address: str, interval: str = TimeInterval.SEVEN_DAYS) -> str:
+    def forward(self, contract_address: str, interval: TimeInterval = TimeInterval.SEVEN_DAYS) -> str:
         """Fetch agent data by contract address.
 
         Args:
             contract_address (str): Contract address of the agent
-            interval (str, optional): Time interval. Defaults to "_7Days".
+            interval (TimeInterval, optional): Time interval. Defaults to SEVEN_DAYS.
 
         Returns:
             str: Agent data including trading history and performance as JSON string
@@ -127,7 +118,7 @@ class GetAgentByAddressTool(CookieFunBase):
         try:
             response = requests.get(
                 f"{COOKIE_FUN_API_BASE}/agents/contractAddress/{contract_address}",
-                params={"interval": interval},
+                params={"interval": str(interval)},
                 headers=self.headers,
                 timeout=10,
             )
@@ -147,7 +138,7 @@ class GetAgentsPagedTool(CookieFunBase):
         "interval": {
             "type": "string",
             "description": "Time interval (_3Days, _7Days)",
-            "default": "_7Days",
+            "default": TimeInterval.SEVEN_DAYS,
             "nullable": True,
         },
         "page": {
@@ -165,13 +156,11 @@ class GetAgentsPagedTool(CookieFunBase):
     }
     output_type = "string"
 
-    def forward(
-        self, interval: str = TimeInterval.SEVEN_DAYS, page: int = 1, page_size: int = 10
-    ) -> str:
+    def forward(self, interval: TimeInterval = TimeInterval.SEVEN_DAYS, page: int = 1, page_size: int = 10) -> str:
         """Fetch paginated list of agents ordered by mindshare.
 
         Args:
-            interval (str, optional): Time interval. Defaults to "_7Days".
+            interval (TimeInterval, optional): Time interval. Defaults to SEVEN_DAYS.
             page (int, optional): Page number (starts at 1). Defaults to 1.
             page_size (int, optional): Number of agents per page (1-25). Defaults to 10.
 
@@ -192,7 +181,7 @@ class GetAgentsPagedTool(CookieFunBase):
 
             response = requests.get(
                 f"{COOKIE_FUN_API_BASE}/agents/agentsPaged",
-                params={"interval": interval, "page": page, "pageSize": page_size},
+                params={"interval": str(interval), "page": str(page), "pageSize": str(page_size)},
                 headers=self.headers,
                 timeout=10,
             )
@@ -211,9 +200,7 @@ if __name__ == "__main__":
         print("Twitter Agent Data:", twitter_data)
 
         address_tool = GetAgentByAddressTool()
-        address_data = address_tool.forward(
-            "0xc0041ef357b183448b235a8ea73ce4e4ec8c265f", TimeInterval.THREE_DAYS
-        )
+        address_data = address_tool.forward("0xc0041ef357b183448b235a8ea73ce4e4ec8c265f", TimeInterval.THREE_DAYS)
         print("Address Agent Data:", address_data)
 
         # Test paginated agents list
