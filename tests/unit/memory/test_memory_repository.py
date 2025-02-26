@@ -124,27 +124,24 @@ async def test_get_short_term_memory(memory_repo):
     assert memories[0].content == "User: Test\n Assistant: Response"
 
 
-"""
-def test_initialize_with_existing_memory_file(mock_embeddings, mock_faiss, tmp_path):
-    """
-# Test initialization when memory file exists
-"""
-    # Setup
-    memory_file = tmp_path / "test_memory.faiss"
-    # Create an empty file
-    memory_file.touch()
-    
-    # Create repository with memory file
+@patch("galadriel.memory.memory_repository.FAISS.load_local")
+@patch("galadriel.memory.memory_repository.OpenAIEmbeddings")
+def test_initialize_with_existing_memory_folder(mock_embeddings, mock_faiss, tmp_path):
+    """Test if MemoryRepository loads from an existing memory folder."""
+
+    memory_folder = tmp_path / "test_memory"
+    memory_folder.mkdir()
+
+    # Mock FAISS load_local behavior
+    mock_faiss.return_value = Mock()
+
     repository = MemoryRepository(
         api_key="test-key",
-        memory_file_path=str(memory_file)
+        memory_folder_path=str(memory_folder)
     )
-    
-    # Assert
-    mock_faiss.load_local.assert_called_once_with(
-        str(memory_file),
-        embeddings=mock_embeddings,
+
+    mock_faiss.assert_called_once_with(
+        str(memory_folder),
+        embeddings=mock_embeddings.return_value,
         allow_dangerous_deserialization=True
     )
-    assert repository.vector_store == mock_faiss.load_local.return_value
-"""

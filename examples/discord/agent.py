@@ -56,5 +56,5 @@ asyncio.run(runtime.run())
 # Save memory to local file
 memory_repository.save_data_locally(memory_repository.memory_folder_path)
 
-# Save agent state
+# Upload agent state with memory to S3
 agent_state_repository.upload_agent_state(agent_state.memory_folder_path)

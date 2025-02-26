@@ -43,7 +43,6 @@ def test_download_with_specific_key(mock_download_folder, repository):
     )
 
 
-
 @patch.object(AgentStateRepository, "_download_folder_from_s3", return_value=True)
 def test_download_latest(mock_download_folder, repository, mock_s3_client):
     """Test downloading latest agent state"""
@@ -84,9 +83,7 @@ def test_upload_with_specific_key(mock_upload_folder, repository, mock_s3_client
     result = repository.upload_agent_state(file_path, key)
 
     assert result == key
-    mock_upload_folder.assert_called_once_with(
-        file_path, f"agents/{AGENT_INSTANCE_ID}/state_{key}"
-    )
+    mock_upload_folder.assert_called_once_with(file_path, f"agents/{AGENT_INSTANCE_ID}/state_{key}")
     mock_s3_client.put_object.assert_called_once_with(
         Bucket=BUCKET_NAME, Key=f"agents/{AGENT_INSTANCE_ID}/latest.state", Body=key.encode()
     )
@@ -102,12 +99,11 @@ def test_upload_without_key(mock_upload_folder, repository, mock_s3_client):
         result = repository.upload_agent_state(file_path)
 
     assert result == "20240226_150000"
-    mock_upload_folder.assert_called_once_with(
-        file_path, f"agents/{AGENT_INSTANCE_ID}/state_20240226_150000"
-    )
+    mock_upload_folder.assert_called_once_with(file_path, f"agents/{AGENT_INSTANCE_ID}/state_20240226_150000")
     mock_s3_client.put_object.assert_called_once_with(
         Bucket=BUCKET_NAME, Key=f"agents/{AGENT_INSTANCE_ID}/latest.state", Body=b"20240226_150000"
     )
+
 
 def test_upload_folder_to_s3(repository, mock_s3_client, tmp_path):
     """Test _upload_folder_to_s3 uploads all files while preserving structure"""
@@ -134,6 +130,7 @@ def test_upload_folder_to_s3(repository, mock_s3_client, tmp_path):
     # Assert that upload_file was called correctly
     mock_s3_client.upload_file.assert_has_calls(expected_calls, any_order=True)
     assert mock_s3_client.upload_file.call_count == 2
+
 
 def test_download_folder_from_s3(repository, mock_s3_client, tmp_path):
     """Test _download_folder_from_s3 downloads all files while preserving structure"""
@@ -174,6 +171,8 @@ def test_download_folder_from_s3(repository, mock_s3_client, tmp_path):
         repository.bucket_name, "agents/test-instance/state_20240226/file1.txt", str(local_folder / "file1.txt")
     )
     mock_s3_client.download_file.assert_any_call(
-        repository.bucket_name, "agents/test-instance/state_20240226/subdir/file2.txt", str(local_folder / "subdir/file2.txt")
+        repository.bucket_name,
+        "agents/test-instance/state_20240226/subdir/file2.txt",
+        str(local_folder / "subdir/file2.txt"),
     )
     assert mock_s3_client.download_file.call_count == 2

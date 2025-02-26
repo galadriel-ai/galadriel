@@ -36,9 +36,6 @@ class MemoryRepository:
             memory_folder_path: Path to the folder to load the vector store from
         """
         self.agent_name = agent_name
-        self.api_key = api_key
-        self.embedding_model = embedding_model
-        self.memory_folder_path = memory_folder_path
         self.vector_store = self._initialize_vector_database(embedding_model, api_key, memory_folder_path)  # type: ignore
         self.short_term_memory = []  # type: ignore
         self.short_term_memory_limit = short_term_memory_limit

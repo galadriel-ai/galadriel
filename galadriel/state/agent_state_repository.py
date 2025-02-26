@@ -60,7 +60,7 @@ class AgentStateRepository:
             # Upload folder to S3
             success = self._upload_folder_to_s3(local_folder_path, remote_folder_path)
             if success:
-                 # Update the "latest" reference
+                # Update the "latest" reference
                 latest_marker_path = f"agents/{self.agent_instance_id}/latest.state"
                 self.s3_client.put_object(Bucket=self.bucket_name, Key=latest_marker_path, Body=key.encode())
                 return key
