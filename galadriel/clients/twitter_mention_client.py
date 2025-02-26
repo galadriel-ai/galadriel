@@ -8,7 +8,6 @@ from galadriel.agent import AgentOutput
 from galadriel.connectors.twitter import TwitterApiClient
 from galadriel.connectors.twitter import TwitterCredentials
 from galadriel.entities import Message
-from galadriel.entities import Message
 from galadriel.entities import PushOnlyQueue
 
 
