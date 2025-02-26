@@ -29,12 +29,6 @@ class GetTokenBalanceTool(SolanaBaseTool):
     """Tool for retrieving user SPL token balances.
 
     Fetches token balances from Associated Token Accounts (ATAs).
-
-    Attributes:
-        name (str): Tool identifier
-        description (str): Description of the tool's functionality
-        inputs (dict): Schema for required input parameters
-        output_type (str): Type of data returned by the tool
     """
 
     name = "get_user_token_balance"
@@ -92,14 +86,7 @@ class GetTokenBalanceTool(SolanaBaseTool):
 
 
 class TransferTokenTool(SolanaBaseTool):
-    """Tool for transferring SPL tokens between user
-
-    Attributes:
-        name (str): Tool identifier
-        description (str): Description of the tool's functionality
-        inputs (dict): Schema for required input parameters
-        output_type (str): Type of data returned by the tool
-    """
+    """Tool for transferring SPL tokens between user"""
 
     name = "transfer_token"
     description = "Transfers SPL tokens between users."
@@ -114,7 +101,7 @@ class TransferTokenTool(SolanaBaseTool):
         },
         "amount": {
             "type": "number",
-            "description": "The amount of tokens to transfer.",
+            "description": "Token transfer amount, expressed in whole token units (accounting for token decimals).",
         },
     }
     output_type = "string"
@@ -128,7 +115,7 @@ class TransferTokenTool(SolanaBaseTool):
         Args:
             recipient_address (str): The recipient's Solana wallet address
             token_address (str): The token's mint address
-            amount (float): The amount of tokens to transfer
+            amount (float): Token transfer amount, expressed in whole token units (accounting for token decimals)
 
         Returns:
             str: The transaction signature if successful, error message if failed
@@ -140,7 +127,7 @@ class TransferTokenTool(SolanaBaseTool):
             token_pubkey = Pubkey.from_string(token_address)
 
             # Initialize SPL token client
-            spl_client = Token(self.client, token_pubkey, TOKEN_PROGRAM_ID, keypair)  # type: ignore
+            spl_client = Token(conn=self.client, pubkey=token_pubkey, program_id=TOKEN_PROGRAM_ID, payer=keypair)
 
             # Verify token mint is initialized
             mint = spl_client.get_mint_info()
