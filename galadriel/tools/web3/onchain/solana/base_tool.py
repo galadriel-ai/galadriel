@@ -1,9 +1,10 @@
+"""Base class for Solana tools."""
+
 from abc import ABC
 from enum import Enum
 import os
 
 from solana.rpc.api import Client
-from solana.rpc.async_api import AsyncClient
 from galadriel.tools import Tool
 from galadriel.wallets.solana_wallet import SolanaWallet
 
@@ -25,8 +26,7 @@ class SolanaBaseTool(Tool, ABC):
     Attributes:
         wallet_manager (WalletManager): Manager for handling wallet operations
         network (Network): The Solana network being used (mainnet or devnet)
-        client (Client, optional): The Solana RPC client for network interactions (if not using async client)
-        async_client (AsyncClient, optional): The HTTPX async client for network interactions (if using async client)
+        client (Client): The Solana RPC client for network interactions
 
     Example:
         class MySolanaTool(SolanaBaseTool):
@@ -39,12 +39,11 @@ class SolanaBaseTool(Tool, ABC):
                 # Use wallet for transactions
     """
 
-    def __init__(self, wallet: SolanaWallet, is_async_client: bool = False, *args, **kwargs):
+    def __init__(self, wallet: SolanaWallet, *args, **kwargs):
         """Initialize the Solana tool.
 
         Args:
             wallet_manager (WalletManager): The wallet manager instance for handling wallet operations
-            is_async_client (bool): Flag indicating if async client should be used
             *args: Variable length argument list passed to parent Tool class
             **kwargs: Arbitrary keyword arguments passed to parent Tool class
         """
@@ -53,16 +52,10 @@ class SolanaBaseTool(Tool, ABC):
         # Set the network and client based on the environment variable, default to mainnet
         if os.getenv("SOLANA_NETWORK") == "devnet":
             self.network = Network.DEVNET
-            if is_async_client:
-                self.async_client = AsyncClient("https://api.devnet.solana.com")
-            else:
-                self.client = Client("https://api.devnet.solana.com")
+            self.client = Client("https://api.devnet.solana.com")
         else:
             self.network = Network.MAINNET
-            if is_async_client:
-                self.async_client = AsyncClient("https://api.mainnet-beta.solana.com")
-            else:
-                self.client = Client("https://api.mainnet-beta.solana.com")
+            self.client = Client("https://api.mainnet-beta.solana.com")
 
         # Initialize parent Tool class
         super().__init__(*args, **kwargs)
