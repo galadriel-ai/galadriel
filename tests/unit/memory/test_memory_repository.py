@@ -135,13 +135,8 @@ def test_initialize_with_existing_memory_folder(mock_embeddings, mock_faiss, tmp
     # Mock FAISS load_local behavior
     mock_faiss.return_value = Mock()
 
-    repository = MemoryRepository(
-        api_key="test-key",
-        memory_folder_path=str(memory_folder)
-    )
+    MemoryRepository(api_key="test-key", memory_folder_path=str(memory_folder))
 
     mock_faiss.assert_called_once_with(
-        str(memory_folder),
-        embeddings=mock_embeddings.return_value,
-        allow_dangerous_deserialization=True
+        str(memory_folder), embeddings=mock_embeddings.return_value, allow_dangerous_deserialization=True
     )

@@ -145,7 +145,7 @@ class MemoryRepository:
 
     def _initialize_vector_database(
         self, embedding_model: str, api_key: str, folder_path: Optional[str] = None
-    ) -> Optional[FAISS]:
+    ) -> FAISS:
         """Initialize or load the vector database for long-term memory storage.
 
         Args:

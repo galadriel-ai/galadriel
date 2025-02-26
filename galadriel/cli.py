@@ -17,7 +17,7 @@ from dotenv import load_dotenv
 from solders.keypair import Keypair  # type: ignore
 
 API_BASE_URL = "https://api.galadriel.com/v1"
-DEFAULT_SOLANA_KEY_PATH = os.path.expanduser("~/secret/.private_key.json")
+DEFAULT_SOLANA_KEY_PATH = os.path.expanduser("~/.galadriel/solana/default_key.json")
 REQUEST_TIMEOUT = 180  # seconds
 
 

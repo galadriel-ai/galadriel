@@ -49,67 +49,70 @@ class GradioClient(AgentInput, AgentOutput):
 
         # Initialize the Gradio interface with a chatbot component
         with gr.Blocks() as self.interface:
-            self.chatbot = gr.Chatbot(
-                value=[],
+            stored_messages = gr.State([])
+            chatbot = gr.Chatbot(
                 label="Agent",
+                type="messages",
                 resizeable=True,
                 scale=1,
             )
-            with gr.Row():
-                self.msg = gr.Textbox(
-                    label="Message",
-                    placeholder="Type a message...",
-                    show_label=False,
-                    scale=7,
-                )
-                self.submit = gr.Button("Send", scale=1)
-            self.clear = gr.Button("Clear")
-
-            # Set up event handlers with chaining
-            self.msg.submit(self._handle_message, [self.msg, self.chatbot], [self.msg, self.chatbot]).then(
-                self._process_response, [self.chatbot], [self.chatbot]
+            text_input = gr.Textbox(lines=1, label="Chat Message")
+            text_input.submit(
+                self._handle_message,
+                [text_input, stored_messages, chatbot],
+                [stored_messages, text_input, chatbot],
             )
+            # Hidden refresh button to update the UI state.
+            # Its click action calls refresh_chat, which returns the latest chat history.
+            refresh_btn = gr.Button("Refresh", visible=False, elem_id="refresh-btn")
+            refresh_btn.click(self._refresh_chat, inputs=[chatbot, stored_messages], outputs=[chatbot, stored_messages])
+            # JavaScript to click the hidden refresh button every 0.1 second
+            gr.HTML("""
+            <script>
+            setInterval(function(){
+                document.getElementById("refresh-btn").click();
+            }, 100);
+            </script>
+            """)
 
-            self.submit.click(self._handle_message, [self.msg, self.chatbot], [self.msg, self.chatbot]).then(
-                self._process_response, [self.chatbot], [self.chatbot]
-            )
+    async def _refresh_chat(self, chatbot, stored_messages):
+        """
+        Simply returns the latest chat history.
+        This function is used by a hidden button that is triggered via JavaScript
+        to periodically refresh the UI.
+        """
+        return chatbot, stored_messages
 
-            self.clear.click(lambda: [], None, self.chatbot, queue=False)
-
-    async def _handle_message(self, message: str, history):
+    async def _handle_message(self, message: str, stored_messages, chatbot):
         """Process incoming messages from the Gradio interface.
 
         Args:
             message (str): The user's input message
-            history: The current chat history
+            stored_messages: The stored messages state
+            chatbot: The chatbot component
 
         Returns:
-            tuple: A tuple containing (empty string, updated history)
+            tuple: A tuple containing (stored_messages, empty string, updated chatbot)
         """
         if not message:
-            return "", history
+            return stored_messages, "", chatbot
 
         await self.input_queue.put(message)
-        history = history or []
-        history.append((message, None))
-        return "", history
 
-    async def _process_response(self, history):
-        """Process the agent's response and update the chat interface.
+        # Add user message to chat
+        chatbot.append(gr.ChatMessage(role="user", content=message))
 
-        Waits for a response from the output queue and adds it to the chat history.
-
-        Args:
-            history: The current chat history
-
-        Returns:
-            list: Updated chat history including the new response
-        """
+        # Wait for and process the response
         while self.output_queue.empty():
-            await asyncio.sleep(0.1)
-        new_message = await self.output_queue.get()
-        history.append((None, new_message))
-        return history
+            await asyncio.sleep(0.01)
+
+        # Get and display the response
+        while not self.output_queue.empty():
+            new_message = await self.output_queue.get()
+            chatbot.append(gr.ChatMessage(role="assistant", content=new_message))
+            await asyncio.sleep(0.2)
+
+        return stored_messages, "", chatbot
 
     async def start(self, queue: PushOnlyQueue) -> None:
         """Start the Gradio interface and begin processing messages.

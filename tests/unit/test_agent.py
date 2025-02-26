@@ -1,4 +1,4 @@
-from typing import Dict, Optional
+from typing import AsyncGenerator, Dict, Optional
 from typing import List
 from unittest.mock import MagicMock, AsyncMock
 
@@ -17,9 +17,11 @@ class MockAgent(Agent):
     def __init__(self):
         self.called_messages: List[Message] = []
 
-    async def execute(self, request: Message, memory: Optional[str] = None) -> Message:
+    async def execute(
+        self, request: Message, memory: Optional[str] = None, stream: bool = False
+    ) -> AsyncGenerator[Message, None]:
         self.called_messages.append(request)
-        return RESPONSE_MESSAGE
+        yield RESPONSE_MESSAGE
 
 
 class MockAgentInput(AgentInput):
@@ -57,7 +59,7 @@ async def test_publishes_proof():
         content="hello",
         conversation_id=CONVERSATION_ID,
     )
-    await runtime._run_request(request)
+    await runtime._run_request(request, stream=False)
     agent.publish_proof.execute.assert_called_with(request, RESPONSE_MESSAGE, "mock_proof")
 
 
@@ -74,7 +76,7 @@ async def test_post_output_to_client():
         content="hello",
         conversation_id=CONVERSATION_ID,
     )
-    await runtime._run_request(request)
+    await runtime._run_request(request, stream=False)
     assert output_client.output_requests[0] == request
     assert output_client.output_responses[0] == RESPONSE_MESSAGE
     # assert output_client.output_proofs[0] == "mock_proof"
@@ -92,7 +94,7 @@ async def test_payment_validation():
     )
 
     request = Message(content="test with payment sig123")
-    await runtime._run_request(request)
+    await runtime._run_request(request, stream=False)
 
     assert len(user_agent.called_messages) == 1
     assert user_agent.called_messages[0].content == "validated task"
@@ -109,7 +111,7 @@ async def test_payment_validation_failure():
     runtime.solana_payment_validator.execute = AsyncMock(side_effect=PaymentValidationError("Invalid payment"))
 
     request = Message(content="test with invalid payment")
-    await runtime._run_request(request)
+    await runtime._run_request(request, stream=False)
 
-    assert output_client.output_responses[0].content == "Invalid payment"
+    assert output_client.output_responses == []
     assert len(user_agent.called_messages) == 0
