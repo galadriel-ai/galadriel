@@ -122,7 +122,11 @@ runtime = AgentRuntime(
     inputs=[chatui_client],
     outputs=[chatui_client],
     agent=manager_agent,
-    memory_repository=MemoryRepository(api_key=os.getenv("OPENAI_API_KEY"), agent_name="open_deep_research_agent"),
+    memory_repository=MemoryRepository(
+        api_key=os.getenv("OPENAI_API_KEY"),
+        agent_name="open_deep_research_agent",
+        short_term_memory_limit=4,
+    ),
 )
 
 # Run the agent
