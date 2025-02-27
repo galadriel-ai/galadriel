@@ -18,7 +18,7 @@ from scripts.text_web_browser import (
 from scripts.visual_qa import visualizer
 
 from galadriel import CodeAgent, AgentRuntime, ToolCallingAgent
-from galadriel.clients import GradioClient
+from galadriel.clients import ChatUIClient
 from galadriel import LiteLLMModel
 
 
@@ -115,15 +115,15 @@ manager_agent = CodeAgent(
     managed_agents=[text_webbrowser_agent],
 )
 
-gradio_client = GradioClient()
+chatui_client = ChatUIClient()
 
 # Set up the runtime
 runtime = AgentRuntime(
-    inputs=[gradio_client],
-    outputs=[gradio_client],
+    inputs=[chatui_client],
+    outputs=[chatui_client],
     agent=manager_agent,
     memory_repository=MemoryRepository(api_key=os.getenv("OPENAI_API_KEY"), agent_name="open_deep_research_agent"),
 )
 
 # Run the agent
-asyncio.run(runtime.run())
+asyncio.run(runtime.run(stream=True))

@@ -3,7 +3,7 @@ import json
 import logging
 import time
 from collections import defaultdict
-from typing import Optional, AsyncGenerator, Union
+from typing import Dict, Optional, AsyncGenerator
 
 from fastapi import FastAPI
 from fastapi.responses import StreamingResponse
@@ -12,14 +12,17 @@ from pydantic import BaseModel
 import uvicorn
 
 from galadriel import AgentInput, AgentOutput
-from galadriel.entities import Message, LogMessage, PushOnlyQueue
+from galadriel.entities import Message, PushOnlyQueue
+
 
 class ChatMessage(BaseModel):
     role: str
     content: str
 
+
 class ChatRequest(BaseModel):
     messages: list[ChatMessage]
+
 
 class ChatUIClient(AgentInput, AgentOutput):
     """A ChatUI client that handles SSE-based message communication.
@@ -41,10 +44,10 @@ class ChatUIClient(AgentInput, AgentOutput):
         self.logger = logger or logging.getLogger("chatui_client")
         self.host = host
         self.port = port
-        
+
         # Store active SSE connections by conversation_id
-        self.active_connections = defaultdict(list)
-        
+        self.active_connections: Dict[str, list] = defaultdict(list)
+
         # Set up CORS
         self.app.add_middleware(
             CORSMiddleware,
@@ -55,11 +58,11 @@ class ChatUIClient(AgentInput, AgentOutput):
         )
 
         # Register the chat endpoint
-        self.app.post('/chat/completions')(self.chat_endpoint)
+        self.app.post("/chat/completions")(self.chat_endpoint)
 
     async def start(self, queue: PushOnlyQueue) -> None:
         """Start the ChatUI client and begin processing messages.
-        
+
         This method starts the FastAPI server in a way that doesn't block the calling
         coroutine, allowing it to be used with asyncio.create_task().
 
@@ -68,18 +71,13 @@ class ChatUIClient(AgentInput, AgentOutput):
         """
         self.queue = queue
         self.logger.info(f"Starting ChatUI client on {self.host}:{self.port}")
-        
+
         # Create a server config
-        config = uvicorn.Config(
-            app=self.app,
-            host=self.host,
-            port=self.port,
-            log_level="info"
-        )
-        
+        config = uvicorn.Config(app=self.app, host=self.host, port=self.port, log_level="info")
+
         # Create the server
         server = uvicorn.Server(config)
-        
+
         # Start the server - this will run until the server is stopped
         await server.serve()
 
@@ -91,7 +89,7 @@ class ChatUIClient(AgentInput, AgentOutput):
 
         # Process only the last message in the conversation
         last_message = chat_request.messages[-1]
-        
+
         # Create a unique conversation ID (in practice, you might want to manage this differently)
         conversation_id = "chat-1"  # Simplified for this example
 
@@ -102,32 +100,32 @@ class ChatUIClient(AgentInput, AgentOutput):
             additional_kwargs={
                 "author": "web_user",
                 "role": last_message.role,
-            }
+            },
         )
-        
+
         await self.queue.put(incoming)
         self.logger.info(f"Enqueued message: {incoming}")
 
         # Create a response stream for this conversation
         response_stream = self._create_response_stream(conversation_id)
-        
+
         return StreamingResponse(
             response_stream,
-            media_type='text/event-stream',
+            media_type="text/event-stream",
             headers={
-                'Cache-Control': 'no-cache',
-                'Connection': 'keep-alive',
-            }
+                "Cache-Control": "no-cache",
+                "Connection": "keep-alive",
+            },
         )
 
     async def _create_response_stream(self, conversation_id: str) -> AsyncGenerator[str, None]:
         """Create a response stream for a specific conversation."""
         # Create a queue for this specific connection
-        queue = asyncio.Queue()
-        
+        queue: asyncio.Queue[Dict] = asyncio.Queue()
+
         # Register this connection in our active connections
         self.active_connections[conversation_id].append(queue)
-        
+
         try:
             # Keep the connection open
             while True:
@@ -135,30 +133,30 @@ class ChatUIClient(AgentInput, AgentOutput):
                 try:
                     # Wait for a message with a timeout
                     message = await asyncio.wait_for(queue.get(), timeout=60)
-                    
+
                     # Format and yield the message
                     yield f"data: {json.dumps(message)}\n\n"
-                    
+
                     # If this is the end message, break the loop
                     if message.get("choices", [{}])[0].get("finish_reason") == "stop":
                         break
-                        
+
                 except asyncio.TimeoutError:
                     # Send a keep-alive comment to prevent connection timeout
                     yield ": keep-alive\n\n"
                     continue
-                    
+
         finally:
             # Clean up when the connection is closed
             if conversation_id in self.active_connections:
                 if queue in self.active_connections[conversation_id]:
                     self.active_connections[conversation_id].remove(queue)
-                
+
                 # If no more connections for this conversation, clean up
                 if not self.active_connections[conversation_id]:
                     del self.active_connections[conversation_id]
 
-    async def send(self, request: Message, response: Union[Message, LogMessage]) -> None:
+    async def send(self, request: Message, response: Message) -> None:
         """Send a response message back to the chat interface.
 
         Args:
@@ -170,45 +168,35 @@ class ChatUIClient(AgentInput, AgentOutput):
             return
 
         conversation_id = response.conversation_id
-        
+
         # Check if we have any active connections for this conversation
         if conversation_id not in self.active_connections or not self.active_connections[conversation_id]:
             self.logger.warning(f"No active connections for conversation {conversation_id}")
             return
-            
+
         # Format response in OpenAI-compatible format
         formatted_response = {
             "id": "chatcmpl-" + conversation_id,
             "object": "chat.completion.chunk",
             "created": int(time.time()),
             "model": "gpt-4",  # This could be configurable
-            "choices": [{
-                "index": 0,
-                "delta": {
-                    "content": response.content
-                },
-                "finish_reason": None
-            }]
+            "choices": [{"index": 0, "delta": {"content": response.content}, "finish_reason": None}],
         }
-        
+
         # Send the response to all active connections for this conversation
         for queue in self.active_connections[conversation_id]:
             await queue.put(formatted_response)
 
         # Send a final message to indicate completion if the response is not a log message
-        if not isinstance(response, LogMessage):
+        if response.final:
             final_message = {
                 "id": "chatcmpl-" + conversation_id,
                 "object": "chat.completion.chunk",
                 "created": int(time.time()),
                 "model": "gpt-4",
-                "choices": [{
-                    "index": 0,
-                    "delta": {},
-                    "finish_reason": "stop"
-                }]
+                "choices": [{"index": 0, "delta": {}, "finish_reason": "stop"}],
             }
             for queue in self.active_connections[conversation_id]:
                 await queue.put(final_message)
-            
+
         self.logger.info(f"Response sent to conversation {conversation_id}: {response.content}")

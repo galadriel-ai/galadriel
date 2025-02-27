@@ -1,7 +1,7 @@
 from typing import Optional
 import re
 
-from galadriel.entities import LogMessage
+from galadriel.entities import Message
 from smolagents import ActionStep
 
 
@@ -15,7 +15,7 @@ async def pull_messages_from_step(
 
     # Output the step number
     step_number = f"Step {step_log.step_number}" if step_log.step_number is not None else ""
-    yield LogMessage(content=f"**{step_number}**", conversation_id=conversation_id, additional_kwargs=additional_kwargs)
+    yield Message(content=f"**{step_number}**", conversation_id=conversation_id, additional_kwargs=additional_kwargs)
 
     # First yield the thought/reasoning from the LLM
     if hasattr(step_log, "model_output") and step_log.model_output is not None:
@@ -26,7 +26,7 @@ async def pull_messages_from_step(
         model_output = re.sub(r"<end_code>\s*```", "```", model_output)
         model_output = re.sub(r"```\s*\n\s*<end_code>", "```", model_output)
         model_output = model_output.strip()
-        yield LogMessage(content=model_output, conversation_id=conversation_id, additional_kwargs=additional_kwargs)
+        yield Message(content=model_output, conversation_id=conversation_id, additional_kwargs=additional_kwargs)
 
     # For tool calls
     if hasattr(step_log, "tool_calls") and step_log.tool_calls is not None:
@@ -50,30 +50,30 @@ async def pull_messages_from_step(
 
         # Tool call message
         tool_kwargs = {**(additional_kwargs or {}), "tool_name": first_tool_call.name, "status": "pending"}
-        yield LogMessage(content=content, conversation_id=conversation_id, additional_kwargs=tool_kwargs)
+        yield Message(content=content, conversation_id=conversation_id, additional_kwargs=tool_kwargs)
 
         # Execution logs
         if hasattr(step_log, "observations") and step_log.observations and step_log.observations.strip():
             log_content = step_log.observations.strip()
             log_content = re.sub(r"^Execution logs:\s*", "", log_content)
             log_kwargs = {**(additional_kwargs or {}), "type": "execution_logs", "status": "done"}
-            yield LogMessage(content=log_content, conversation_id=conversation_id, additional_kwargs=log_kwargs)
+            yield Message(content=log_content, conversation_id=conversation_id, additional_kwargs=log_kwargs)
 
         # Tool errors
         if hasattr(step_log, "error") and step_log.error is not None:
             error_kwargs = {**(additional_kwargs or {}), "type": "error", "status": "done"}
-            yield LogMessage(content=str(step_log.error), conversation_id=conversation_id, additional_kwargs=error_kwargs)
+            yield Message(content=str(step_log.error), conversation_id=conversation_id, additional_kwargs=error_kwargs)
 
         # Final tool status
         tool_kwargs["status"] = "done"
-        yield LogMessage(
+        yield Message(
             content="Tool execution completed", conversation_id=conversation_id, additional_kwargs=tool_kwargs
         )
 
     # Handle standalone errors
     elif hasattr(step_log, "error") and step_log.error is not None:
         error_kwargs = {**(additional_kwargs or {}), "type": "error"}
-        yield LogMessage(content=str(step_log.error), conversation_id=conversation_id, additional_kwargs=error_kwargs)
+        yield Message(content=str(step_log.error), conversation_id=conversation_id, additional_kwargs=error_kwargs)
 
     # Step summary with tokens and duration
     step_footnote = f"{step_number}"
@@ -85,7 +85,7 @@ async def pull_messages_from_step(
         step_footnote += step_duration  # type: ignore
 
     summary_kwargs = {**(additional_kwargs or {}), "type": "step_summary"}
-    yield LogMessage(content=step_footnote, conversation_id=conversation_id, additional_kwargs=summary_kwargs)
+    yield Message(content=step_footnote, conversation_id=conversation_id, additional_kwargs=summary_kwargs)
 
     # Step separator
-    yield LogMessage(content="-----\n```\n", conversation_id=conversation_id, additional_kwargs=additional_kwargs)
+    yield Message(content="-----\n```\n", conversation_id=conversation_id, additional_kwargs=additional_kwargs)

@@ -17,8 +17,6 @@ class Message(BaseModel):
     final: bool = False
     additional_kwargs: Optional[Dict] = None
 
-class LogMessage(Message):
-    type: str = "log"
 
 class PushOnlyQueue:
     def __init__(self, queue: asyncio.Queue):
