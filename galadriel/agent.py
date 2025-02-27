@@ -393,8 +393,9 @@ async def stream_agent_response(
         ):
             yield message
     final_answer = step_log  # Last log is the run's final_answer
+    # final message
     yield Message(
-        content=f"**Final answer:** {str(final_answer)}",
+        content=f"{str(final_answer)}",
         conversation_id=conversation_id,
         additional_kwargs=additional_kwargs,
     )

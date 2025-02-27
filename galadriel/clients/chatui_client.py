@@ -3,7 +3,7 @@ import json
 import logging
 import time
 from collections import defaultdict
-from typing import Optional, AsyncGenerator
+from typing import Optional, AsyncGenerator, Union
 
 from fastapi import FastAPI
 from fastapi.responses import StreamingResponse
@@ -12,7 +12,7 @@ from pydantic import BaseModel
 import uvicorn
 
 from galadriel import AgentInput, AgentOutput
-from galadriel.entities import HumanMessage, Message, PushOnlyQueue
+from galadriel.entities import Message, LogMessage, PushOnlyQueue
 
 class ChatMessage(BaseModel):
     role: str
@@ -96,7 +96,7 @@ class ChatUIClient(AgentInput, AgentOutput):
         conversation_id = "chat-1"  # Simplified for this example
 
         # Create and queue the incoming message
-        incoming = HumanMessage(
+        incoming = Message(
             content=last_message.content,
             conversation_id=conversation_id,
             additional_kwargs={
@@ -158,7 +158,7 @@ class ChatUIClient(AgentInput, AgentOutput):
                 if not self.active_connections[conversation_id]:
                     del self.active_connections[conversation_id]
 
-    async def send(self, request: Message, response: Message) -> None:
+    async def send(self, request: Message, response: Union[Message, LogMessage]) -> None:
         """Send a response message back to the chat interface.
 
         Args:
@@ -194,21 +194,21 @@ class ChatUIClient(AgentInput, AgentOutput):
         # Send the response to all active connections for this conversation
         for queue in self.active_connections[conversation_id]:
             await queue.put(formatted_response)
-            
-        # Send a final message to indicate completion
-        final_message = {
-            "id": "chatcmpl-" + conversation_id,
-            "object": "chat.completion.chunk",
-            "created": int(time.time()),
-            "model": "gpt-4",
-            "choices": [{
-                "index": 0,
-                "delta": {},
-                "finish_reason": "stop"
-            }]
-        }
-        
-        for queue in self.active_connections[conversation_id]:
-            await queue.put(final_message)
+
+        # Send a final message to indicate completion if the response is not a log message
+        if not isinstance(response, LogMessage):
+            final_message = {
+                "id": "chatcmpl-" + conversation_id,
+                "object": "chat.completion.chunk",
+                "created": int(time.time()),
+                "model": "gpt-4",
+                "choices": [{
+                    "index": 0,
+                    "delta": {},
+                    "finish_reason": "stop"
+                }]
+            }
+            for queue in self.active_connections[conversation_id]:
+                await queue.put(final_message)
             
         self.logger.info(f"Response sent to conversation {conversation_id}: {response.content}")

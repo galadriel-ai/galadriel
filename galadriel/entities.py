@@ -16,6 +16,8 @@ class Message(BaseModel):
     type: Optional[str] = None
     additional_kwargs: Optional[Dict] = None
 
+class LogMessage(Message):
+    type: str = "log"
 
 class PushOnlyQueue:
     def __init__(self, queue: asyncio.Queue):
