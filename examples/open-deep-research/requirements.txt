@@ -1,4 +1,4 @@
-galadriel>=0.0.10
+galadriel>=0.0.11
 beautifulsoup4==4.12.3
 Bio
 chess
@@ -25,7 +25,6 @@ pydub==0.25.1
 requests==2.32.3
 scikit-learn==1.6.1
 scipy==1.15.2
-serpapi==0.1.5
 SpeechRecognition==3.10.1
 sympy==1.12
 torch==2.2.2

@@ -78,14 +78,14 @@ async def pull_messages_from_step(
     # Step summary with tokens and duration
     step_footnote = f"{step_number}"
     if hasattr(step_log, "input_token_count") and hasattr(step_log, "output_token_count"):
-        token_str = f" | Input-tokens:{step_log.input_token_count:,} | Output-tokens:{step_log.output_token_count:,}"
+        token_str = f"\nInput-tokens:{step_log.input_token_count:,} | Output-tokens:{step_log.output_token_count:,}"
         step_footnote += token_str
     if hasattr(step_log, "duration"):
-        step_duration = f" | Duration: {round(float(step_log.duration), 2)}" if step_log.duration else None
+        step_duration = f" | Duration: {round(float(step_log.duration), 2)}\n" if step_log.duration else None
         step_footnote += step_duration  # type: ignore
 
     summary_kwargs = {**(additional_kwargs or {}), "type": "step_summary"}
     yield Message(content=step_footnote, conversation_id=conversation_id, additional_kwargs=summary_kwargs)
 
     # Step separator
-    yield Message(content="-----", conversation_id=conversation_id, additional_kwargs=additional_kwargs)
+    yield Message(content="-----\n```\n", conversation_id=conversation_id, additional_kwargs=additional_kwargs)

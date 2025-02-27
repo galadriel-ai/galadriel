@@ -34,6 +34,7 @@ You are a helpful chatbot assistant.
 Here is the chat history: \n\n {{chat_history}} \n
 Answer the following question: \n\n {{request}} \n
 Please remember the chat history and use it to answer the question, if relevant to the question.
+Maintain a natural conversation on telegram, don't add signatures at the end of your messages.
 """
 
 
@@ -395,8 +396,9 @@ async def stream_agent_response(
         ):
             yield message
     final_answer = step_log  # Last log is the run's final_answer
+    # final message
     yield Message(
-        content=f"**Final answer:** {str(final_answer)}",
+        content=f"{str(final_answer)}",
         conversation_id=conversation_id,
         additional_kwargs=additional_kwargs,
         final=True,
