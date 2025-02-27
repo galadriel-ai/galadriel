@@ -19,7 +19,7 @@ from scripts.visual_qa import visualizer
 
 from galadriel import CodeAgent, AgentRuntime, ToolCallingAgent
 from galadriel.clients import GradioClient
-from galadriel.core_agent import LiteLLMModel
+from galadriel import LiteLLMModel
 
 
 AUTHORIZED_IMPORTS = [
@@ -52,6 +52,8 @@ AUTHORIZED_IMPORTS = [
 
 user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36 Edg/119.0.0.0"
 
+load_dotenv(dotenv_path=Path(".") / ".env", override=True)
+
 BROWSER_CONFIG = {
     "viewport_size": 1024 * 5,
     "downloads_folder": "downloads_folder",
@@ -67,7 +69,6 @@ os.makedirs(f"./{BROWSER_CONFIG['downloads_folder']}", exist_ok=True)
 
 text_limit = 150000
 
-load_dotenv(dotenv_path=Path(".") / ".env", override=True)
 model = LiteLLMModel(model_id="gpt-4o", api_key=os.getenv("OPENAI_API_KEY"))
 
 document_inspection_tool = TextInspectorTool(model, text_limit)
