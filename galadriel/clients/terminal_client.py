@@ -88,13 +88,13 @@ class TerminalClient(AgentInput, AgentOutput):
                         "timestamp": str(datetime.now().isoformat()),
                     },
                 )
-                
+
                 # Clear the event before sending the message
                 self.response_received.clear()
-                
+
                 await self.message_queue.put(msg)
                 self.logger.debug(f"Added message to queue: {msg}")
-                
+
                 # Wait for the response
                 await self.response_received.wait()
 
@@ -116,6 +116,6 @@ class TerminalClient(AgentInput, AgentOutput):
             conversation flow.
         """
         print(f"\nAgent: {response.content}")
-        
+
         if response.final:
             self.response_received.set()
