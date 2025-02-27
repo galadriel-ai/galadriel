@@ -37,6 +37,7 @@ types-aiofiles = "^24.1.0.20241221"
 pyTelegramBotAPI = "^4.26.0"
 solana = "^0.35.0"
 solders = "^0.21.0,<0.24.0"
+dextools-python = "^0.3.2"
 jupiter-python-sync-sdk =  {git = "https://github.com/galadriel-ai/jupiter-python-sync-sdk", rev = "main"}
 litellm = {version = "^1.58.2"}
 gradio = "^5.15.0"
