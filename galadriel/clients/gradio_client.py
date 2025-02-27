@@ -5,7 +5,7 @@ from datetime import datetime
 import gradio as gr
 
 from galadriel import AgentInput, AgentOutput
-from galadriel.entities import Message, PushOnlyQueue, HumanMessage
+from galadriel.entities import Message, PushOnlyQueue
 
 
 class GradioClient(AgentInput, AgentOutput):
@@ -138,7 +138,7 @@ class GradioClient(AgentInput, AgentOutput):
             if not self.input_queue.empty():
                 user_input = await self.input_queue.get()
 
-                msg = HumanMessage(
+                msg = Message(
                     content=user_input,
                     conversation_id=self.conversation_id,
                     additional_kwargs={

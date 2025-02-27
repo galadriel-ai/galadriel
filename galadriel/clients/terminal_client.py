@@ -4,7 +4,7 @@ import logging
 from datetime import datetime
 
 from galadriel import AgentInput, AgentOutput
-from galadriel.entities import Message, PushOnlyQueue, HumanMessage
+from galadriel.entities import Message, PushOnlyQueue
 
 
 class TerminalClient(AgentInput, AgentOutput):
@@ -77,7 +77,7 @@ class TerminalClient(AgentInput, AgentOutput):
                     break
 
                 # Create Message object and add to queue
-                msg = HumanMessage(
+                msg = Message(
                     content=user_input,
                     conversation_id=self.conversation_id,
                     additional_kwargs={
