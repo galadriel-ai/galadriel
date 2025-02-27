@@ -238,7 +238,7 @@ class AgentRuntime:
         outputs: List[AgentOutput],
         agent: Agent,
         pricing: Optional[Pricing] = None,
-        memory_repository: Optional[MemoryStore] = None,
+        memory_repository: Optional[MemoryStore] = MemoryStore(),
         debug: bool = False,
         enable_logs: bool = False,
     ):
