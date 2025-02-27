@@ -2,7 +2,6 @@ import asyncio
 import json
 import logging
 import time
-from collections import defaultdict
 from typing import Dict, Optional, AsyncGenerator
 
 from fastapi import FastAPI
@@ -45,8 +44,7 @@ class ChatUIClient(AgentInput, AgentOutput):
         self.host = host
         self.port = port
 
-        # Store active SSE connections by conversation_id
-        self.active_connections: Dict[str, list] = defaultdict(list)
+        self.active_connection: Optional[asyncio.Queue] = None
 
         # Set up CORS
         self.app.add_middleware(
@@ -120,11 +118,11 @@ class ChatUIClient(AgentInput, AgentOutput):
 
     async def _create_response_stream(self, conversation_id: str) -> AsyncGenerator[str, None]:
         """Create a response stream for a specific conversation."""
-        # Create a queue for this specific connection
+        # Create a queue for this connection
         queue: asyncio.Queue[Dict] = asyncio.Queue()
 
-        # Register this connection in our active connections
-        self.active_connections[conversation_id].append(queue)
+        # Store the active connection
+        self.active_connection = queue
 
         try:
             # Keep the connection open
@@ -148,13 +146,7 @@ class ChatUIClient(AgentInput, AgentOutput):
 
         finally:
             # Clean up when the connection is closed
-            if conversation_id in self.active_connections:
-                if queue in self.active_connections[conversation_id]:
-                    self.active_connections[conversation_id].remove(queue)
-
-                # If no more connections for this conversation, clean up
-                if not self.active_connections[conversation_id]:
-                    del self.active_connections[conversation_id]
+            self.active_connection = None
 
     async def send(self, request: Message, response: Message) -> None:
         """Send a response message back to the chat interface.
@@ -167,36 +159,32 @@ class ChatUIClient(AgentInput, AgentOutput):
             self.logger.warning("No conversation_id found in response; cannot respond.")
             return
 
-        conversation_id = response.conversation_id
-
-        # Check if we have any active connections for this conversation
-        if conversation_id not in self.active_connections or not self.active_connections[conversation_id]:
-            self.logger.warning(f"No active connections for conversation {conversation_id}")
+        # Check if we have an active connection
+        if not self.active_connection:
+            self.logger.warning(f"No active connection for conversation {response.conversation_id}")
             return
 
         # Format response in OpenAI-compatible format
         formatted_response = {
-            "id": "chatcmpl-" + conversation_id,
+            "id": "chatcmpl-" + response.conversation_id,
             "object": "chat.completion.chunk",
             "created": int(time.time()),
             "model": "gpt-4",  # This could be configurable
             "choices": [{"index": 0, "delta": {"content": response.content}, "finish_reason": None}],
         }
 
-        # Send the response to all active connections for this conversation
-        for queue in self.active_connections[conversation_id]:
-            await queue.put(formatted_response)
+        # Send the response to the active connection
+        await self.active_connection.put(formatted_response)
 
         # Send a final message to indicate completion if the response is not a log message
         if response.final:
             final_message = {
-                "id": "chatcmpl-" + conversation_id,
+                "id": "chatcmpl-" + response.conversation_id,
                 "object": "chat.completion.chunk",
                 "created": int(time.time()),
                 "model": "gpt-4",
                 "choices": [{"index": 0, "delta": {}, "finish_reason": "stop"}],
             }
-            for queue in self.active_connections[conversation_id]:
-                await queue.put(final_message)
+            await self.active_connection.put(final_message)
 
-        self.logger.info(f"Response sent to conversation {conversation_id}: {response.content}")
+        self.logger.info(f"Response sent to conversation {response.conversation_id}: {response.content}")
