@@ -147,6 +147,7 @@ class CodeAgent(Agent, InternalCodeAgent):
                 content=str(answer),
                 conversation_id=request.conversation_id,
                 additional_kwargs=request.additional_kwargs,
+                final=True,
             )
             return
         # Stream is enabled
@@ -210,6 +211,7 @@ class ToolCallingAgent(Agent, InternalToolCallingAgent):
                 content=str(answer),
                 conversation_id=request.conversation_id,
                 additional_kwargs=request.additional_kwargs,
+                final=True,
             )
             return
         # Stream is enabled
@@ -417,4 +419,5 @@ async def stream_agent_response(
         content=f"**Final answer:** {str(final_answer)}",
         conversation_id=conversation_id,
         additional_kwargs=additional_kwargs,
+        final=True,
     )

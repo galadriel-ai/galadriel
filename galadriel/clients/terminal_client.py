@@ -4,7 +4,7 @@ import logging
 from datetime import datetime
 
 from galadriel import AgentInput, AgentOutput
-from galadriel.entities import Message, PushOnlyQueue, HumanMessage
+from galadriel.entities import Message, PushOnlyQueue
 
 
 class TerminalClient(AgentInput, AgentOutput):
@@ -18,6 +18,7 @@ class TerminalClient(AgentInput, AgentOutput):
         message_queue (Optional[PushOnlyQueue]): Queue for storing messages to be processed
         logger (logging.Logger): Logger instance for tracking client activities
         conversation_id (str): Identifier for the terminal chat session
+        response_received (asyncio.Event): Event to signal when a response is received
     """
 
     def __init__(self, logger: Optional[logging.Logger] = None):
@@ -30,6 +31,7 @@ class TerminalClient(AgentInput, AgentOutput):
         self.message_queue: Optional[PushOnlyQueue] = None
         self.logger = logger or logging.getLogger("terminal_client")
         self.conversation_id = "terminal"  # Single conversation ID for terminal
+        self.response_received = asyncio.Event()
 
     async def get_user_input(self):
         """Get input from user asynchronously.
@@ -77,7 +79,7 @@ class TerminalClient(AgentInput, AgentOutput):
                     break
 
                 # Create Message object and add to queue
-                msg = HumanMessage(
+                msg = Message(
                     content=user_input,
                     conversation_id=self.conversation_id,
                     additional_kwargs={
@@ -86,8 +88,16 @@ class TerminalClient(AgentInput, AgentOutput):
                         "timestamp": str(datetime.now().isoformat()),
                     },
                 )
+
+                # Clear the event before sending the message
+                self.response_received.clear()
+
                 await self.message_queue.put(msg)
                 self.logger.debug(f"Added message to queue: {msg}")
+
+                # Wait for the response
+                await self.response_received.wait()
+
             except Exception as e:
                 self.logger.error(f"Error processing input: {e}")
                 break
@@ -106,3 +116,6 @@ class TerminalClient(AgentInput, AgentOutput):
             conversation flow.
         """
         print(f"\nAgent: {response.content}")
+
+        if response.final:
+            self.response_received.set()

@@ -7,7 +7,6 @@ from galadriel.agent import AgentInput
 from galadriel.agent import AgentOutput
 from galadriel.connectors.twitter import TwitterApiClient
 from galadriel.connectors.twitter import TwitterCredentials
-from galadriel.entities import HumanMessage
 from galadriel.entities import Message
 from galadriel.entities import PushOnlyQueue
 
@@ -46,19 +45,19 @@ class TwitterMentionClient(TwitterApiClient, AgentInput, AgentOutput):
         """Begin monitoring Twitter mentions and queueing them for processing.
 
         Fetches recent mentions of the authenticated user and converts them
-        to HumanMessage objects for processing by the agent.
+        to Message objects for processing by the agent.
 
         Args:
             queue (PushOnlyQueue): Queue for storing messages to be processed
 
         Note:
-            Each mention is converted to a HumanMessage with the tweet's text,
+            Each mention is converted to a Message with the tweet's text,
             conversation ID, and additional metadata including the tweet ID
             and author ID.
         """
         mentions = await self._fetch_mentions(self.user_id)
         for mention in mentions:
-            message = HumanMessage(
+            message = Message(
                 content=mention["text"],
                 conversation_id=mention["conversation_id"],
                 additional_kwargs={
