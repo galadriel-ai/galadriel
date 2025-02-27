@@ -23,7 +23,7 @@ from galadriel.entities import PushOnlyQueue
 from galadriel.errors import PaymentValidationError
 from galadriel.logging_utils import init_logging
 from galadriel.logging_utils import get_agent_logger
-from galadriel.memory.memory_repository import MemoryStore
+from galadriel.memory.memory_store import MemoryStore
 
 logger = get_agent_logger()
 
