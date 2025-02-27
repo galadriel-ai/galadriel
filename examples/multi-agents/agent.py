@@ -5,8 +5,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 from galadriel import AgentRuntime, LiteLLMModel, CodeAgent
-from galadriel.clients import SimpleMessageClient
-from galadriel.memory.memory_repository import MemoryRepository
+from galadriel.clients import ChatUIClient
 from galadriel.tools import DuckDuckGoSearchTool
 
 load_dotenv(dotenv_path=Path(".") / ".env", override=True)
@@ -22,15 +21,15 @@ managed_web_agent = CodeAgent(
 manager_agent = CodeAgent(tools=[], model=model, managed_agents=[managed_web_agent])
 
 # Add basic client which sends two messages to the agent and prints agent's result
-client = SimpleMessageClient("What's the most recent of Daige on X (twitter)?")
+client = ChatUIClient()
 
 # Set up the runtime
 runtime = AgentRuntime(
     agent=manager_agent,
     inputs=[client],
     outputs=[client],
-    memory_repository=MemoryRepository(api_key=os.getenv("OPENAI_API_KEY"), agent_name="multi_agent"),
+    use_long_term_memory=True,
 )
 
 # Run the agent
-asyncio.run(runtime.run())
+asyncio.run(runtime.run(stream=True))

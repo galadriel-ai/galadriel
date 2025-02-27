@@ -27,9 +27,7 @@ from galadriel.memory.memory_repository import MemoryRepository
 
 logger = get_agent_logger()
 
-DEFAULT_PROMPT_TEMPLATE = "{{request}}"
-
-DEFAULT_PROMPT_TEMPLATE_WITH_CHAT_MEMORY = """
+DEFAULT_PROMPT_TEMPLATE = """
 You are a helpful chatbot assistant.
 Here is the chat history: \n\n {{chat_history}} \n
 Answer the following question: \n\n {{request}} \n
@@ -45,9 +43,7 @@ class Agent(ABC):
     """
 
     @abstractmethod
-    async def execute(
-        self, request: Message, memory: Optional[str] = None, stream: bool = False
-    ) -> AsyncGenerator[Message, None]:
+    async def execute(self, request: Message, memory: str, stream: bool = False) -> AsyncGenerator[Message, None]:
         """Process a single request and generate a response.
         The processing can be a single LLM call or involve multiple agentic steps, like CodeAgent.
 
@@ -105,38 +101,30 @@ class CodeAgent(Agent, InternalCodeAgent):
     kept between requests by default.
     """
 
-    def __init__(
-        self,
-        prompt_template: Optional[str] = None,
-        chat_memory: Optional[bool] = True,
-        **kwargs,
-    ):
+    def __init__(self, prompt_template: Optional[str] = None, **kwargs):
         """Initialize the CodeAgent.
 
         Args:
             prompt_template (Optional[str]): Template used to format input requests.
-                The template should contain {{request}} where the input message should be inserted.
-                Example: "Answer the following question: {{request}}"
-                If not provided, defaults to "{{request}}"
+                The template should contain {{request}} where the input message should be inserted and {{chat_history}} where the chat history should be inserted.
+                Example: "Answer the following question: {{request}} \n\n Chat history: {{chat_history}}"
+                If not provided, defaults to the default prompt template.
             flush_memory (Optional[bool]): If True, clears memory between requests. Defaults to False.
             **kwargs: Additional arguments passed to InternalCodeAgent
 
         Example:
             agent = CodeAgent(
-                prompt_template="You are a helpful assistant. Please answer: {{request}}",
+                prompt_template="You are a helpful assistant. Please answer: {{request}} \n\n Chat history: {{chat_history}}",
                 model="gpt-4",
             )
             response = await agent.execute(Message(content="What is Python?"))
         """
         InternalCodeAgent.__init__(self, **kwargs)
-        self.chat_memory = chat_memory
-        self.prompt_template = (
-            prompt_template or DEFAULT_PROMPT_TEMPLATE_WITH_CHAT_MEMORY if chat_memory else DEFAULT_PROMPT_TEMPLATE
-        )
+        self.prompt_template = prompt_template or DEFAULT_PROMPT_TEMPLATE
         format_prompt.validate_prompt_template(self.prompt_template)
 
     async def execute(  # type: ignore
-        self, request: Message, memory: Optional[str] = None, stream: bool = False
+        self, request: Message, memory: str, stream: bool = False
     ) -> AsyncGenerator[Message, None]:
         request_dict = {"request": request.content, "chat_history": memory}
         formatted_task = format_prompt.execute(self.prompt_template, request_dict)
@@ -168,39 +156,31 @@ class ToolCallingAgent(Agent, InternalToolCallingAgent):
     Memory is kept between requests by default.
     """
 
-    def __init__(
-        self,
-        prompt_template: Optional[str] = None,
-        chat_memory: Optional[bool] = True,
-        **kwargs,
-    ):
+    def __init__(self, prompt_template: Optional[str] = None, **kwargs):
         """
         Initialize the ToolCallingAgent.
 
         Args:
             prompt_template (Optional[str]): Template used to format input requests.
-                The template should contain {{request}} where the input message should be inserted.
-                Example: "Use available tools to answer: {{request}}"
-                If not provided, defaults to "{{request}}"
+                The template should contain {{request}} where the input message should be inserted and {{chat_history}} where the chat history should be inserted.
+                Example: "Use available tools to answer: {{request}} \n\n Chat history: {{chat_history}}"
+                If not provided, defaults to the default prompt template.
             flush_memory (Optional[bool]): If True, clears memory between requests. Defaults to False.
             **kwargs: Additional arguments passed to InternalToolCallingAgent including available tools
 
         Example:
             agent = ToolCallingAgent(
-                prompt_template="You have access to tools. Please help with: {{request}}",
+                prompt_template="You have access to tools. Please help with: {{request}} \n\n Chat history: {{chat_history}}",
                 model="gpt-4",
             )
             response = await agent.execute(Message(content="What's the weather in Paris?"))
         """
         InternalToolCallingAgent.__init__(self, **kwargs)
-        self.chat_memory = chat_memory
-        self.prompt_template = (
-            prompt_template or DEFAULT_PROMPT_TEMPLATE_WITH_CHAT_MEMORY if chat_memory else DEFAULT_PROMPT_TEMPLATE
-        )
+        self.prompt_template = prompt_template or DEFAULT_PROMPT_TEMPLATE
         format_prompt.validate_prompt_template(self.prompt_template)
 
     async def execute(  # type: ignore
-        self, request: Message, memory: Optional[str] = None, stream: bool = False
+        self, request: Message, memory: str, stream: bool = False
     ) -> AsyncGenerator[Message, None]:
         request_dict = {"request": request.content, "chat_history": memory}
         formatted_task = format_prompt.execute(self.prompt_template, request_dict)
@@ -238,7 +218,9 @@ class AgentRuntime:
         outputs: List[AgentOutput],
         agent: Agent,
         pricing: Optional[Pricing] = None,
-        memory_repository: Optional[MemoryRepository] = None,
+        use_long_term_memory: bool = False,
+        short_term_memory_limit: int = 20,
+        agent_name: str = "agent",
         debug: bool = False,
         enable_logs: bool = False,
     ):
@@ -249,6 +231,9 @@ class AgentRuntime:
             outputs (List[AgentOutput]): Output destinations for responses
             agent (Agent): The agent implementation to use
             solana_payment_validator (SolanaPaymentValidator): Payment validator
+            use_long_term_memory (bool): Whether to use long-term memory
+            short_term_memory_limit (int): The maximum number of short-term memories to keep
+            agent_name (str): The name of the agent
             debug (bool): Enable debug mode
             enable_logs (bool): Enable logging
         """
@@ -256,7 +241,11 @@ class AgentRuntime:
         self.outputs = outputs
         self.agent = agent
         self.solana_payment_validator = SolanaPaymentValidator(pricing)  # type: ignore
-        self.memory_repository = memory_repository
+        self.memory_repository = MemoryRepository(
+            agent_name=agent_name,
+            use_long_term_memory=use_long_term_memory,
+            short_term_memory_limit=short_term_memory_limit,
+        )
         self.debug = debug
         self.enable_logs = enable_logs
 
@@ -314,11 +303,10 @@ class AgentRuntime:
         # Run the agent if payment validation passed or not required
         if task_and_payment or not self.solana_payment_validator.pricing:
             memories = None
-            if self.memory_repository:
-                try:
-                    memories = await self.memory_repository.get_memories(prompt=request.content)
-                except Exception as e:
-                    logger.error(f"Error getting memories: {e}")
+            try:
+                memories = await self.memory_repository.get_memories(prompt=request.content)
+            except Exception as e:
+                logger.error(f"Error getting memories: {e}")
             try:
                 async for response in self.agent.execute(request, memories, stream=stream):  # type: ignore
                     for output in self.outputs:
@@ -332,11 +320,10 @@ class AgentRuntime:
         if response:
             # proof = await self._generate_proof(request, response)
             # await self._publish_proof(request, response, proof)
-            if self.memory_repository:
-                try:
-                    await self.memory_repository.add_memory(request=request, response=response)
-                except Exception as e:
-                    logger.error(f"Error adding memory: {e}")
+            try:
+                await self.memory_repository.add_memory(request=request, response=response)
+            except Exception as e:
+                logger.error(f"Error adding memory: {e}")
 
     async def _get_agent_memory(self) -> List[Dict[str, str]]:
         """Retrieve the current state of the agent's inner memory. This is not the chat memories.

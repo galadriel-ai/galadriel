@@ -20,23 +20,26 @@ class MemoryRepository:
 
     def __init__(
         self,
-        api_key: str,
         short_term_memory_limit: int = 20,
         embedding_model: Optional[str] = "text-embedding-3-large",
         agent_name: Optional[str] = "agent",
+        use_long_term_memory: bool = False,
     ):
         """Initialize the memory repository.
 
         Args:
-            api_key: OpenAI API key for embeddings
             short_term_memory_limit: Maximum number of memories to keep in short-term memory
             embedding_model: Name of the OpenAI embedding model to use
             agent_name: Name identifier for the agent using this repository
         """
         self.agent_name = agent_name
-        self.vector_store = self._initialize_vector_database(embedding_model, api_key)  # type: ignore
+        if use_long_term_memory:
+            if os.getenv("OPENAI_API_KEY") is None:
+                raise ValueError("api_key is required if use_long_term_memory is True")
+            self.vector_store = self._initialize_vector_database(embedding_model, os.getenv("OPENAI_API_KEY"))  # type: ignore
         self.short_term_memory = []  # type: ignore
         self.short_term_memory_limit = short_term_memory_limit
+        self.use_long_term_memory = use_long_term_memory
 
     async def add_memory(self, request: Message, response: Message) -> None:
         """Add a new memory from a request-response interaction.
@@ -59,15 +62,17 @@ class MemoryRepository:
         # 2. If short term memory is full, move oldest memory to long term
         if len(self.short_term_memory) > self.short_term_memory_limit:
             oldest_memory = self.short_term_memory.pop(0)  # Remove and get oldest memory
-            # Add oldest memory to long term memory
-            _metadata = oldest_memory.additional_kwargs if oldest_memory.additional_kwargs else {}
-            _metadata["conversation_id"] = oldest_memory.conversation_id
-            _metadata["date"] = oldest_memory.additional_kwargs["date"]
-            vector_document = Document(
-                page_content=oldest_memory.content,
-                metadata=_metadata,  # this metadata is used for filtering in query_long_term_memory
-            )
-            await self.vector_store.aadd_documents(documents=[vector_document], ids=[oldest_memory.id])
+
+            # Add oldest memory to long term memory if enabled
+            if self.use_long_term_memory:
+                _metadata = oldest_memory.additional_kwargs if oldest_memory.additional_kwargs else {}
+                _metadata["conversation_id"] = oldest_memory.conversation_id
+                _metadata["date"] = oldest_memory.additional_kwargs["date"]
+                vector_document = Document(
+                    page_content=oldest_memory.content,
+                    metadata=_metadata,  # this metadata is used for filtering in query_long_term_memory
+                )
+                await self.vector_store.aadd_documents(documents=[vector_document], ids=[oldest_memory.id])
 
     async def get_memories(self, prompt: str, top_k: int = 2, filter: Optional[Dict[str, str]] = None) -> str:
         """Retrieve relevant memories based on a prompt.
@@ -85,7 +90,7 @@ class MemoryRepository:
         """
         template = """recent messages: \n{short_term_memory} \nlong term memories that might be relevant: \n{long_term_memory}"""
         short_term = await self._get_short_term_memory()
-        long_term = await self._query_long_term_memory(prompt, top_k, filter)
+        long_term = await self._query_long_term_memory(prompt, top_k, filter) if self.use_long_term_memory else []
 
         return template.format(
             short_term_memory=_format_memories(short_term),
@@ -135,6 +140,8 @@ class MemoryRepository:
         Args:
             file_name: Path where the vector store should be saved
         """
+        if not self.use_long_term_memory:
+            raise ValueError("Cannot save long-term memory if use_long_term_memory is False")
         self.vector_store.save_local(file_name)
 
     def _initialize_vector_database(self, embedding_model: str, api_key: str, file_name: Optional[str] = None) -> FAISS:

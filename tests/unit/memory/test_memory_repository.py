@@ -1,5 +1,6 @@
 import pytest
 from unittest.mock import Mock, patch
+import os
 
 from galadriel.memory.memory_repository import MemoryRepository
 from galadriel.entities import Message
@@ -8,6 +9,9 @@ from langchain_core.documents import Document
 
 @pytest.fixture(autouse=True)
 def mock_embeddings():
+    # Set environment variable for OpenAI API key
+    os.environ["OPENAI_API_KEY"] = "test-api-key"
+
     with patch("openai.OpenAI") as mock_client, patch("langchain_openai.OpenAIEmbeddings") as mock_embeddings:
         # Mock OpenAI client's embeddings.create method
         mock_embeddings_client = Mock()
@@ -24,16 +28,40 @@ def mock_embeddings():
 
         yield mock_embeddings
 
+    # Clean up environment variable
+    if "OPENAI_API_KEY" in os.environ:
+        del os.environ["OPENAI_API_KEY"]
+
 
 @pytest.fixture
 def memory_repo():
-    repo = MemoryRepository(api_key="fake-api-key", short_term_memory_limit=2, agent_name="test-agent")
+    repo = MemoryRepository(short_term_memory_limit=2, agent_name="test-agent", use_long_term_memory=True)
     # Mock the vector store's async methods with AsyncMock
     from unittest.mock import AsyncMock
 
     repo.vector_store.aadd_documents = AsyncMock()
     repo.vector_store.asimilarity_search_with_score = AsyncMock()
     return repo
+
+
+@pytest.fixture
+def memory_repo_no_ltm():
+    return MemoryRepository(short_term_memory_limit=2, agent_name="test-agent", use_long_term_memory=False)
+
+
+@pytest.mark.asyncio
+async def test_get_memories_no_ltm(memory_repo_no_ltm):
+    # Add some test memories
+    request = Message(content="Test request", conversation_id="123")
+    response = Message(content="Test response", conversation_id="123")
+    await memory_repo_no_ltm.add_memory(request, response)
+
+    # Get memories
+    result = await memory_repo_no_ltm.get_memories("test query", top_k=1)
+
+    # Verify result contains short-term memories and a message about LTM being disabled
+    assert "recent messages" in result
+    assert "Test request" in result
 
 
 @pytest.mark.asyncio
@@ -107,6 +135,11 @@ def test_save_data_locally(memory_repo):
     memory_repo.vector_store.save_local = Mock()
     memory_repo.save_data_locally("test.faiss")
     memory_repo.vector_store.save_local.assert_called_once_with("test.faiss")
+
+
+def test_save_data_locally_no_ltm(memory_repo_no_ltm):
+    with pytest.raises(ValueError, match="Cannot save long-term memory if use_long_term_memory is False"):
+        memory_repo_no_ltm.save_data_locally("test.faiss")
 
 
 @pytest.mark.asyncio
