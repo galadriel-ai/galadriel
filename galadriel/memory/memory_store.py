@@ -11,7 +11,7 @@ from langchain_community.vectorstores import FAISS
 from langchain_core.documents import Document
 
 
-class MemoryRepository:
+class MemoryStore:
     """Repository for managing short-term and long-term memory storage for an agent.
 
     Uses a vector database for long-term memory storage and a list for short-term memory.

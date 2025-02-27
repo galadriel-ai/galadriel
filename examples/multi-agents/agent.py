@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 
 from galadriel import AgentRuntime, LiteLLMModel, CodeAgent
 from galadriel.clients import SimpleMessageClient
-from galadriel.memory.memory_repository import MemoryRepository
+from galadriel.memory.memory_repository import MemoryStore
 from galadriel.tools import DuckDuckGoSearchTool
 
 load_dotenv(dotenv_path=Path(".") / ".env", override=True)
@@ -29,7 +29,7 @@ runtime = AgentRuntime(
     agent=manager_agent,
     inputs=[client],
     outputs=[client],
-    memory_repository=MemoryRepository(api_key=os.getenv("OPENAI_API_KEY"), agent_name="multi_agent"),
+    memory_repository=MemoryStore(api_key=os.getenv("OPENAI_API_KEY"), agent_name="multi_agent"),
 )
 
 # Run the agent

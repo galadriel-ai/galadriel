@@ -8,7 +8,7 @@ from character_agent import CharacterAgent
 from galadriel import AgentRuntime, LiteLLMModel
 from galadriel.clients import DiscordClient
 from galadriel.logging_utils import get_agent_logger
-from galadriel.memory.memory_repository import MemoryRepository
+from galadriel.memory.memory_repository import MemoryStore
 from galadriel.tools.composio_converter import convert_action
 from tools import get_time
 
@@ -38,7 +38,7 @@ runtime = AgentRuntime(
     inputs=[discord_client],
     outputs=[discord_client],
     agent=elon_musk_agent,
-    memory_repository=MemoryRepository(api_key=os.getenv("OPENAI_API_KEY"), agent_name="elon_musk_agent"),
+    memory_repository=MemoryStore(api_key=os.getenv("OPENAI_API_KEY"), agent_name="elon_musk_agent"),
 )
 
 # Run the agent

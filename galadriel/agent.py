@@ -23,7 +23,7 @@ from galadriel.entities import PushOnlyQueue
 from galadriel.errors import PaymentValidationError
 from galadriel.logging_utils import init_logging
 from galadriel.logging_utils import get_agent_logger
-from galadriel.memory.memory_repository import MemoryRepository
+from galadriel.memory.memory_repository import MemoryStore
 
 logger = get_agent_logger()
 
@@ -238,7 +238,7 @@ class AgentRuntime:
         outputs: List[AgentOutput],
         agent: Agent,
         pricing: Optional[Pricing] = None,
-        memory_repository: Optional[MemoryRepository] = None,
+        memory_repository: Optional[MemoryStore] = None,
         debug: bool = False,
         enable_logs: bool = False,
     ):
