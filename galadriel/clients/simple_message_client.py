@@ -35,6 +35,7 @@ class SimpleMessageClient(AgentInput, AgentOutput):
 
         self.infinite_interval_seconds: Optional[int] = repeat_messages_interval
         self.messages: List[Message] = [Message(content=msg) for msg in messages]
+        self.response_received = asyncio.Event()
 
     async def start(self, queue: PushOnlyQueue):
         """Begin sending messages to the queue.
@@ -52,16 +53,21 @@ class SimpleMessageClient(AgentInput, AgentOutput):
         if self.infinite_interval_seconds is None:
             # If no interval is provided, just push messages once and return
             for message in self.messages:
-                await queue.put(message)
+                await self.put_message_and_wait(message, queue)
             return
 
         while True:
             try:
                 for message in self.messages:
-                    await queue.put(message)
+                    await self.put_message_and_wait(message, queue)
                 await asyncio.sleep(self.infinite_interval_seconds)
             except asyncio.CancelledError:
                 break
+
+    async def put_message_and_wait(self, message, queue):
+        self.response_received.clear()
+        await queue.put(message)
+        await self.response_received.wait()
 
     async def send(self, request: Message, response: Message):
         """Print the request and response messages to stdout.
@@ -73,6 +79,8 @@ class SimpleMessageClient(AgentInput, AgentOutput):
             request (Message): The original request message
             response (Message): The agent's response message
         """
-        print("\n======== simple_message_client.post_output ========")
-        print("request:", request)
-        print("response:", response)
+        if request.final:
+            self.response_received.set()
+            print("\n======== simple_message_client.post_output ========")
+            print("request:", request)
+            print("response:", response)
