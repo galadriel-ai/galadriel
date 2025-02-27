@@ -5,7 +5,7 @@ from enum import Enum
 import json
 import os
 import time
-from typing import Dict, Optional, Union, Any
+from typing import Optional
 
 from dextools_python import DextoolsAPIV2
 
@@ -572,9 +572,7 @@ if __name__ == "__main__":
 
         # Test DEX endpoints
         dex_factory_tool = GetDexFactoryInfoTool()
-        dex_factory_data = dex_factory_tool.forward(
-            "ether", "0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f"
-        )
+        dex_factory_data = dex_factory_tool.forward("ether", "0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f")
         print("DEX Factory Info:", dex_factory_data)
         time.sleep(2)  # Sleep to respect rate limit
 
@@ -590,16 +588,12 @@ if __name__ == "__main__":
         time.sleep(2)  # Sleep to respect rate limit
 
         pool_liquidity_tool = GetPoolLiquidityTool()
-        pool_liquidity_data = pool_liquidity_tool.forward(
-            "ether", "0xa29fe6ef9592b5d408cca961d0fb9b1faf497d6d"
-        )
+        pool_liquidity_data = pool_liquidity_tool.forward("ether", "0xa29fe6ef9592b5d408cca961d0fb9b1faf497d6d")
         print("Pool Liquidity:", pool_liquidity_data)
         time.sleep(2)  # Sleep to respect rate limit
 
         pools_tool = GetPoolsTool()
-        pools_data = pools_tool.forward(
-            "ether", from_="18570000", to="18570500", sort="creationBlock", order="desc"
-        )
+        pools_data = pools_tool.forward("ether", from_="18570000", to="18570500", sort="creationBlock", order="desc")
         print("Pools:", pools_data)
         time.sleep(2)  # Sleep to respect rate limit
 
@@ -610,9 +604,7 @@ if __name__ == "__main__":
         time.sleep(2)  # Sleep to respect rate limit
 
         token_price_tool = GetTokenPriceTool()
-        token_price_data = token_price_tool.forward(
-            "ether", "0xfb7b4564402e5500db5bb6d63ae671302777c75a"
-        )
+        token_price_data = token_price_tool.forward("ether", "0xfb7b4564402e5500db5bb6d63ae671302777c75a")
         print("Token Price:", token_price_data)
         time.sleep(2)  # Sleep to respect rate limit
 
