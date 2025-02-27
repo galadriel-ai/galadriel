@@ -11,7 +11,7 @@ from galadriel.wallets.solana_wallet import SolanaWallet
 from galadriel.tools.web3.market_data import coingecko, dexscreener
 from galadriel.tools.web3.onchain.solana import (
     jupiter,
-    raydium_openbook,
+    raydium,
     native as solana_native,
     spl_token,
 )
@@ -85,8 +85,7 @@ tools = [
     dexscreener.GetTokenDataTool(),
     solana_native.GetSOLBalanceTool(solana_wallet),
     spl_token.GetTokenBalanceTool(solana_wallet),
-    raydium_openbook.BuyTokenWithSolTool(solana_wallet),
-    raydium_openbook.SellTokenForSolTool(solana_wallet),
+    raydium.SwapTokenTool(solana_wallet),
     jupiter.SwapTokenTool(solana_wallet),
 ]
 
