@@ -35,4 +35,4 @@ else
 fi
 # Continue with execution
 cd /home/appuser/
-python3.12 main.py
+python3.12 agent.py
