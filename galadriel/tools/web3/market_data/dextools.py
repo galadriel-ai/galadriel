@@ -47,7 +47,7 @@ class GetBlockchainInfoTool(DexToolsBase):
     """Tool for fetching blockchain information from DEXTools."""
 
     name = "get_dextools_blockchain"
-    description = "Get blockchain information from DEXTools"
+    description = "Retrieve name, website and DEXTools ID of a specific blockchain from DEXTools"
     inputs = {
         "chain": {
             "type": "string",
@@ -77,7 +77,7 @@ class GetBlockchainsTool(DexToolsBase):
     """Tool for fetching all blockchains from DEXTools."""
 
     name = "get_dextools_blockchains"
-    description = "Get all blockchains from DEXTools with optional sorting"
+    description = "Get name, website and DEXTools ID for all supported blockchains from DEXTools"
     inputs = {
         "sort": {
             "type": "string",
@@ -89,6 +89,16 @@ class GetBlockchainsTool(DexToolsBase):
             "description": "Sort order ('asc' or 'desc')",
             "nullable": True,
         },
+        "page": {
+            "type": "integer",
+            "description": "Page number starting from 0, default is 0",
+            "nullable": True,
+        },
+        "page_size": {
+            "type": "integer",
+            "description": "Number of blockchains to return, default is 20, max is 50",
+            "nullable": True,
+        },
     }
     output_type = "string"
 
@@ -96,18 +106,27 @@ class GetBlockchainsTool(DexToolsBase):
         self,
         sort: Optional[str] = None,
         order: Optional[str] = None,
+        page: Optional[int] = None,
+        page_size: Optional[int] = None,
     ) -> str:
         """Fetch all blockchains with optional sorting.
 
         Args:
             sort: Sort field
             order: Sort order ('asc' or 'desc')
+            page: Page number starting from 0, default is 0
+            page_size: Number of blockchains to return, default is 20, max is 50
 
         Returns:
             str: Blockchains information as JSON string
         """
         try:
-            response = self.client.get_blockchains(sort=sort, order=order)
+            response = self.client.get_blockchains(
+                sort=sort,
+                order=order,
+                page=page,
+                pageSize=page_size,
+            )
             return json.dumps(response, indent=2)
         except Exception as e:
             logger.error(f"Failed to fetch blockchains: {e}")
@@ -118,7 +137,7 @@ class GetDexFactoryInfoTool(DexToolsBase):
     """Tool for fetching DEX factory information from DEXTools."""
 
     name = "get_dextools_dex_factory"
-    description = "Get DEX factory information from DEXTools"
+    description = "Retrieve information about a specific DEX factory from DEXTools, including factory address, name, website, number of pools, 24h volume, and number of swaps in last 24h"
     inputs = {
         "chain": {
             "type": "string",
@@ -153,7 +172,7 @@ class GetDexesTool(DexToolsBase):
     """Tool for fetching DEXes on a specific chain from DEXTools."""
 
     name = "get_dextools_dexes"
-    description = "Get DEXes on a specific chain from DEXTools with optional sorting"
+    description = "Get all supported DEXes on a specific chain from DEXTools, including DEX address, name, website, number of pools, 24h volume, and number of swaps in last 24h"
     inputs = {
         "chain": {
             "type": "string",
@@ -169,6 +188,16 @@ class GetDexesTool(DexToolsBase):
             "description": "Sort order ('asc' or 'desc')",
             "nullable": True,
         },
+        "page": {
+            "type": "integer",
+            "description": "Page number starting from 0, default is 0",
+            "nullable": True,
+        },
+        "page_size": {
+            "type": "integer",
+            "description": "Number of DEXes to return, default is 20, max is 50",
+            "nullable": True,
+        },
     }
     output_type = "string"
 
@@ -177,6 +206,8 @@ class GetDexesTool(DexToolsBase):
         chain: str,
         sort: Optional[str] = None,
         order: Optional[str] = None,
+        page: Optional[int] = None,
+        page_size: Optional[int] = None,
     ) -> str:
         """Fetch DEXes on a specific chain with optional sorting.
 
@@ -184,12 +215,14 @@ class GetDexesTool(DexToolsBase):
             chain: The blockchain identifier
             sort: Sort field
             order: Sort order ('asc' or 'desc')
+            page: Page number starting from 0, default is 0
+            page_size: Number of DEXes to return, default is 20, max is 50
 
         Returns:
             str: DEXes information as JSON string
         """
         try:
-            response = self.client.get_dexes(chain, sort=sort, order=order)
+            response = self.client.get_dexes(chain, sort=sort, order=order, page=page, pageSize=page_size)
             return json.dumps(response, indent=2)
         except Exception as e:
             logger.error(f"Failed to fetch DEXes: {e}")
@@ -200,7 +233,7 @@ class GetPoolInfoTool(DexToolsBase):
     """Tool for fetching pool information from DEXTools."""
 
     name = "get_dextools_pool"
-    description = "Get pool information from DEXTools"
+    description = "Retrieve information about a specific pool from DEXTools, including creation time, exchange details (name and factory address), pool address, and information about both tokens in the pair (name, symbol, and address)"
     inputs = {
         "chain": {
             "type": "string",
@@ -235,7 +268,7 @@ class GetPoolLiquidityTool(DexToolsBase):
     """Tool for fetching pool liquidity from DEXTools."""
 
     name = "get_dextools_pool_liquidity"
-    description = "Get pool liquidity from DEXTools"
+    description = "Retrieve liquidity information about a specific pool from DEXTools"
     inputs = {
         "chain": {
             "type": "string",
@@ -270,7 +303,7 @@ class GetPoolsTool(DexToolsBase):
     """Tool for fetching pools from DEXTools."""
 
     name = "get_dextools_pools"
-    description = "Get pools from DEXTools with time range and optional sorting"
+    description = "Retrieve pools from DEXTools with time range and optional sorting, including pool address, creation time, exchange details (name and factory address), and information about both tokens in the pair (name, symbol, and address)"
     inputs = {
         "chain": {
             "type": "string",
@@ -329,15 +362,15 @@ class GetTokenInfoTool(DexToolsBase):
     """Tool for fetching token information from DEXTools."""
 
     name = "get_dextools_token"
-    description = "Get token information from DEXTools"
+    description = "Retrieve detailed token information from DEXTools including name, symbol, logo, description, creation details, decimals and social media links"
     inputs = {
         "chain": {
             "type": "string",
-            "description": "The blockchain identifier",
+            "description": "The blockchain identifier (e.g. 'ether' for Ethereum)",
         },
         "token_address": {
             "type": "string",
-            "description": "The token contract address",
+            "description": "The token contract address to fetch information for",
         },
     }
     output_type = "string"
@@ -364,7 +397,7 @@ class GetTokenPriceTool(DexToolsBase):
     """Tool for fetching token price from DEXTools."""
 
     name = "get_dextools_token_price"
-    description = "Get token price from DEXTools"
+    description = "Retrieve token price information from DEXTools including current price, 24h price, and percentage variations over 5m, 1h, 6h and 24h periods in both token and chain native currency"
     inputs = {
         "chain": {
             "type": "string",
@@ -399,7 +432,7 @@ class GetTokenPoolsTool(DexToolsBase):
     """Tool for fetching token pools from DEXTools."""
 
     name = "get_dextools_token_pools"
-    description = "Get token pools from DEXTools with time range and optional sorting"
+    description = "Retrieve token pools from DEXTools with time range and optional sorting"
     inputs = {
         "chain": {
             "type": "string",
@@ -471,7 +504,7 @@ class GetRankingHotPoolsTool(DexToolsBase):
     """Tool for fetching hot pools ranking from DEXTools."""
 
     name = "get_dextools_hot_pools"
-    description = "Get hot pools ranking from DEXTools"
+    description = "Retrieve hot pools ranking from DEXTools. Returns a list of the most active trading pools, including details like rank, creation time, exchange info, pool address, and token pair information."
     inputs = {
         "chain": {
             "type": "string",
@@ -501,7 +534,8 @@ class GetRankingGainersTool(DexToolsBase):
     """Tool for fetching gainers ranking from DEXTools."""
 
     name = "get_dextools_gainers"
-    description = "Get gainers ranking from DEXTools"
+    description = "Retrieve a list of tokens that have gained the most in value. Returns an array of pools with exchange details, token pair info (addresses, symbols, names), creation time, fees, rank, current price, 24h price, and 24h variation percentage."
+
     inputs = {
         "chain": {
             "type": "string",
@@ -531,7 +565,7 @@ class GetRankingLosersTool(DexToolsBase):
     """Tool for fetching losers ranking from DEXTools."""
 
     name = "get_dextools_losers"
-    description = "Get losers ranking from DEXTools"
+    description = "Retrieve a list of tokens that have lost the most in value. Returns an array of pools with exchange details, token pair info (addresses, symbols, names), creation time, fees, rank, current price, 24h price, and 24h variation percentage."
     inputs = {
         "chain": {
             "type": "string",
