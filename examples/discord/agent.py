@@ -38,7 +38,7 @@ runtime = AgentRuntime(
     inputs=[discord_client],
     outputs=[discord_client],
     agent=elon_musk_agent,
-    memory_repository=MemoryStore(
+    memory_store=MemoryStore(
         api_key=os.getenv("OPENAI_API_KEY"), embedding_model="text-embedding-3-large", agent_name="elon_musk_agent"
     ),
 )

@@ -29,7 +29,7 @@ runtime = AgentRuntime(
     agent=manager_agent,
     inputs=[client],
     outputs=[client],
-    memory_repository=MemoryStore(
+    memory_store=MemoryStore(
         api_key=os.getenv("OPENAI_API_KEY"), embedding_model="text-embedding-3-large", agent_name="multi_agent"
     ),
 )

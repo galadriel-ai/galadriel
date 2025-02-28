@@ -238,7 +238,7 @@ class AgentRuntime:
         outputs: List[AgentOutput],
         agent: Agent,
         pricing: Optional[Pricing] = None,
-        memory_repository: Optional[MemoryStore] = MemoryStore(),
+        memory_store: Optional[MemoryStore] = MemoryStore(),
         debug: bool = False,
         enable_logs: bool = False,
     ):
@@ -256,7 +256,7 @@ class AgentRuntime:
         self.outputs = outputs
         self.agent = agent
         self.solana_payment_validator = SolanaPaymentValidator(pricing)  # type: ignore
-        self.memory_repository = memory_repository
+        self.memory_repository = memory_store
         self.debug = debug
         self.enable_logs = enable_logs
 
