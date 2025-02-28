@@ -32,7 +32,7 @@ You are a helpful chatbot assistant.
 Here is the chat history: \n\n {{chat_history}} \n
 Answer the following question: \n\n {{request}} \n
 Please remember the chat history and use it to answer the question, if relevant to the question.
-Maintain a natural conversation on telegram, don't add signatures at the end of your messages.
+Maintain a natural conversation, don't add signatures at the end of your messages.
 """
 
 

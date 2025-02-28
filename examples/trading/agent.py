@@ -52,8 +52,10 @@ Otherwise, if it’s available on Jupiter, use the Jupiter swap API.
 Ensure the transaction parameters are correctly set, including the restriction that the maximum SOL output per swap is 0.006 SOL.
 Log and Monitor:
 
-Once a swap is executed, log the transaction details for further analysis and monitor the performance of the swap.{{request}}
-Here is the history of recent interactions which may be helpful for next steps: \n\n {{chat_history}} \n
+Once a swap is executed, log the transaction details for further analysis and monitor the performance of the swap.
+Please remember the chat history and use it to answer the question, if relevant to the question.
+Here is the chat history: \n\n {{chat_history}} \n
+Answer the following question: \n\n {{request}} \n
         """
 
 load_dotenv(dotenv_path=Path(".") / ".env", override=True)
