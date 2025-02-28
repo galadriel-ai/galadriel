@@ -23,18 +23,16 @@ from galadriel.entities import PushOnlyQueue
 from galadriel.errors import PaymentValidationError
 from galadriel.logging_utils import init_logging
 from galadriel.logging_utils import get_agent_logger
-from galadriel.memory.memory_repository import MemoryRepository
+from galadriel.memory.memory_store import MemoryStore
 
 logger = get_agent_logger()
 
-DEFAULT_PROMPT_TEMPLATE = "{{request}}"
-
-DEFAULT_PROMPT_TEMPLATE_WITH_CHAT_MEMORY = """
+DEFAULT_PROMPT_TEMPLATE = """
 You are a helpful chatbot assistant.
 Here is the chat history: \n\n {{chat_history}} \n
 Answer the following question: \n\n {{request}} \n
 Please remember the chat history and use it to answer the question, if relevant to the question.
-Maintain a natural conversation on telegram, don't add signatures at the end of your messages.
+Maintain a natural conversation, don't add signatures at the end of your messages.
 """
 
 
@@ -129,10 +127,7 @@ class CodeAgent(Agent, InternalCodeAgent):
             response = await agent.execute(Message(content="What is Python?"))
         """
         InternalCodeAgent.__init__(self, **kwargs)
-        self.chat_memory = chat_memory
-        self.prompt_template = (
-            prompt_template or DEFAULT_PROMPT_TEMPLATE_WITH_CHAT_MEMORY if chat_memory else DEFAULT_PROMPT_TEMPLATE
-        )
+        self.prompt_template = prompt_template or DEFAULT_PROMPT_TEMPLATE
         format_prompt.validate_prompt_template(self.prompt_template)
 
     async def execute(  # type: ignore
@@ -193,10 +188,7 @@ class ToolCallingAgent(Agent, InternalToolCallingAgent):
             response = await agent.execute(Message(content="What's the weather in Paris?"))
         """
         InternalToolCallingAgent.__init__(self, **kwargs)
-        self.chat_memory = chat_memory
-        self.prompt_template = (
-            prompt_template or DEFAULT_PROMPT_TEMPLATE_WITH_CHAT_MEMORY if chat_memory else DEFAULT_PROMPT_TEMPLATE
-        )
+        self.prompt_template = prompt_template or DEFAULT_PROMPT_TEMPLATE
         format_prompt.validate_prompt_template(self.prompt_template)
 
     async def execute(  # type: ignore
@@ -238,7 +230,7 @@ class AgentRuntime:
         outputs: List[AgentOutput],
         agent: Agent,
         pricing: Optional[Pricing] = None,
-        memory_repository: Optional[MemoryRepository] = None,
+        memory_store: Optional[MemoryStore] = MemoryStore(),
         debug: bool = False,
         enable_logs: bool = False,
     ):
@@ -256,7 +248,7 @@ class AgentRuntime:
         self.outputs = outputs
         self.agent = agent
         self.solana_payment_validator = SolanaPaymentValidator(pricing)  # type: ignore
-        self.memory_repository = memory_repository
+        self.memory_store = memory_store
         self.debug = debug
         self.enable_logs = enable_logs
 
@@ -314,9 +306,9 @@ class AgentRuntime:
         # Run the agent if payment validation passed or not required
         if task_and_payment or not self.solana_payment_validator.pricing:
             memories = None
-            if self.memory_repository:
+            if self.memory_store:
                 try:
-                    memories = await self.memory_repository.get_memories(prompt=request.content)
+                    memories = await self.memory_store.get_memories(prompt=request.content)
                 except Exception as e:
                     logger.error(f"Error getting memories: {e}")
             try:
@@ -332,9 +324,9 @@ class AgentRuntime:
         if response:
             # proof = await self._generate_proof(request, response)
             # await self._publish_proof(request, response, proof)
-            if self.memory_repository:
+            if self.memory_store:
                 try:
-                    await self.memory_repository.add_memory(request=request, response=response)
+                    await self.memory_store.add_memory(request=request, response=response)
                 except Exception as e:
                     logger.error(f"Error adding memory: {e}")
 
@@ -359,8 +351,8 @@ class AgentRuntime:
         Returns:
             str: The agent's chat memories
         """
-        if self.memory_repository:
-            return self.memory_repository.save_data_locally(file_name)
+        if self.memory_store:
+            return self.memory_store.save_data_locally(file_name)
         return None
 
     async def _generate_proof(self, request: Message, response: Message) -> str:

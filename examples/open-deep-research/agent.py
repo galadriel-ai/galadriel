@@ -3,7 +3,7 @@ import os
 from pathlib import Path
 
 from dotenv import load_dotenv
-from galadriel.memory.memory_repository import MemoryRepository
+from galadriel.memory.memory_store import MemoryStore
 from scripts.text_inspector_tool import TextInspectorTool
 from scripts.text_web_browser import (
     ArchiveSearchTool,
@@ -122,8 +122,9 @@ runtime = AgentRuntime(
     inputs=[chatui_client],
     outputs=[chatui_client],
     agent=manager_agent,
-    memory_repository=MemoryRepository(
+    memory_store=MemoryStore(
         api_key=os.getenv("OPENAI_API_KEY"),
+        embedding_model="text-embedding-3-large",
         agent_name="open_deep_research_agent",
         short_term_memory_limit=4,
     ),

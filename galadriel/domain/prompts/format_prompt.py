@@ -15,6 +15,9 @@ def validate_prompt_template(prompt_template: str) -> None:
     if "{{request}}" not in prompt_template:
         raise ValueError("Prompt template must contain {{request}}")
 
+    if "{{chat_history}}" not in prompt_template:
+        raise ValueError("Prompt template must contain {{chat_history}}, otherwise it can't use any memory")
+
 
 def execute(prompt_template: str, prompt_state: Dict) -> str:
     prompt = prompt_template

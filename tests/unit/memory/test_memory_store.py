@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import Mock, patch
 
-from galadriel.memory.memory_repository import MemoryRepository
+from galadriel.memory.memory_store import MemoryStore
 from galadriel.entities import Message
 from langchain_core.documents import Document
 
@@ -27,7 +27,12 @@ def mock_embeddings():
 
 @pytest.fixture
 def memory_repo():
-    repo = MemoryRepository(api_key="fake-api-key", short_term_memory_limit=2, agent_name="test-agent")
+    repo = MemoryStore(
+        short_term_memory_limit=2,
+        api_key="fake-api-key",
+        embedding_model="text-embedding-3-large",
+        agent_name="test-agent",
+    )
     # Mock the vector store's async methods with AsyncMock
     from unittest.mock import AsyncMock
 
