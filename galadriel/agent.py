@@ -129,7 +129,6 @@ class CodeAgent(Agent, InternalCodeAgent):
             response = await agent.execute(Message(content="What is Python?"))
         """
         InternalCodeAgent.__init__(self, **kwargs)
-        self.chat_memory = chat_memory
         self.prompt_template = (
             prompt_template or DEFAULT_PROMPT_TEMPLATE_WITH_CHAT_MEMORY if chat_memory else DEFAULT_PROMPT_TEMPLATE
         )
@@ -193,7 +192,6 @@ class ToolCallingAgent(Agent, InternalToolCallingAgent):
             response = await agent.execute(Message(content="What's the weather in Paris?"))
         """
         InternalToolCallingAgent.__init__(self, **kwargs)
-        self.chat_memory = chat_memory
         self.prompt_template = (
             prompt_template or DEFAULT_PROMPT_TEMPLATE_WITH_CHAT_MEMORY if chat_memory else DEFAULT_PROMPT_TEMPLATE
         )
@@ -256,7 +254,7 @@ class AgentRuntime:
         self.outputs = outputs
         self.agent = agent
         self.solana_payment_validator = SolanaPaymentValidator(pricing)  # type: ignore
-        self.memory_repository = memory_store
+        self.memory_store = memory_store
         self.debug = debug
         self.enable_logs = enable_logs
 
@@ -314,9 +312,9 @@ class AgentRuntime:
         # Run the agent if payment validation passed or not required
         if task_and_payment or not self.solana_payment_validator.pricing:
             memories = None
-            if self.memory_repository:
+            if self.memory_store:
                 try:
-                    memories = await self.memory_repository.get_memories(prompt=request.content)
+                    memories = await self.memory_store.get_memories(prompt=request.content)
                 except Exception as e:
                     logger.error(f"Error getting memories: {e}")
             try:
@@ -332,9 +330,9 @@ class AgentRuntime:
         if response:
             # proof = await self._generate_proof(request, response)
             # await self._publish_proof(request, response, proof)
-            if self.memory_repository:
+            if self.memory_store:
                 try:
-                    await self.memory_repository.add_memory(request=request, response=response)
+                    await self.memory_store.add_memory(request=request, response=response)
                 except Exception as e:
                     logger.error(f"Error adding memory: {e}")
 
@@ -359,8 +357,8 @@ class AgentRuntime:
         Returns:
             str: The agent's chat memories
         """
-        if self.memory_repository:
-            return self.memory_repository.save_data_locally(file_name)
+        if self.memory_store:
+            return self.memory_store.save_data_locally(file_name)
         return None
 
     async def _generate_proof(self, request: Message, response: Message) -> str:
