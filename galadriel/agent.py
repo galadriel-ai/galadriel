@@ -27,9 +27,7 @@ from galadriel.memory.memory_store import MemoryStore
 
 logger = get_agent_logger()
 
-DEFAULT_PROMPT_TEMPLATE = "{{request}}"
-
-DEFAULT_PROMPT_TEMPLATE_WITH_CHAT_MEMORY = """
+DEFAULT_PROMPT_TEMPLATE = """
 You are a helpful chatbot assistant.
 Here is the chat history: \n\n {{chat_history}} \n
 Answer the following question: \n\n {{request}} \n
@@ -129,9 +127,7 @@ class CodeAgent(Agent, InternalCodeAgent):
             response = await agent.execute(Message(content="What is Python?"))
         """
         InternalCodeAgent.__init__(self, **kwargs)
-        self.prompt_template = (
-            prompt_template or DEFAULT_PROMPT_TEMPLATE_WITH_CHAT_MEMORY if chat_memory else DEFAULT_PROMPT_TEMPLATE
-        )
+        self.prompt_template = prompt_template or DEFAULT_PROMPT_TEMPLATE
         format_prompt.validate_prompt_template(self.prompt_template)
 
     async def execute(  # type: ignore
@@ -192,9 +188,7 @@ class ToolCallingAgent(Agent, InternalToolCallingAgent):
             response = await agent.execute(Message(content="What's the weather in Paris?"))
         """
         InternalToolCallingAgent.__init__(self, **kwargs)
-        self.prompt_template = (
-            prompt_template or DEFAULT_PROMPT_TEMPLATE_WITH_CHAT_MEMORY if chat_memory else DEFAULT_PROMPT_TEMPLATE
-        )
+        self.prompt_template = prompt_template or DEFAULT_PROMPT_TEMPLATE
         format_prompt.validate_prompt_template(self.prompt_template)
 
     async def execute(  # type: ignore
