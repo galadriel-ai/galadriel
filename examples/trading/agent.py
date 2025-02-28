@@ -53,6 +53,7 @@ Ensure the transaction parameters are correctly set, including the restriction t
 Log and Monitor:
 
 Once a swap is executed, log the transaction details for further analysis and monitor the performance of the swap.{{request}}
+Here is the history of recent interactions which may be helpful for next steps: \n\n {{chat_history}} \n
         """
 
 load_dotenv(dotenv_path=Path(".") / ".env", override=True)
