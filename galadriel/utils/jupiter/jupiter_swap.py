@@ -1,44 +1,18 @@
 import base64
-import json
-import time
-import struct
 
 import httpx
 from httpx._config import Timeout
 
-from typing import Any
 from typing import Optional
 
 from solders import message
-from solders.pubkey import Pubkey  # type: ignore
 from solders.keypair import Keypair  # type: ignore
 from solders.transaction import VersionedTransaction  # type: ignore
-from solders.system_program import transfer, TransferParams  # type: ignore
 
-from solana.rpc.types import TxOpts
-from solana.rpc.commitment import Processed
 from solana.rpc.api import Client  # Add this import
-
-from spl.token.instructions import (
-    create_associated_token_account,
-    get_associated_token_address,
-    sync_native,
-    SyncNativeParams,
-    close_account,
-    CloseAccountParams,
-)
-from spl.token.constants import WRAPPED_SOL_MINT
-
-from construct import Container
-from anchorpy.program.core import Program as AnchorProgram
-from anchorpy.program.core import Idl, Provider
-from anchorpy.provider import Wallet
-from anchorpy import Context
-from anchorpy import AccountsCoder
 
 
 class Jupiter:
-
     ENDPOINT_APIS_URL = {
         "QUOTE": "https://quote-api.jup.ag/v6/quote?",
         "SWAP": "https://quote-api.jup.ag/v6/swap",
@@ -51,7 +25,7 @@ class Jupiter:
 
     def __init__(
         self,
-        client: Client,  # Change to sync Client
+        client: Client,  # Client instance
         keypair: Keypair,
         quote_api_url: str = "https://quote-api.jup.ag/v6/quote?",
         swap_api_url: str = "https://quote-api.jup.ag/v6/swap",
@@ -106,10 +80,10 @@ class Jupiter:
 
         Example:
             >>> rpc_url = "https://neat-hidden-sanctuary.solana-mainnet.discover.quiknode.pro/2af5315d336f9ae920028bbb90a73b724dc1bbed/"
-            >>> async_client = AsyncClient(rpc_url)
+            >>> client = Client(rpc_url)
             >>> private_key_string = "tSg8j3pWQyx3TC2fpN9Ud1bS0NoAK0Pa3TC2fpNd1bS0NoASg83TC2fpN9Ud1bS0NoAK0P"
             >>> private_key = Keypair.from_bytes(base58.b58decode(private_key_string))
-            >>> jupiter = Jupiter(async_client, private_key)
+            >>> jupiter = Jupiter(client, private_key)
             >>> input_mint = "So11111111111111111111111111111111111111112"
             >>> output_mint = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
             >>> amount = 5_000_000
@@ -199,10 +173,10 @@ class Jupiter:
 
         Example:
             >>> rpc_url = "https://neat-hidden-sanctuary.solana-mainnet.discover.quiknode.pro/2af5315d336f9ae920028bbb90a73b724dc1bbed/"
-            >>> async_client = AsyncClient(rpc_url)
+            >>> client = Client(rpc_url)
             >>> private_key_string = "tSg8j3pWQyx3TC2fpN9Ud1bS0NoAK0Pa3TC2fpNd1bS0NoASg83TC2fpN9Ud1bS0NoAK0P"
             >>> private_key = Keypair.from_bytes(base58.b58decode(private_key_string))
-            >>> jupiter = Jupiter(async_client, private_key)
+            >>> jupiter = Jupiter(client, private_key)
             >>> input_mint = "So11111111111111111111111111111111111111112"
             >>> output_mint = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
             >>> amount = 5_000_000
@@ -230,12 +204,8 @@ class Jupiter:
             "wrapAndUnwrapSol": wrap_unwrap_sol,
         }
         if prioritization_fee_lamports:
-            transaction_parameters.update(
-                {"prioritizationFeeLamports": prioritization_fee_lamports}
-            )
-        transaction_data = httpx.post(
-            url=self.ENDPOINT_APIS_URL["SWAP"], json=transaction_parameters
-        ).json()
+            transaction_parameters.update({"prioritizationFeeLamports": prioritization_fee_lamports})
+        transaction_data = httpx.post(url=self.ENDPOINT_APIS_URL["SWAP"], json=transaction_parameters).json()
         return transaction_data["swapTransaction"]
 
     def open_order(
@@ -261,15 +231,17 @@ class Jupiter:
 
         Example:
             >>> rpc_url = "https://neat-hidden-sanctuary.solana-mainnet.discover.quiknode.pro/2af5315d336f9ae920028bbb90a73b724dc1bbed/"
-            >>> async_client = AsyncClient(rpc_url)
+            >>> client = Client(rpc_url)
             >>> private_key_string = "tSg8j3pWQyx3TC2fpN9Ud1bS0NoAK0Pa3TC2fpNd1bS0NoASg83TC2fpN9Ud1bS0NoAK0P"
             >>> private_key = Keypair.from_bytes(base58.b58decode(private_key_string))
-            >>> jupiter = Jupiter(async_client, private_key)
+            >>> jupiter = Jupiter(client, private_key)
             >>> input_mint = "So11111111111111111111111111111111111111112"
             >>> output_mint = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
             >>> in_amount = 5_000_000
             >>> out_amount = 100_000
-            >>> transaction_data = await jupiter.open_order(user_public_key, input_mint, output_mint, in_amount, out_amount)
+            >>> transaction_data = await jupiter.open_order(
+            ...     user_public_key, input_mint, output_mint, in_amount, out_amount
+            ... )
             {
                 'transaction_data': 'AgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgEGC5Qzg6Gwmq0Gtgp4+LWUVz0yQOAuHGNJAGTs0dcqEMVCBvqBKhFi2uRFEKYI4zPatxbdm7DylvnQUby9MexSmeAdsqhWUMQ86Ddz4+7pQFooE6wLglATS/YvzOVUNMOqnyAmC8Ioh9cSvEZniys4XY0OyEvxe39gSdHqlHWJQUPMn4prs0EwIc9JznmgzyMliG5PJTvaFYw75ssASGlB2gMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAImg/TLoYktlelMGKAi4mA0icnTD92092qSZhd3wNABMCv4fVqQvV1OYZ3a3bH43JpI5pIln+UAHnO1fyDJwCfIGm4hX/quBhPtof2NGGMA12sQ53BrrO1WYoPAAAAAAAQan1RcZLFxRIYzJTD1K8X9Y2u4Im6H9ROPb2YoAAAAABt324ddloZPZy+FGzut5rBy0he1fWzeROoz1hX7/AKmr+pT0gdwb1ZeE73qr11921UvCtCB3MMpBcLaiY8+u7QEHDAEABAMCCAIHBgUKCRmFbkqvcJ/1nxAnAAAAAAAAECcAAAAAAAAA',
                 'signature2': Signature(
@@ -288,9 +260,9 @@ class Jupiter:
         }
         if expired_at:
             transaction_parameters["expiredAt"] = expired_at
-        transaction_data = httpx.post(
-            url=self.ENDPOINT_APIS_URL["OPEN_ORDER"], json=transaction_parameters
-        ).json()["tx"]
+        transaction_data = httpx.post(url=self.ENDPOINT_APIS_URL["OPEN_ORDER"], json=transaction_parameters).json()[
+            "tx"
+        ]
         raw_transaction = VersionedTransaction.from_bytes(base64.b64decode(transaction_data))
         signature2 = keypair.sign_message(message.to_bytes_versioned(raw_transaction.message))
         return {"transaction_data": transaction_data, "signature2": signature2}
@@ -306,11 +278,13 @@ class Jupiter:
 
         Example:
             >>> rpc_url = "https://neat-hidden-sanctuary.solana-mainnet.discover.quiknode.pro/2af5315d336f9ae920028bbb90a73b724dc1bbed/"
-            >>> async_client = AsyncClient(rpc_url)
+            >>> client = Client(rpc_url)
             >>> private_key_string = "tSg8j3pWQyx3TC2fpN9Ud1bS0NoAK0Pa3TC2fpNd1bS0NoASg83TC2fpN9Ud1bS0NoAK0P"
             >>> private_key = Keypair.from_bytes(base58.b58decode(private_key_string))
-            >>> jupiter = Jupiter(async_client, private_key)
-            >>> list_orders = [item['publicKey'] for item in await jupiter.query_open_orders()] # Cancel all open orders
+            >>> jupiter = Jupiter(client, private_key)
+            >>> list_orders = [
+            ...     item["publicKey"] for item in await jupiter.query_open_orders()
+            ... ]  # Cancel all open orders
             >>> transaction_data = await jupiter.cancel_orders(orders=openOrders)
             AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAQIlDODobCarQa2Cnj4tZRXPTJA4C4cY0kAZOzR1yoQxUIklPdDonxNd5JDfdYoHE56dvNBQ1SLN90fFZxvVlzZr9DPwpfbd+ANTB35SSvHYVViD27UZR578oC2faxJea7y958guyGPhmEVKNR9GmJIjjuZU0VSr2/k044JZIRklkwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAr+H1akL1dTmGd2t2x+NyaSOaSJZ/lAB5ztX8gycAnyBpuIV/6rgYT7aH9jRhjANdrEOdwa6ztVmKDwAAAAAAEG3fbh12Whk9nL4UbO63msHLSF7V9bN5E6jPWFfv8AqW9ZjNTy3JS6YYFodCWqtWH80+eLPmN4igHrkYHIsdQfAQUHAQIAAwQHBghfge3wCDHfhA==
         """
@@ -320,9 +294,9 @@ class Jupiter:
             "feePayer": self.keypair.pubkey().__str__(),
             "orders": orders,
         }
-        transaction_data = httpx.post(
-            url=self.ENDPOINT_APIS_URL["CANCEL_ORDERS"], json=transaction_parameters
-        ).json()["tx"]
+        transaction_data = httpx.post(url=self.ENDPOINT_APIS_URL["CANCEL_ORDERS"], json=transaction_parameters).json()[
+            "tx"
+        ]
         return transaction_data
 
     @staticmethod
@@ -413,9 +387,7 @@ class Jupiter:
             ]
         """
 
-        query_orders_history_url = (
-            "https://jup.ag/api/limit/v1/orderHistory" + "?wallet=" + wallet_address
-        )
+        query_orders_history_url = "https://jup.ag/api/limit/v1/orderHistory" + "?wallet=" + wallet_address
         if cursor:
             query_orders_history_url += "?cursor=" + str(cursor)
         if skip:
@@ -423,9 +395,7 @@ class Jupiter:
         if take:
             query_orders_history_url += "?take=" + str(take)
 
-        list_orders_history = httpx.get(
-            query_orders_history_url, timeout=Timeout(timeout=30.0)
-        ).json()
+        list_orders_history = httpx.get(query_orders_history_url, timeout=Timeout(timeout=30.0)).json()
         return list_orders_history
 
     @staticmethod
@@ -473,9 +443,7 @@ class Jupiter:
             ]
         """
 
-        query_tradeHistoryUrl = (
-            "https://jup.ag/api/limit/v1/tradeHistory" + "?wallet=" + wallet_address
-        )
+        query_tradeHistoryUrl = "https://jup.ag/api/limit/v1/tradeHistory" + "?wallet=" + wallet_address
         if input_mint:
             query_tradeHistoryUrl += "inputMint=" + input_mint
         if output_mint:
@@ -547,9 +515,7 @@ class Jupiter:
         Example:
             >>> all_tickers_list = await Jupiter.get_all_tickers()
         """
-        all_tickers_list = httpx.get(
-            "https://stats.jup.ag/coingecko/tickers", timeout=Timeout(timeout=30.0)
-        ).json()
+        all_tickers_list = httpx.get("https://stats.jup.ag/coingecko/tickers", timeout=Timeout(timeout=30.0)).json()
         return all_tickers_list
 
     @staticmethod
@@ -562,9 +528,7 @@ class Jupiter:
         Example:
             >>> all_swap_pairs_list = await Jupiter.get_all_swap_pairs()
         """
-        all_swap_pairs_list = httpx.get(
-            "https://stats.jup.ag/coingecko/pairs", timeout=Timeout(timeout=30.0)
-        ).json()
+        all_swap_pairs_list = httpx.get("https://stats.jup.ag/coingecko/pairs", timeout=Timeout(timeout=30.0)).json()
         return all_swap_pairs_list
 
     @staticmethod
@@ -583,11 +547,11 @@ class Jupiter:
             ``dict``: all swap pairs for input token and output token
 
         Example:
-            >>> swap_pairs_list = await Jupiter.get_swap_pairs("So11111111111111111111111111111111111111112", "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v")
+            >>> swap_pairs_list = await Jupiter.get_swap_pairs(
+            ...     "So11111111111111111111111111111111111111112", "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+            ... )
         """
-        swap_pairs_url = (
-            "https://stats.jup.ag/coingecko/tickers?ticker_id=" + input_mint + "_" + output_mint
-        )
+        swap_pairs_url = "https://stats.jup.ag/coingecko/tickers?ticker_id=" + input_mint + "_" + output_mint
         swap_pairs_list = httpx.get(swap_pairs_url, timeout=Timeout(timeout=30.0)).json()
         return swap_pairs_list
 
@@ -607,12 +571,12 @@ class Jupiter:
             ``list``: all swap pairs for input token and output token
 
         Example:
-            >>> token_stats_by_date = await Jupiter.get_swap_pairs("B5mW68TkDewnKvWNc2trkmmdSRxcCjZz3Yd9BWxQTSRU", "2022-04-1")
+            >>> token_stats_by_date = await Jupiter.get_swap_pairs(
+            ...     "B5mW68TkDewnKvWNc2trkmmdSRxcCjZz3Yd9BWxQTSRU", "2022-04-1"
+            ... )
         """
         token_stats_by_date_url = "https://stats.jup.ag/token-ledger/" + token + "/" + date
-        token_stats_by_date = httpx.get(
-            token_stats_by_date_url, timeout=Timeout(timeout=30.0)
-        ).json()
+        token_stats_by_date = httpx.get(token_stats_by_date_url, timeout=Timeout(timeout=30.0)).json()
         return token_stats_by_date
 
     @staticmethod
