@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 
 from galadriel import AgentRuntime, LiteLLMModel
 from galadriel.agent import CodeAgent
-from galadriel.clients import SimpleMessageClient
+from galadriel.clients import TerminalClient
 from galadriel.wallets.solana_wallet import SolanaWallet
 from galadriel.tools.web3.market_data import coingecko, dexscreener
 from galadriel.tools.web3.onchain.solana import (
@@ -56,15 +56,7 @@ trading_agent = CodeAgent(
     max_steps=6,  # Make the trading agent more reliable by increasing the number of steps he can take to complete the task
 )
 
-client = SimpleMessageClient(
-    # "What's the TVL of Uniswap?",
-    # "Just for context: your Solana address is AiATFSS1QRdXNMibEZiht8VxMkYQHvYZiWUS1JJbFy2N",
-    # "What's your Solana balance?",
-    # "What's the price of Daige?",
-    # "Swap 0.2 SOL for Daige",
-    "What's the price of Daige?",
-    "Should I buy it?",
-)
+client = TerminalClient()
 
 # Set up the runtime
 runtime = AgentRuntime(

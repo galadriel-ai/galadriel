@@ -66,7 +66,6 @@ class SimpleMessageClient(AgentInput, AgentOutput):
 
     async def put_message_and_wait(self, message, queue):
         self.response_received.clear()
-        print(f"@@@ User: {message.content}")
         await queue.put(message)
         await self.response_received.wait()
 
@@ -82,6 +81,6 @@ class SimpleMessageClient(AgentInput, AgentOutput):
         """
         if response.final:
             self.response_received.set()
-            print("@@@@@\n======== simple_message_client.post_output ========")
-            print("@@@@@ request:", request)
-            print("@@@@@ response:", response)
+            print("\n======== simple_message_client.post_output ========")
+            print(" request:", request)
+            print(" response:", response)
