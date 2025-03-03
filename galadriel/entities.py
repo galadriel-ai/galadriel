@@ -18,6 +18,10 @@ class Message(BaseModel):
     additional_kwargs: Optional[Dict] = None
 
 
+class AgentState(BaseModel):
+    memory_folder_path: Optional[str] = None
+
+
 class PushOnlyQueue:
     def __init__(self, queue: asyncio.Queue):
         self._queue = queue

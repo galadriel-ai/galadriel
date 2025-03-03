@@ -25,6 +25,7 @@ from galadriel.errors import PaymentValidationError
 from galadriel.logging_utils import init_logging
 from galadriel.logging_utils import get_agent_logger
 from galadriel.memory.memory_store import MemoryStore
+from galadriel.state.agent_state_repository import AgentStateRepository
 
 logger = get_agent_logger()
 
@@ -88,11 +89,6 @@ class AgentOutput:
             request (Message): The original request that generated the response
             response (Message): The response to be delivered
         """
-
-
-class AgentState:
-    # TODO: knowledge_base: KnowledgeBase
-    pass
 
 
 # pylint:disable=E0102
@@ -253,7 +249,7 @@ class AgentRuntime:
         self.debug = debug
         self.enable_logs = enable_logs
         self.shutdown_event = asyncio.Event()
-
+        self.agent_state_repository = AgentStateRepository()
         env_path = Path(".") / ".env"
         _load_dotenv(dotenv_path=env_path)
         # AgentConfig should have some settings for debug?
@@ -272,6 +268,9 @@ class AgentRuntime:
         # Listen for shutdown event
         await self._listen_for_stop()
 
+        # Download agent state from S3 if long term memory is enabled
+        await self._load_agent_state()
+
         # Start agent inputs
         # Create tasks for all inputs and track them
         input_tasks = [
@@ -289,6 +288,8 @@ class AgentRuntime:
                 continue
             # Process the request
             await self._run_request(request, stream)
+
+        await self._save_agent_state()
 
     def stop(self):
         self.shutdown_event.set()
@@ -380,6 +381,48 @@ class AgentRuntime:
 
     async def _publish_proof(self, request: Message, response: Message, proof: str):
         publish_proof.execute(request, response, proof)
+
+    async def _load_agent_state(self):
+        """Load agent state from persistent storage if available."""
+        if not (self.memory_store and self.memory_store.vector_store):
+            logger.debug("Skipping memory loading: vector store not configured")
+            return False
+
+        try:
+            logger.info("Attempting to load agent state from storage")
+            agent_state = self.agent_state_repository.download_agent_state()
+
+            if not agent_state:
+                logger.info("No existing agent state found in storage")
+                return False
+
+            self.memory_store.load_memory_from_folder(agent_state.memory_folder_path)
+            logger.info(f"Successfully loaded agent memory from {agent_state.memory_folder_path}")
+            return True
+
+        except Exception as e:
+            logger.error(f"Failed to load agent memory: {e}", exc_info=self.debug)
+            return False
+
+    async def _save_agent_state(self):
+        """Save agent state to persistent storage if vector store is configured."""
+        if not (self.memory_store and self.memory_store.vector_store):
+            logger.debug("Skipping state saving: vector store not configured")
+            return False
+
+        try:
+            state_folder_path = "/tmp/agent_state"
+            logger.info(f"Saving agent state to {state_folder_path}")
+
+            self.memory_store.save_data_locally(state_folder_path)
+            self.agent_state_repository.upload_agent_state(state_folder_path)
+
+            logger.info("Successfully saved and uploaded agent state")
+            return True
+
+        except Exception as e:
+            logger.error(f"Failed to save agent state: {e}", exc_info=self.debug)
+            return False
 
 
 async def stream_agent_response(
