@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import Mock, patch
 
-from galadriel.memory.memory_repository import MemoryRepository
+from galadriel.memory.memory_store import MemoryStore
 from galadriel.entities import Message
 from langchain_core.documents import Document
 
@@ -27,7 +27,12 @@ def mock_embeddings():
 
 @pytest.fixture
 def memory_repo():
-    repo = MemoryRepository(api_key="fake-api-key", short_term_memory_limit=2, agent_name="test-agent")
+    repo = MemoryStore(
+        short_term_memory_limit=2,
+        api_key="fake-api-key",
+        embedding_model="text-embedding-3-large",
+        agent_name="test-agent",
+    )
     # Mock the vector store's async methods with AsyncMock
     from unittest.mock import AsyncMock
 
@@ -124,9 +129,9 @@ async def test_get_short_term_memory(memory_repo):
     assert memories[0].content == "User: Test\n Assistant: Response"
 
 
-@patch("galadriel.memory.memory_repository.FAISS.load_local")
-@patch("galadriel.memory.memory_repository.OpenAIEmbeddings")
-def test_initialize_with_existing_memory_folder(mock_embeddings, mock_faiss, tmp_path):
+@patch("galadriel.memory.memory_store.FAISS.load_local")
+@patch("galadriel.memory.memory_store.OpenAIEmbeddings")
+def test_load_existing_memory_folder(mock_embeddings, mock_faiss, tmp_path):
     """Test if MemoryRepository loads from an existing memory folder."""
 
     memory_folder = tmp_path / "test_memory"
@@ -135,7 +140,9 @@ def test_initialize_with_existing_memory_folder(mock_embeddings, mock_faiss, tmp
     # Mock FAISS load_local behavior
     mock_faiss.return_value = Mock()
 
-    MemoryRepository(api_key="test-key", memory_folder_path=str(memory_folder))
+    memory_store = MemoryStore(api_key="test-key", embedding_model="test-model", agent_name="test-agent")
+
+    memory_store.load_memory_from_folder(str(memory_folder))
 
     mock_faiss.assert_called_once_with(
         str(memory_folder), embeddings=mock_embeddings.return_value, allow_dangerous_deserialization=True

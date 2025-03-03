@@ -10,6 +10,7 @@ Key Features:
 """
 
 import logging
+import os
 from typing import Optional
 
 from solders.pubkey import Pubkey  # type: ignore # pylint: disable=E0401
@@ -28,12 +29,6 @@ class GetTokenBalanceTool(SolanaBaseTool):
     """Tool for retrieving user SPL token balances.
 
     Fetches token balances from Associated Token Accounts (ATAs).
-
-    Attributes:
-        name (str): Tool identifier
-        description (str): Description of the tool's functionality
-        inputs (dict): Schema for required input parameters
-        output_type (str): Type of data returned by the tool
     """
 
     name = "get_user_token_balance"
@@ -90,11 +85,98 @@ class GetTokenBalanceTool(SolanaBaseTool):
             return None
 
 
+class TransferTokenTool(SolanaBaseTool):
+    """Tool for transferring SPL tokens between user"""
+
+    name = "transfer_token"
+    description = "Transfers SPL tokens between users."
+    inputs = {
+        "recipient_address": {
+            "type": "string",
+            "description": "The address of the recipient.",
+        },
+        "token_address": {
+            "type": "string",
+            "description": "The SPL token mint address.",
+        },
+        "amount": {
+            "type": "number",
+            "description": "Token transfer amount, expressed in whole token units (accounting for token decimals).",
+        },
+    }
+    output_type = "string"
+
+    def __init__(self, wallet: SolanaWallet, *args, **kwargs):
+        super().__init__(wallet, *args, **kwargs)
+
+    def forward(self, recipient_address: str, token_address: str, amount: float) -> str:
+        """Transfer SPL tokens between user addresses.
+
+        Args:
+            recipient_address (str): The recipient's Solana wallet address
+            token_address (str): The token's mint address
+            amount (float): Token transfer amount, expressed in whole token units (accounting for token decimals)
+
+        Returns:
+            str: The transaction signature if successful, error message if failed
+        """
+        try:
+            keypair = self.wallet.get_wallet()
+            sender_pubkey = Pubkey.from_string(self.wallet.get_address())
+            recipient_pubkey = Pubkey.from_string(recipient_address)
+            token_pubkey = Pubkey.from_string(token_address)
+
+            # Initialize SPL token client
+            spl_client = Token(conn=self.client, pubkey=token_pubkey, program_id=TOKEN_PROGRAM_ID, payer=keypair)
+
+            # Verify token mint is initialized
+            mint = spl_client.get_mint_info()
+            if not mint.is_initialized:
+                raise ValueError("Token mint is not initialized.")
+
+            # Get sender's Associated Token Account
+            sender_ata = get_associated_token_address(sender_pubkey, token_pubkey)
+
+            sender_token_balance = self.client.get_token_account_balance(sender_ata)
+
+            # Verify sender has sufficient balance
+            sender_ui_amount = sender_token_balance.value.ui_amount
+            if sender_ui_amount is not None and sender_ui_amount < amount:
+                raise ValueError("Insufficient balance to transfer tokens.")
+
+            # Calculate amount in UI format
+            decimals = mint.decimals
+            amount = int(amount * 10**decimals)  # Convert to UI format based on token decimals
+
+            # Transfer tokens
+            response = spl_client.transfer(sender_ata, recipient_pubkey, sender_pubkey, amount)
+
+            logger.info(f"Token transfer response: {response}")
+
+            if response is None:
+                return "Transaction failed. No response received."
+
+            logger.info(f"Token transfer response: {response}")
+            return f"Transaction succeeded with signature: {response}"
+
+        except Exception as error:
+            logger.error(f"Failed to transfer tokens: {str(error)}")
+            return f"Transaction failed with error: {str(error)}"
+
+
 if __name__ == "__main__":
-    wallet = SolanaWallet(key_path="path/to/keypair.json")
-    get_balance_tool = GetTokenBalanceTool(wallet)
+    wallet = SolanaWallet(key_path=os.getenv("SOLANA_KEY_PATH"))
+    get_balance_tool = GetTokenBalanceTool(wallet)  # type: ignore
     data = get_balance_tool.forward(
         "4kbGbZtfkfkRVGunkbKX4M7dGPm9MghJZodjbnRZbmug",
         "J1Wpmugrooj1yMyQKrdZ2vwRXG5rhfx3vTnYE39gpump",
     )
     print(data)
+
+    transfer_tool = TransferTokenTool(wallet)  # type: ignore
+    transfer_res = transfer_tool.forward(
+        "J7DYsxt2mGt3XGpk8rAwcc5qfjPP14FgmiAsEeAsMEMY",
+        "J1Wpmugrooj1yMyQKrdZ2vwRXG5rhfx3vTnYE39gpump",
+        0.1,
+    )
+    print(transfer_res)

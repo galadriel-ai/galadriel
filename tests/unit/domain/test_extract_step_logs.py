@@ -40,7 +40,7 @@ async def test_basic_step():
     assert messages[0].content == "**Step 1**"
     assert messages[1].content == "This is a thought"
     assert "Step 1" in messages[2].content  # Summary
-    assert messages[3].content == "-----"  # Separator
+    assert messages[3].content == "-----\n```\n"  # Separator
 
 
 @pytest.mark.asyncio

@@ -14,15 +14,8 @@ class Message(BaseModel):
     content: str
     conversation_id: Optional[str] = None
     type: Optional[str] = None
+    final: bool = False
     additional_kwargs: Optional[Dict] = None
-
-
-class HumanMessage(Message):
-    type: str = "human"
-
-
-class AgentMessage(Message):
-    type: str = "agent"
 
 
 class AgentState(BaseModel):

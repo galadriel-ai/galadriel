@@ -24,17 +24,17 @@ from galadriel.entities import PushOnlyQueue
 from galadriel.errors import PaymentValidationError
 from galadriel.logging_utils import init_logging
 from galadriel.logging_utils import get_agent_logger
-from galadriel.memory.memory_repository import MemoryRepository
+from galadriel.memory.memory_store import MemoryStore
+from galadriel.state.agent_state_repository import AgentStateRepository
 
 logger = get_agent_logger()
 
-DEFAULT_PROMPT_TEMPLATE = "{{request}}"
-
-DEFAULT_PROMPT_TEMPLATE_WITH_CHAT_MEMORY = """
+DEFAULT_PROMPT_TEMPLATE = """
 You are a helpful chatbot assistant.
 Here is the chat history: \n\n {{chat_history}} \n
 Answer the following question: \n\n {{request}} \n
 Please remember the chat history and use it to answer the question, if relevant to the question.
+Maintain a natural conversation, don't add signatures at the end of your messages.
 """
 
 
@@ -124,10 +124,7 @@ class CodeAgent(Agent, InternalCodeAgent):
             response = await agent.execute(Message(content="What is Python?"))
         """
         InternalCodeAgent.__init__(self, **kwargs)
-        self.chat_memory = chat_memory
-        self.prompt_template = (
-            prompt_template or DEFAULT_PROMPT_TEMPLATE_WITH_CHAT_MEMORY if chat_memory else DEFAULT_PROMPT_TEMPLATE
-        )
+        self.prompt_template = prompt_template or DEFAULT_PROMPT_TEMPLATE
         format_prompt.validate_prompt_template(self.prompt_template)
 
     async def execute(  # type: ignore
@@ -142,6 +139,7 @@ class CodeAgent(Agent, InternalCodeAgent):
                 content=str(answer),
                 conversation_id=request.conversation_id,
                 additional_kwargs=request.additional_kwargs,
+                final=True,
             )
             return
         # Stream is enabled
@@ -187,10 +185,7 @@ class ToolCallingAgent(Agent, InternalToolCallingAgent):
             response = await agent.execute(Message(content="What's the weather in Paris?"))
         """
         InternalToolCallingAgent.__init__(self, **kwargs)
-        self.chat_memory = chat_memory
-        self.prompt_template = (
-            prompt_template or DEFAULT_PROMPT_TEMPLATE_WITH_CHAT_MEMORY if chat_memory else DEFAULT_PROMPT_TEMPLATE
-        )
+        self.prompt_template = prompt_template or DEFAULT_PROMPT_TEMPLATE
         format_prompt.validate_prompt_template(self.prompt_template)
 
     async def execute(  # type: ignore
@@ -205,6 +200,7 @@ class ToolCallingAgent(Agent, InternalToolCallingAgent):
                 content=str(answer),
                 conversation_id=request.conversation_id,
                 additional_kwargs=request.additional_kwargs,
+                final=True,
             )
             return
         # Stream is enabled
@@ -231,7 +227,7 @@ class AgentRuntime:
         outputs: List[AgentOutput],
         agent: Agent,
         pricing: Optional[Pricing] = None,
-        memory_repository: Optional[MemoryRepository] = None,
+        memory_store: Optional[MemoryStore] = MemoryStore(),
         debug: bool = False,
         enable_logs: bool = False,
     ):
@@ -249,11 +245,11 @@ class AgentRuntime:
         self.outputs = outputs
         self.agent = agent
         self.solana_payment_validator = SolanaPaymentValidator(pricing)  # type: ignore
-        self.memory_repository = memory_repository
+        self.memory_store = memory_store
         self.debug = debug
         self.enable_logs = enable_logs
         self.shutdown_event = asyncio.Event()
-
+        self.agent_state_repository = AgentStateRepository()
         env_path = Path(".") / ".env"
         _load_dotenv(dotenv_path=env_path)
         # AgentConfig should have some settings for debug?
@@ -272,6 +268,9 @@ class AgentRuntime:
         # Listen for shutdown event
         await self._listen_for_stop()
 
+        # Download agent state from S3 if long term memory is enabled
+        await self._load_agent_state()
+
         # Start agent inputs
         # Create tasks for all inputs and track them
         input_tasks = [
@@ -289,6 +288,8 @@ class AgentRuntime:
                 continue
             # Process the request
             await self._run_request(request, stream)
+
+        await self._save_agent_state()
 
     def stop(self):
         self.shutdown_event.set()
@@ -326,9 +327,9 @@ class AgentRuntime:
         # Run the agent if payment validation passed or not required
         if task_and_payment or not self.solana_payment_validator.pricing:
             memories = None
-            if self.memory_repository:
+            if self.memory_store:
                 try:
-                    memories = await self.memory_repository.get_memories(prompt=request.content)
+                    memories = await self.memory_store.get_memories(prompt=request.content)
                 except Exception as e:
                     logger.error(f"Error getting memories: {e}")
             try:
@@ -344,9 +345,9 @@ class AgentRuntime:
         if response:
             # proof = await self._generate_proof(request, response)
             # await self._publish_proof(request, response, proof)
-            if self.memory_repository:
+            if self.memory_store:
                 try:
-                    await self.memory_repository.add_memory(request=request, response=response)
+                    await self.memory_store.add_memory(request=request, response=response)
                 except Exception as e:
                     logger.error(f"Error adding memory: {e}")
 
@@ -371,21 +372,57 @@ class AgentRuntime:
         Returns:
             str: The agent's chat memories
         """
-        if self.memory_repository:
-            return self.memory_repository.save_data_locally(file_name)
+        if self.memory_store:
+            return self.memory_store.save_data_locally(file_name)
         return None
-
-    async def _upload_agent_state(self) -> None:
-        pass
-
-    async def _download_agent_state(self) -> None:
-        pass
 
     async def _generate_proof(self, request: Message, response: Message) -> str:
         return generate_proof.execute(request, response)
 
     async def _publish_proof(self, request: Message, response: Message, proof: str):
         publish_proof.execute(request, response, proof)
+
+    async def _load_agent_state(self):
+        """Load agent state from persistent storage if available."""
+        if not (self.memory_store and self.memory_store.vector_store):
+            logger.debug("Skipping memory loading: vector store not configured")
+            return False
+
+        try:
+            logger.info("Attempting to load agent state from storage")
+            agent_state = self.agent_state_repository.download_agent_state()
+
+            if not agent_state:
+                logger.info("No existing agent state found in storage")
+                return False
+
+            self.memory_store.load_memory_from_folder(agent_state.memory_folder_path)
+            logger.info(f"Successfully loaded agent memory from {agent_state.memory_folder_path}")
+            return True
+
+        except Exception as e:
+            logger.error(f"Failed to load agent memory: {e}", exc_info=self.debug)
+            return False
+
+    async def _save_agent_state(self):
+        """Save agent state to persistent storage if vector store is configured."""
+        if not (self.memory_store and self.memory_store.vector_store):
+            logger.debug("Skipping state saving: vector store not configured")
+            return False
+
+        try:
+            state_folder_path = "/tmp/agent_state"
+            logger.info(f"Saving agent state to {state_folder_path}")
+
+            self.memory_store.save_data_locally(state_folder_path)
+            self.agent_state_repository.upload_agent_state(state_folder_path)
+
+            logger.info("Successfully saved and uploaded agent state")
+            return True
+
+        except Exception as e:
+            logger.error(f"Failed to save agent state: {e}", exc_info=self.debug)
+            return False
 
 
 async def stream_agent_response(
@@ -414,8 +451,10 @@ async def stream_agent_response(
         ):
             yield message
     final_answer = step_log  # Last log is the run's final_answer
+    # final message
     yield Message(
-        content=f"**Final answer:** {str(final_answer)}",
+        content=f"{str(final_answer)}",
         conversation_id=conversation_id,
         additional_kwargs=additional_kwargs,
+        final=True,
     )

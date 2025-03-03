@@ -1,4 +1,5 @@
-from typing import AsyncGenerator, Dict, Optional
+import asyncio
+from typing import AsyncGenerator, Optional
 from typing import List
 from unittest.mock import MagicMock, AsyncMock
 
@@ -25,8 +26,14 @@ class MockAgent(Agent):
 
 
 class MockAgentInput(AgentInput):
-    async def start(self, queue: PushOnlyQueue) -> Dict:
-        pass
+    def __init__(self):
+        self.stop_event = asyncio.Event()
+
+    async def start(self, queue: PushOnlyQueue):
+        await self.start_event.wait()
+
+    async def stop(self):
+        self.stop_event.set()
 
 
 class MockAgentOutput(AgentOutput):
@@ -115,3 +122,62 @@ async def test_payment_validation_failure():
 
     assert output_client.output_responses == []
     assert len(user_agent.called_messages) == 0
+
+
+async def test_agent_state_download_on_start():
+    mock_agent = MockAgent()
+    memory_store = MagicMock(api_key="test-key", embedding_model="test-model", agent_name="test-agent")
+    memory_store.vector_store = MagicMock()
+    memory_store.load_memory_from_folder = MagicMock()
+
+    agent_state_repository = MagicMock()
+    agent_state_repository.download_agent_state = MagicMock()
+
+    input_client = MockAgentInput()
+    runtime = AgentRuntime(
+        inputs=[input_client],
+        outputs=[],
+        agent=mock_agent,
+        memory_store=memory_store,
+    )
+    runtime.agent_state_repository = agent_state_repository
+
+    task = asyncio.create_task(runtime.run(stream=False))
+    await asyncio.sleep(0.1)
+    input_client.stop()
+    runtime.stop()
+    await task
+
+    agent_state_repository.download_agent_state.assert_called_once()
+    memory_store.load_memory_from_folder.assert_called()
+
+
+async def test_agent_state_upload_on_shutdown():
+    mock_agent = MockAgent()
+    memory_store = MagicMock()
+    memory_store.vector_store = True
+    memory_store.get_memories = AsyncMock(return_value=None)
+    memory_store.load_memory_from_folder = MagicMock()
+    memory_store.save_data_locally = AsyncMock()
+
+    agent_state_repository = MagicMock()
+    agent_state_repository.download_agent_state = MagicMock(return_value=None)
+    agent_state_repository.upload_agent_state = MagicMock()
+
+    input_client = MockAgentInput()
+    runtime = AgentRuntime(
+        inputs=[input_client],
+        outputs=[],
+        agent=mock_agent,
+        memory_store=memory_store,
+    )
+    runtime.agent_state_repository = agent_state_repository
+
+    task = asyncio.create_task(runtime.run(stream=False))
+    await asyncio.sleep(0.1)
+    input_client.stop()
+    runtime.shutdown_event.set()
+    await task
+
+    memory_store.save_data_locally.assert_called()
+    agent_state_repository.upload_agent_state.assert_called()

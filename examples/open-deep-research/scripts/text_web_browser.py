@@ -11,7 +11,7 @@ from urllib.parse import unquote, urljoin, urlparse
 
 import pathvalidate
 import requests
-import serpapi
+from serpapi import GoogleSearch
 from smolagents import Tool
 
 from .cookies import COOKIES
@@ -212,7 +212,7 @@ class SimpleTextBrowser:
         if filter_year is not None:
             params["tbs"] = f"cdr:1,cd_min:01/01/{filter_year},cd_max:12/31/{filter_year}"
 
-        search = serpapi.search(params)  # GoogleSearch(params)
+        search = GoogleSearch(params)
         results = search.get_dict()
         self.page_title = f"{query} - Search"
         if "organic_results" not in results.keys():

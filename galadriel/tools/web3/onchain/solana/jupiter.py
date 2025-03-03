@@ -13,11 +13,11 @@ from solders.transaction import VersionedTransaction  # pylint: disable=E0401 # 
 from spl.token.client import Token
 from spl.token.constants import TOKEN_PROGRAM_ID
 
-from jupiter_python_sync_sdk.jupiter import Jupiter
 
 from galadriel.tools.web3.onchain.solana.base_tool import Network, SolanaBaseTool
 from galadriel.logging_utils import get_agent_logger
 from galadriel.wallets.solana_wallet import SolanaWallet
+from galadriel.utils.jupiter.jupiter_swap import Jupiter
 
 
 # API endpoints for Jupiter Protocol
