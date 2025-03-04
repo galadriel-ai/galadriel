@@ -198,3 +198,5 @@ class ChatUIClient(AgentInput, AgentOutput):
             await self.active_connection.put(final_message)
 
         self.logger.info("Response sent to conversation")
+        # Yield a small delay to that the response is picked up and sent to the client
+        await asyncio.sleep(0.1)
