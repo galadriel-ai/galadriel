@@ -225,6 +225,7 @@ def create(path: str):
     try:
         pub_key = _create_solana_wallet(path)
         click.echo(f"Successfully created Solana wallet {pub_key} at {path}")
+
     except Exception as e:
         click.echo(f"Failed to create Solana wallet: {str(e)}")
 
@@ -266,6 +267,29 @@ def import_wallet(private_key: str, path: str):
         _update_agent_env_file({"SOLANA_KEY_PATH": path})
 
         click.echo(f"Successfully imported Solana wallet from {path}")
+
+
+@wallet.command()
+def airdrop():
+    """Request an airdrop of 0.001 SOL to the given Solana wallet."""
+
+    load_dotenv(dotenv_path=Path(".") / ".agents.env", override=True)
+
+    key_path = os.getenv("SOLANA_KEY_PATH")
+    if not key_path or not os.path.exists(key_path):
+        raise click.ClickException(
+            "SOLANA_KEY_PATH not found in environment or does not exist. Please run `galadriel wallet create` to create a new wallet or `galadriel wallet import` to import an existing wallet."
+        )
+
+    try:
+        with open(key_path, "r", encoding="utf-8") as file:
+            seed = json.load(file)
+            pub_key = Keypair.from_bytes(seed).pubkey()
+            _request_airdrop(str(pub_key))
+    except json.JSONDecodeError:
+        raise click.ClickException(f"Invalid JSON format in key file: {key_path}")
+    except Exception as e:
+        raise click.ClickException(f"Failed to request airdrop: {str(e)}")
 
 
 def _assert_config_files(image_name: str) -> Tuple[str, str]:
@@ -640,6 +664,26 @@ def _create_solana_wallet(path: str) -> str:
         file.write(private_key_json)
 
     return str(keypair.pubkey())
+
+
+def _request_airdrop(pubkey: str) -> None:
+    """Request an airdrop of 0.0001 SOL to the given Solana wallet."""
+
+    url = f"{API_BASE_URL}/faucet/solana"
+    response = requests.post(
+        url,
+        headers={
+            "Content-Type": "application/json",
+        },
+        json={"address": pubkey},
+        timeout=REQUEST_TIMEOUT,
+    )
+    if response.status_code == 200:
+        click.echo(f"Airdrop requested successfully! Transaction hash: {response.json()['transaction_signature']}")
+    elif response.status_code == 429:
+        click.echo(f"Rate limit exceeded: {response.headers['error']}")
+    else:
+        click.echo(f"Failed to request airdrop: {response.status_code} {response.text}")
 
 
 def _get_installed_galadriel_version() -> str:
