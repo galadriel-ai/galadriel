@@ -720,9 +720,7 @@ def _request_airdrop(pubkey: str) -> None:
         timeout=REQUEST_TIMEOUT,
     )
     if response.status_code == 200:
-        click.echo(
-            f"Airdrop requested successfully! Transaction hash: {response.json()['transaction_signature']}"
-        )
+        click.echo(f"Airdrop requested successfully! Transaction hash: {response.json()['transaction_signature']}")
     elif response.status_code == 429:
         click.echo("Rate limit exceeded (one airdrop per 24 hours). Please try again later.")
     else:
