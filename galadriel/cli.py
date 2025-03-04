@@ -280,10 +280,15 @@ def import_wallet(private_key: str, path: str):
 
 @wallet.command()
 def airdrop():
-    """Request an airdrop of 0.0001 SOL to the given Solana wallet."""
+    """Request an airdrop of 0.001 SOL to the given Solana wallet."""
+
+    load_dotenv(dotenv_path=Path(".") / ".agents.env", override=True)
+
     key_path = os.getenv("SOLANA_KEY_PATH")
     if not key_path or not os.path.exists(key_path):
-        raise click.ClickException("SOLANA_KEY_PATH not found in environment or does not exist")
+        raise click.ClickException(
+            "SOLANA_KEY_PATH not found in environment or does not exist. Please run `galadriel wallet create` to create a new wallet or `galadriel wallet import` to import an existing wallet."
+        )
 
     try:
         with open(key_path, "r", encoding="utf-8") as file:
@@ -705,16 +710,11 @@ def _create_solana_wallet(path: str) -> str:
 def _request_airdrop(pubkey: str) -> None:
     """Request an airdrop of 0.0001 SOL to the given Solana wallet."""
 
-    load_dotenv(dotenv_path=Path(".") / ".env")
-    api_key = os.getenv("GALADRIEL_API_KEY")
-    if not api_key:
-        raise click.ClickException("GALADRIEL_API_KEY not found in environment")
     url = f"{API_BASE_URL}/faucet/solana"
     response = requests.post(
         url,
         headers={
             "Content-Type": "application/json",
-            "Authorization": f"Bearer {api_key}",
         },
         json={"address": pubkey},
         timeout=REQUEST_TIMEOUT,
@@ -722,6 +722,6 @@ def _request_airdrop(pubkey: str) -> None:
     if response.status_code == 200:
         click.echo(f"Airdrop requested successfully! Transaction hash: {response.json()['transaction_signature']}")
     elif response.status_code == 429:
-        click.echo("Rate limit exceeded (one airdrop per 24 hours). Please try again later.")
+        click.echo(f"Rate limit exceeded: {response.headers['error']}")
     else:
         click.echo(f"Failed to request airdrop: {response.status_code} {response.text}")
