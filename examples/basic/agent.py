@@ -5,7 +5,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 from galadriel import AgentRuntime, CodeAgent, LiteLLMModel
-from galadriel.clients import SimpleMessageClient
+from galadriel.clients import ChatUIClient
 from galadriel.tools import DuckDuckGoSearchTool
 
 load_dotenv(dotenv_path=Path(".") / ".env", override=True)
@@ -18,7 +18,7 @@ agent = CodeAgent(
 )
 
 # Add basic client which sends two messages to the agent and prints agent's result
-client = SimpleMessageClient("What is the capital of Estonia?", "What's the price of Solana today?")
+client = ChatUIClient()
 
 # Set up the runtime
 runtime = AgentRuntime(
@@ -28,4 +28,4 @@ runtime = AgentRuntime(
 )
 
 # Run the agent
-asyncio.run(runtime.run())
+asyncio.run(runtime.run(stream=True))

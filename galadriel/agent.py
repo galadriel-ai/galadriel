@@ -34,6 +34,9 @@ Here is the chat history: \n\n {{chat_history}} \n
 Answer the following question: \n\n {{request}} \n
 Please remember the chat history and use it to answer the question, if relevant to the question.
 Maintain a natural conversation, don't add signatures at the end of your messages.
+Call the final_answer tool if you have a final answer to the question.
+If you find the error "Error in code parsing: Your code snippet is invalid, 
+because the regex pattern ```(?:py|python)?\n(.*?)\n``` was not found in it.", ignore it and call the final_answer tool
 """
 
 
@@ -142,7 +145,11 @@ class CodeAgent(Agent, InternalCodeAgent):
             yield Message(
                 content=str(answer),
                 conversation_id=request.conversation_id,
-                additional_kwargs=request.additional_kwargs,
+                additional_kwargs={
+                    **(request.additional_kwargs or {}),
+                    "role": "assistant",
+                    "type": "completion_message",
+                },
                 final=True,
             )
             return
@@ -203,7 +210,11 @@ class ToolCallingAgent(Agent, InternalToolCallingAgent):
             yield Message(
                 content=str(answer),
                 conversation_id=request.conversation_id,
-                additional_kwargs=request.additional_kwargs,
+                additional_kwargs={
+                    **(request.additional_kwargs or {}),
+                    "role": "assistant",
+                    "type": "completion_message",
+                },
                 final=True,
             )
             return
@@ -407,11 +418,10 @@ async def stream_agent_response(
             step_log, conversation_id=conversation_id, additional_kwargs=additional_kwargs
         ):
             yield message
-    final_answer = step_log  # Last log is the run's final_answer
     # final message
     yield Message(
-        content=f"{str(final_answer)}",
+        content=f"\n**Final answer:**\n{step_log.to_string()}\n",
         conversation_id=conversation_id,
-        additional_kwargs=additional_kwargs,
+        additional_kwargs={**(additional_kwargs or {}), "role": "assistant", "type": "completion_message"},
         final=True,
     )
