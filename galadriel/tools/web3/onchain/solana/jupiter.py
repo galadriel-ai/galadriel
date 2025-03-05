@@ -169,6 +169,7 @@ class PrepareSwapTokenTool(SolanaBaseTool):
             )
 
             return json.dumps({
+                "operation": "swap",
                 "transaction_data": transaction_data,  # Base64 encoded transaction data
                 "input_mint": input_mint,
                 "output_mint": output_mint,

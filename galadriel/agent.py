@@ -138,7 +138,15 @@ class CodeAgent(Agent, InternalCodeAgent):
         formatted_task = format_prompt.execute(self.prompt_template, request_dict)
 
         if not stream:
+            # answer = {
+            #     "operation": "swap",
+            #     "transaction_data": "AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAQAHCpBErv3pDB2sZmcils4IvPtY/9d36augBNVys0uY0Ndfhk25ZMtnf851zvt+cfEwCyaTa5+v9tk0fDorkPJbDSK/ahSOFOL+MSZQntWj9RuagEXDW8dA7bL+F61MbetVuAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAwZGb+UhFzL/7K26csOb57yM5bvF9xJrLEObOkAAAAAEedVb8jHAbu50xW7OaBUH/bGy3qP0jlECsc2iVrwTjwbd9uHXZaGT2cvhRs7reawctIXtX1s3kTqM9YV+/wCpjJclj04kifG7PRApFI4NgwtaE5na/xCEBI572Nvp+Fm0P/on9df2SnTAmx8pWHneSwmrNt/J3VFLMhqns4zl6Pqi2bXH3Telt0voZcKLTaXSgBFpWpKRLdfZ33TDraWfHFcFg+ZBgkhgrQ7HkcONzUlJuPEutTOJ6ITfeAvvlCMGBAAFAsBcFQAHBgACAA0DBgEBAwIAAgwCAAAAAMqaOwAAAAAGAQIBEQUbBgACAQUJBQgFDwYKDgoMCwoKCgoKCgoKAgEAI+UXy5d6460qAQAAAAdkAAEAypo7AAAAALvXDy0UAAAAMgAABgMCAAABCQGNko/JTCgIBgp7k+SOQWyLrTF9HUe25cpZcqnGXyD9lwOqqawDHwIA",
+            #     "input_mint": "So11111111111111111111111111111111111111112",
+            #     "output_mint": "HsNx7RirehVMy54xnFtcgCBPDMrwNnJKykageqdWpump",
+            #     "input_amount": 1000000000
+            # }
             answer = InternalCodeAgent.run(self, task=formatted_task)
+
             yield Message(
                 content=str(answer),
                 conversation_id=request.conversation_id,
