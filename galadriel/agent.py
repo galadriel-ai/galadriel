@@ -293,7 +293,7 @@ class AgentRuntime:
             if not active_tasks:
                 logger.info("All input clients finished. Stopping the runtime...")
                 self.stop()
-                continue
+                break
             # Get the next request from the queue
             try:
                 request = await asyncio.wait_for(input_queue.get(), timeout=1.0)
