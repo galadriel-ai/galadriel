@@ -2,7 +2,9 @@ import hashlib
 import json
 import os
 import re
+import shutil
 import subprocess
+import docker
 from pathlib import Path
 from typing import List
 from typing import Optional
@@ -42,12 +44,7 @@ def galadriel():
     pass
 
 
-# @galadriel.group()
-# def agent():
-#     """Agent management commands"""
-
-
-# @agent.command()
+@galadriel.command()
 def init() -> None:
     """Create a new Agent folder template in the current directory."""
     agent_name = ""
@@ -57,21 +54,15 @@ def init() -> None:
         if not agent_name:
             print("Invalid agent name: name should only contain alphanumerical and _ symbols.")
 
-    # docker_username = click.prompt("Enter Docker username", type=str)
-    # docker_password = click.prompt("Enter Docker password", hide_input=True, type=str)
-    # galadriel_api_key = click.prompt(
-    #     "Enter Galadriel API key", hide_input=True, type=str
-    # )
-
     click.echo(f"Creating a new agent template in {os.getcwd()}...")
     try:
-        _create_agent_template(agent_name, "", "", "")
+        _create_agent_template(agent_name)
         click.echo("Successfully created agent template!")
     except Exception as e:
         click.echo(f"Error creating agent template: {str(e)}", err=True)
 
 
-# @agent.command()
+@galadriel.command()
 @click.option("--image-name", default="agent", help="Name of the Docker image")
 def build(image_name: str) -> None:
     """Build the agent Docker image."""
@@ -84,7 +75,7 @@ def build(image_name: str) -> None:
         raise click.ClickException(str(e))
 
 
-# @agent.command()
+@galadriel.command()
 @click.option("--image-name", default="agent", help="Name of the Docker image")
 def publish(image_name: str) -> None:
     """Publish the agent Docker image to the Docker Hub."""
@@ -101,7 +92,7 @@ def publish(image_name: str) -> None:
         raise click.ClickException(str(e))
 
 
-# @agent.command()
+@galadriel.command()
 @click.option("--image-name", default="agent", help="Name of the Docker image")
 def deploy(image_name: str) -> None:
     """Build, publish and deploy the agent."""
@@ -127,7 +118,7 @@ def deploy(image_name: str) -> None:
         raise click.ClickException(str(e))
 
 
-# @agent.command()
+@galadriel.command()
 @click.option("--agent-id", help="ID of the agent to update")
 @click.option("--image-name", default="agent", help="Name of the Docker image")
 def update(agent_id: str, image_name: str):
@@ -144,7 +135,7 @@ def update(agent_id: str, image_name: str):
         raise click.ClickException(str(e))
 
 
-# @agent.command()
+@galadriel.command()
 @click.option("--agent-id", help="ID of the agent to get state for")
 def state(agent_id: str):
     """Get information about a deployed agent from Galadriel platform."""
@@ -170,7 +161,7 @@ def state(agent_id: str):
         click.echo(f"Failed to get agent state: {str(e)}")
 
 
-# @agent.command()
+@galadriel.command()
 def states():
     """Get all agent states"""
     try:
@@ -195,7 +186,7 @@ def states():
         click.echo(f"Failed to get agent state: {str(e)}")
 
 
-# @agent.command()
+@galadriel.command()
 @click.argument("agent_id")
 def destroy(agent_id: str):
     """Destroy a deployed agent from Galadriel platform."""
@@ -317,7 +308,7 @@ def _assert_config_files(image_name: str) -> Tuple[str, str]:
 
 
 # pylint: disable=W0613
-def _create_agent_template(agent_name: str, docker_username: str, docker_password: str, galadriel_api_key: str) -> None:
+def _create_agent_template(agent_name: str) -> None:
     """
     Generates the Python code and directory structure for a new Galadriel agent.
 
@@ -326,75 +317,45 @@ def _create_agent_template(agent_name: str, docker_username: str, docker_passwor
     """
 
     # Create directories
-    agent_dir = os.path.join(agent_name, "agent")
-    # agent_configurator_dir = os.path.join(agent_name, "agent_configurator")
-    # docker_dir = os.path.join(agent_name, "docker")
-    os.makedirs(agent_dir, exist_ok=True)
-    # os.makedirs(agent_configurator_dir, exist_ok=True)
-    # os.makedirs(docker_dir)
-
-    # Generate <agent_name>.py
-    class_name = "".join(word.capitalize() for word in agent_name.split("_"))
-    agent_code = f"""from galadriel import Agent
-from galadriel.entities import Message
-
-
-class {class_name}(Agent):
-    async def run(self, request: Message) -> Message:
-        # Implement your agent's logic here
-        print(f"Running {class_name}")
-        return Message(
-            content="TODO"
-        )
-"""
-    with open(os.path.join(agent_dir, f"{agent_name}.py"), "w", encoding="utf-8") as f:
-        f.write(agent_code)
-
-    # Generate <agent_name>.json
-    # initial_data = {
-    #     "name": class_name,
-    #     "description": "A brief description of your agent",
-    #     "prompt": "The initial prompt for the agent",
-    #     "tools": [],
-    # }
-    # with open(
-    #     os.path.join(agent_configurator_dir, f"{agent_name}.json"),
-    #     "w",
-    #     encoding="utf-8",
-    # ) as f:
-    #     json.dump(initial_data, f, indent=2)
+    docker_dir = os.path.join(agent_name, "docker")
+    os.makedirs(docker_dir, exist_ok=True)
 
     # generate agent.py
     main_code = f"""import asyncio
+import os
+from pathlib import Path
 
-from galadriel import AgentOutput
-from galadriel import AgentRuntime
-from galadriel.clients import Cron
-from galadriel.entities import Message
+from dotenv import load_dotenv
 
-from agent.{agent_name} import {class_name}
+from galadriel import AgentRuntime, CodeAgent, LiteLLMModel
+from galadriel.clients import TerminalClient
+from galadriel.tools import DuckDuckGoSearchTool
 
+load_dotenv(dotenv_path=Path(".") / ".env", override=True)
+model = LiteLLMModel(model_id="gpt-4o", api_key=os.getenv("OPENAI_API_KEY"))
 
-class GenericOutput(AgentOutput):
+{agent_name} = CodeAgent(
+    model=model,
+    tools=[DuckDuckGoSearchTool()],
+)
 
-    async def send(self, request: Message, response: Message) -> None:
-        print(f"Received response: {{response.content}}")
+client = TerminalClient()
 
+runtime = AgentRuntime(
+    agent={agent_name},
+    inputs=[client],
+    outputs=[client],
+)
 
-if __name__ == "__main__":
-    {agent_name} = {class_name}()
-    agent = AgentRuntime(
-        inputs=[Cron(interval_seconds=30)],
-        outputs=[GenericOutput()],
-        agent={agent_name},
-    )
-    asyncio.run(agent.run())
+asyncio.run(runtime.run())
 """
     with open(os.path.join(agent_name, "agent.py"), "w", encoding="utf-8") as f:
         f.write(main_code)
 
+    galadriel_version = _get_installed_galadriel_version()
+
     # Generate pyproject.toml
-    pyproject_toml = """
+    pyproject_toml = f"""
 [tool.poetry]
 name = "agent"
 version = "0.1.0"
@@ -403,7 +364,7 @@ authors = ["Your Name <your.email@example.com>"]
 
 [tool.poetry.dependencies]
 python = "^3.10"
-galadriel = "^0.0.2"
+galadriel = "^{galadriel_version}"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
@@ -412,34 +373,34 @@ build-backend = "poetry.core.masonry.api"
     with open(os.path.join(agent_name, "pyproject.toml"), "w", encoding="utf-8") as f:
         f.write(pyproject_toml)
 
-    # Create .env and .agents.env file in the agent directory
-    #     env_content = f"""DOCKER_USERNAME={docker_username}
-    # DOCKER_PASSWORD={docker_password}
-    # GALADRIEL_API_KEY={galadriel_api_key}"""
-    #     with open(os.path.join(agent_name, ".env"), "w", encoding="utf-8") as f:
-    #         f.write(env_content)
-    agent_env_content = f'AGENT_NAME="{agent_name}"'
-    with open(os.path.join(agent_name, ".agents.env"), "w", encoding="utf-8") as f:
-        f.write(agent_env_content)
+    # copy docker files from galadriel/docker to user current directory
+    docker_files_dir = os.path.join(os.path.dirname(__file__), "docker")
+    shutil.copy(
+        os.path.join(os.path.join(os.path.dirname(__file__)), "docker-compose.yml"),
+        os.path.join(agent_name, "docker-compose.yml"),
+    )
+    shutil.copy(
+        os.path.join(docker_files_dir, "Dockerfile"),
+        os.path.join(docker_dir, "Dockerfile"),
+    )
+    shutil.copy(
+        os.path.join(docker_files_dir, ".dockerignore"),
+        os.path.join(agent_name, ".dockerignore"),
+    )
+    shutil.copy(
+        os.path.join(docker_files_dir, "logrotate_logs"),
+        os.path.join(docker_dir, "logrotate_logs"),
+    )
 
-    # copy docker files from sentience/galadriel/docker to user current directory
-    # docker_files_dir = os.path.join(os.path.dirname(__file__), "docker")
-    # shutil.copy(
-    #     os.path.join(os.path.join(os.path.dirname(__file__)), "docker-compose.yml"),
-    #     os.path.join(agent_name, "docker-compose.yml"),
-    # )
-    # shutil.copy(
-    #     os.path.join(docker_files_dir, "Dockerfile"),
-    #     os.path.join(docker_dir, "Dockerfile"),
-    # )
-    # shutil.copy(
-    #     os.path.join(docker_files_dir, ".dockerignore"),
-    #     os.path.join(agent_name, ".dockerignore"),
-    # )
-    # shutil.copy(
-    #     os.path.join(docker_files_dir, "logrotate_logs"),
-    #     os.path.join(docker_dir, "logrotate_logs"),
-    # )
+    # copy template files from galadriel/templates to user current directory
+    shutil.copy(
+        os.path.join(os.path.dirname(__file__), "../template.agents.env"),
+        os.path.join(agent_name, "template.agents.env"),
+    )
+    shutil.copy(
+        os.path.join(os.path.dirname(__file__), "../template.env"),
+        os.path.join(agent_name, "template.env"),
+    )
 
 
 def _build_image(docker_username: str) -> None:
@@ -517,14 +478,12 @@ def _publish_image(image_name: str, docker_username: str, docker_password: str) 
 
     # Login to Docker Hub
     click.echo("Logging into Docker Hub...")
-    login_process = subprocess.run(
-        ["docker", "login", "-u", docker_username, "--password-stdin"],
-        input=docker_password.encode(),
-        capture_output=True,
-        check=False,
-    )
-    if login_process.returncode != 0:
-        raise click.ClickException(f"Docker login failed: {login_process.stderr.decode()}")
+    try:
+        client = docker.from_env()
+        client.login(username=docker_username, password=docker_password)
+        click.echo("Successfully logged into Docker Hub")
+    except docker.errors.APIError as e:
+        raise click.ClickException(f"Docker login failed: {str(e)}")
 
     # Create repository if it doesn't exist
     click.echo(f"Creating repository {docker_username}/{image_name} if it doesn't exist...")
@@ -725,3 +684,20 @@ def _request_airdrop(pubkey: str) -> None:
         click.echo(f"Rate limit exceeded: {response.headers['error']}")
     else:
         click.echo(f"Failed to request airdrop: {response.status_code} {response.text}")
+
+
+def _get_installed_galadriel_version() -> str:
+    """
+    Get the installed galadriel package version.
+
+    Returns:
+        The version string (e.g., "0.0.11")
+    """
+    try:
+        import importlib.metadata
+
+        return importlib.metadata.version("galadriel")
+    except Exception as e:
+        click.echo(f"Failed to get installed galadriel version: {e}")
+        click.echo("Falling back to default version 0.0.11")
+        return "0.0.11"
