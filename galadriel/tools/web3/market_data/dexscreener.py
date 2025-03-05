@@ -45,9 +45,7 @@ class GetTokenDataTool(Tool):
             Dict[str, Any]: Token data as a dictionary, or empty dict if request fails
         """
         try:
-            response = requests.get(
-                f"{DEXSCREENER_API_URL}/tokens/v1/{ecosystem}/{token_address}", timeout=30
-            )
+            response = requests.get(f"{DEXSCREENER_API_URL}/tokens/v1/{ecosystem}/{token_address}", timeout=30)
             if response.status_code == 200:
                 data = response.json()
                 # Remove unrelated data to fit the context limit
@@ -84,7 +82,7 @@ class SearchTokenPairTool(Tool):
     }
     output_type = "string"
 
-    def forward(self, token_symbol: str) -> Dict[str, Any]:
+    def forward(self, token_symbol: str) -> str:
         """Search for token pairs on DexScreener.
 
         Args:
@@ -94,9 +92,7 @@ class SearchTokenPairTool(Tool):
             str: Token pair data as a string, or empty string if request fails
         """
         try:
-            response = requests.get(
-                f"{DEXSCREENER_API_URL}/latest/dex/search/?q={token_symbol}", timeout=30
-            )
+            response = requests.get(f"{DEXSCREENER_API_URL}/latest/dex/search/?q={token_symbol}", timeout=30)
             if response.status_code == 200:
                 data = response.json()
                 return json.dumps(data, indent=2)

@@ -24,9 +24,7 @@ agent = CodeAgent(
 )
 
 # Add basic client which sends two messages to the agent and prints agent's result
-client = SimpleMessageClient(
-    "What is the price of DAIGE today? Buy 0.001 SOL of DAIGE if the price is below 0.5 USD"
-)
+client = SimpleMessageClient("What is the price of DAIGE today? Buy 0.001 SOL of DAIGE if the price is below 0.5 USD")
 
 # Set up the runtime
 runtime = AgentRuntime(
