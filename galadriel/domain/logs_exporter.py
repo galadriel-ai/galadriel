@@ -44,9 +44,13 @@ class LogsExportHandler(logging.Handler):
         Blocking function that exports logs every self.export_interval_seconds
         """
         api_key = os.getenv("GALADRIEL_API_KEY")
+        agent_id = os.getenv("AGENT_ID")
         agent_instance_id = os.getenv("AGENT_INSTANCE_ID")
         if not api_key:
             self.logger.info("Didn't find GALADRIEL_API_KEY, skipping logs exporting")
+            return
+        if not agent_id:
+            self.logger.info("AGENT_ID not found, skipping logs exporting")
             return
         if not agent_instance_id:
             self.logger.info("AGENT_INSTANCE_ID not found, skipping logs exporting")
@@ -54,7 +58,7 @@ class LogsExportHandler(logging.Handler):
         while True:
             time.sleep(self.export_interval_seconds)
             formatted_logs = self._format_logs()
-            is_export_success = self._export_logs(api_key, agent_instance_id, formatted_logs)
+            is_export_success = self._export_logs(api_key, agent_id, agent_instance_id, formatted_logs)
             if is_export_success:
                 self.log_records = self.log_records[len(formatted_logs) :]
 
@@ -76,18 +80,18 @@ class LogsExportHandler(logging.Handler):
                 pass
         return formatted_logs[:LOG_EXPORT_BATCH_SIZE]
 
-    def _export_logs(self, api_key: str, agent_instance_id: str, formatted_logs: List[Dict]) -> bool:
+    def _export_logs(self, api_key: str, agent_id: str, agent_instance_id: str, formatted_logs: List[Dict]) -> bool:
         is_export_success = False
         if formatted_logs:
             try:
                 response = requests.post(
-                    urljoin(GALADRIEL_API_BASE_URL, f"v1/agents/logs/{agent_instance_id}"),
+                    urljoin(GALADRIEL_API_BASE_URL, f"v1/agents/logs/{agent_id}"),
                     timeout=60,
                     headers={
                         "Content-Type": "application/json",
                         "Authorization": f"Bearer {api_key}",
                     },
-                    json={"logs": formatted_logs},
+                    json={"agent_instance_id": agent_instance_id, "logs": formatted_logs},
                 )
                 self.logger.debug(f"Log export request status: {response.status_code}")
                 is_export_success = response.ok
