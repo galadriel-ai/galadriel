@@ -24,6 +24,7 @@ class EnclaveServer:
 
     def __init__(self):
         self.attestation_manager = AttestationManager()
+
     def start(self):
         """Start the vsock server."""
         try:

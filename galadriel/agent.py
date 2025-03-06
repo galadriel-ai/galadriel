@@ -291,7 +291,9 @@ class AgentRuntime:
         while not self.shutdown_event.is_set():
             active_tasks = [task for task in input_tasks if not task.done()]
             if not active_tasks:
-                raise RuntimeError("All input clients died")
+                logger.info("All input clients finished. Stopping the runtime...")
+                self.stop()
+                break
             # Get the next request from the queue
             try:
                 request = await asyncio.wait_for(input_queue.get(), timeout=1.0)
@@ -301,6 +303,7 @@ class AgentRuntime:
             await self._run_request(request, stream)
 
         await self._save_agent_state()
+        logger.info("Runtime done.")
 
     def stop(self):
         self.shutdown_event.set()
