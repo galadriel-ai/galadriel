@@ -101,7 +101,8 @@ class ChatUIClient(AgentInput, AgentOutput):
             },
         )
 
-        await self.queue.put(incoming)
+        # Enqueue the incoming message in a non-blocking way
+        asyncio.create_task(self.queue.put(incoming))
         self.logger.info(f"Enqueued message: {incoming}")
 
         # Create a response stream for this conversation
@@ -149,7 +150,7 @@ class ChatUIClient(AgentInput, AgentOutput):
             self.active_connection = None
 
     async def send(self, request: Message, response: Message) -> None:
-        """Send a response message back to the chat interface.
+        """Send a response message back to the chat interface in OpenAI format.
 
         Args:
             request (Message): The original request message
@@ -164,27 +165,39 @@ class ChatUIClient(AgentInput, AgentOutput):
             self.logger.warning(f"No active connection for conversation {response.conversation_id}")
             return
 
+        # Get role from additional_kwargs or default to "assistant"
+        role = response.additional_kwargs.get("role", "assistant") if response.additional_kwargs else "assistant"
+
         # Format response in OpenAI-compatible format
         formatted_response = {
             "id": "chatcmpl-" + response.conversation_id,
             "object": "chat.completion.chunk",
             "created": int(time.time()),
-            "model": "gpt-4",  # This could be configurable
-            "choices": [{"index": 0, "delta": {"content": response.content}, "finish_reason": None}],
+            "model": "galadriel",
+            "choices": [{"index": 0, "delta": {"role": role, "content": response.content}, "finish_reason": None}],
         }
+
+        # Add any additional metadata that might be useful for the UI
+        if response.additional_kwargs:
+            # Create a clean copy of additional_kwargs without role to avoid duplication
+            metadata = {k: v for k, v in response.additional_kwargs.items() if k != "role"}
+            if metadata:  # Only add if there's something left
+                formatted_response["choices"][0]["delta"]["metadata"] = metadata  # type: ignore
 
         # Send the response to the active connection
         await self.active_connection.put(formatted_response)
 
-        # Send a final message to indicate completion if the response is not a log message
+        # Send a final message to indicate completion if this is the final message
         if response.final:
             final_message = {
                 "id": "chatcmpl-" + response.conversation_id,
                 "object": "chat.completion.chunk",
                 "created": int(time.time()),
-                "model": "gpt-4",
+                "model": "galadriel",
                 "choices": [{"index": 0, "delta": {}, "finish_reason": "stop"}],
             }
             await self.active_connection.put(final_message)
 
-        self.logger.info(f"Response sent to conversation {response.conversation_id}: {response.content}")
+        self.logger.info("Response sent to conversation")
+        # Yield a small delay to that the response is picked up and sent to the client
+        await asyncio.sleep(0.1)
