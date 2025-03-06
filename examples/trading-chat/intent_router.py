@@ -47,9 +47,7 @@ You are an intelligent intent routing system designed to analyze user requests a
 - Every user input, no matter how simple, must be routed to one of the specialized agents
 
 ## Response Format
-1. Briefly identify the detected intent (1 sentence)
-2. Name the specialized agent you're routing to
-3. Return the specialized agent's response
+Return the specialized agent's response without any modifications
 """
 
 MANAGED_AGENT_TASK_PROMPT = """
