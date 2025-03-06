@@ -4,10 +4,8 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-from galadriel import AgentRuntime, LiteLLMModel
-from galadriel.agent import CodeAgent, ToolCallingAgent
-from galadriel.clients import TerminalClient
-from galadriel.memory.memory_store import MemoryStore
+from galadriel import LiteLLMModel
+from galadriel.agent import ToolCallingAgent
 
 PROMPT = """
 You are an intelligent intent routing system designed to analyze user requests and direct them to the most appropriate specialized agent.
@@ -59,29 +57,6 @@ model = LiteLLMModel(
     api_key=os.getenv("OPENAI_API_KEY"),
 )
 
-calculator_agent = CodeAgent(
-    model=model,
-    tools=[],
-    max_steps=4,
-    verbosity_level=2,
-    name="calculator_agent",
-    description="""A team member that can help with basic calculations.
-""",
-    provide_run_summary=True,
-)
-calculator_agent.prompt_templates["managed_agent"]["task"] = MANAGED_AGENT_TASK_PROMPT
-
-sentiment_agent = CodeAgent(
-    model=model,
-    tools=[],
-    max_steps=4,
-    verbosity_level=2,
-    name="sentiment_agent",
-    description="""A team member that can help with sentiment analysis even if the user's request is not directly related to sentiment.
-""",
-    provide_run_summary=True,
-)
-sentiment_agent.prompt_templates["managed_agent"]["task"] = MANAGED_AGENT_TASK_PROMPT
 
 intent_router = ToolCallingAgent(
     prompt_template=PROMPT,
@@ -91,21 +66,3 @@ intent_router = ToolCallingAgent(
     verbosity_level=2,
     managed_agents=[calculator_agent, sentiment_agent],
 )
-
-terminal_client = TerminalClient()
-
-# Set up the runtime
-runtime = AgentRuntime(
-    inputs=[terminal_client],
-    outputs=[terminal_client],
-    memory_store=MemoryStore(
-        api_key=os.getenv("OPENAI_API_KEY"),
-        embedding_model="text-embedding-3-large",
-        agent_name="trading_agent",
-        short_term_memory_limit=4,
-    ),
-    agent=intent_router,
-)
-
-# Run the agent
-asyncio.run(runtime.run(stream=False))
