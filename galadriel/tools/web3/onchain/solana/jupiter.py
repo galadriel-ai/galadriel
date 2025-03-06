@@ -100,7 +100,7 @@ class PrepareSwapTokenTool(SolanaBaseTool):
     """
 
     name = "jupiter_prepare_swap"
-    description = "Prepares (but does not execute) a swap transaction on Jupiter Swap. Returns the transaction data for later use."
+    description = "Prepares (but does not execute) a swap transaction on Jupiter Swap. Returns the raw transaction data as a JSON string without any additional interpretation. The output should be passed directly to the user without modification."
     inputs = {
         "token1": {"type": "string", "description": "The address of the token to sell"},
         "token2": {"type": "string", "description": "The address of the token to buy"},
@@ -128,11 +128,14 @@ class PrepareSwapTokenTool(SolanaBaseTool):
             slippage_bps (int): Slippage tolerance in basis points. Defaults to 300 (3%)
 
         Returns:
-            str: A JSON string containing the prepared transaction data:
-                - transaction_data: Base64 encoded transaction data
-                - input_mint: Source token mint address
-                - output_mint: Target token mint address
-                - input_amount: Amount of input token (in native units)
+            str: A raw JSON string containing the prepared transaction data:
+                {
+                    "operation": "swap",
+                    "transaction_data": "base64_encoded_transaction_data",
+                    "input_mint": "source_token_address",
+                    "output_mint": "target_token_address",
+                    "input_amount": input_amount_in_native_units
+                }
         """
         wallet = self.wallet.get_wallet()
         
