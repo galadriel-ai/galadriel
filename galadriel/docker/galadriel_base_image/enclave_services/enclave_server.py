@@ -49,7 +49,7 @@ class EnclaveServer:
                 if not data:
                     logger.info("Client disconnected")
                     return
-                logger.info(f"Received data: {data}")
+                logger.info(f"Received data: [{data}]")
                 # Handle different request types
                 if data == RequestType.GET_ATTESTATION.value:
                     response = self.attestation_manager.handle_request(data)
@@ -61,8 +61,5 @@ class EnclaveServer:
                 else:
                     logger.warning(f"Unknown request type: {data}")
                     conn.sendall(b"Unknown request type")
-
-                response = self.attestation_manager.handle_request(data)
-                conn.sendall(response.encode())
         except Exception as e:
             logger.error(f"Error while handling client connection: {e}")

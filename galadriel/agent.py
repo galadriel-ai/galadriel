@@ -240,7 +240,7 @@ class AgentRuntime:
         pricing: Optional[Pricing] = None,
         memory_store: Optional[MemoryStore] = MemoryStore(),
         debug: bool = False,
-        enable_logs: bool = False,
+        enable_logs: bool = True,
     ):
         """Initialize the AgentRuntime.
 
