@@ -5,7 +5,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 from galadriel import AgentRuntime, LiteLLMModel
-from galadriel.agent import CodeAgent, ToolCallingAgent
+from galadriel.agent import CodeAgent
 from galadriel.clients import Cron, ChatUIClient, DiscordClient, TerminalClient
 from galadriel.entities import Message, PushOnlyQueue
 from galadriel.memory.memory_store import MemoryStore
@@ -20,7 +20,7 @@ from galadriel.tools.web3.onchain.solana import (
 
 TRADING_INTERVAL_SECONDS = 600
 
-PROMPT= """
+PROMPT = """
 You are a helpful trading agent collaborating with a human trader in the Solana ecosystem.
 
 ### Chat History:
@@ -70,7 +70,7 @@ trading_agent = CodeAgent(
     additional_authorized_imports=["json"],
     max_steps=10,
     verbosity_level=2,
-    #planning_interval=4,
+    # planning_interval=4,
     name="trading_agent",
     description="""A team member that is a trading agent specialized in executing token swaps on the Solana ecosystem. 
 He can identify the best opportunities among tokens in the "pump-fun" and "solana-meme-coins" categories and execute trades using either Raydium or Jupiter (whichever is applicable). 
@@ -112,21 +112,30 @@ manager_agent = CodeAgent(
     add_base_tools=True,
     max_steps=6,
     verbosity_level=2,
-    #planning_interval=4,
+    # planning_interval=4,
     managed_agents=[trading_agent],
 )
 
 chatui_client = ChatUIClient()
 discord_client = DiscordClient(guild_id=os.getenv("DISCORD_GUILD_ID"))
 terminal_client = TerminalClient()
+
+
 class CronClient(Cron):
     async def start(self, queue: PushOnlyQueue):
         while True:
             try:
-                await queue.put(Message(content="Start a new trading session and identify the best opportunities to trade.", conversation_id=1329084945204904060))
+                await queue.put(
+                    Message(
+                        content="Start a new trading session and identify the best opportunities to trade.",
+                        conversation_id=1329084945204904060,
+                    )
+                )
                 await asyncio.sleep(self.interval_seconds)
             except asyncio.CancelledError:
                 break
+
+
 cron_client = CronClient(TRADING_INTERVAL_SECONDS)
 # Set up the runtime
 runtime = AgentRuntime(
