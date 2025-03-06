@@ -138,7 +138,7 @@ class PrepareSwapTokenTool(SolanaBaseTool):
                 }
         """
         wallet = self.wallet.get_wallet()
-        
+
         # Convert addresses to strings
         input_mint = str(token1)
         output_mint = str(token2)
@@ -171,13 +171,16 @@ class PrepareSwapTokenTool(SolanaBaseTool):
                 slippage_bps=slippage_bps,
             )
 
-            return json.dumps({
-                "operation": "swap",
-                "transaction_data": transaction_data,  # Base64 encoded transaction data
-                "input_mint": input_mint,
-                "output_mint": output_mint,
-                "input_amount": input_amount,
-            }, indent=2)
+            return json.dumps(
+                {
+                    "operation": "swap",
+                    "transaction_data": transaction_data,  # Base64 encoded transaction data
+                    "input_mint": input_mint,
+                    "output_mint": output_mint,
+                    "input_amount": input_amount,
+                },
+                indent=2,
+            )
 
         except Exception as e:
             logger.error(f"Failed to prepare swap transaction: {str(e)}")
