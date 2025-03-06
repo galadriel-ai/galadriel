@@ -1,13 +1,17 @@
 import asyncio
 import os
+from pathlib import Path
+
+from dotenv import load_dotenv
 
 from intent_routing_agent import intent_router
 from galadriel import AgentRuntime
 from galadriel.clients import ChatUIClient
 from galadriel.memory.memory_store import MemoryStore
 
-TRADING_INTERVAL_SECONDS = 600
 
+load_dotenv(dotenv_path=Path(".") / ".env", override=True)
+load_dotenv(dotenv_path=Path(".") / ".agents.env", override=True)
 
 chatui_client = ChatUIClient()
 
