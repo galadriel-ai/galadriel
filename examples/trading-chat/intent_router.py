@@ -6,16 +6,12 @@ from dotenv import load_dotenv
 
 from galadriel import AgentRuntime, LiteLLMModel
 from galadriel.agent import CodeAgent, ToolCallingAgent
-from galadriel.clients import TerminalClient, ChatUIClient
+from galadriel.clients import ChatUIClient
 from galadriel.memory.memory_store import MemoryStore
-from galadriel.clients import Cron
 from galadriel.wallets.solana_wallet import SolanaWallet
 from galadriel.tools.web3.market_data import coingecko, dexscreener
 from galadriel.tools.web3.onchain.solana import (
     jupiter,
-    raydium,
-    native as solana_native,
-    spl_token,
 )
 
 PROMPT = """

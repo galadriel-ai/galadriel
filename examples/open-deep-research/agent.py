@@ -18,7 +18,7 @@ from scripts.text_web_browser import (
 from scripts.visual_qa import visualizer
 
 from galadriel import CodeAgent, AgentRuntime, ToolCallingAgent
-from galadriel.clients import ChatUIClient, TerminalClient
+from galadriel.clients import ChatUIClient
 from galadriel import LiteLLMModel
 from galadriel.wallets.solana_wallet import SolanaWallet
 from galadriel.tools.web3.market_data import coingecko, dexscreener
