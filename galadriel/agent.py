@@ -106,7 +106,6 @@ class CodeAgent(Agent, InternalCodeAgent):
     def __init__(
         self,
         prompt_template: Optional[str] = None,
-        chat_memory: Optional[bool] = True,
         **kwargs,
     ):
         """Initialize the CodeAgent.
@@ -170,7 +169,6 @@ class ToolCallingAgent(Agent, InternalToolCallingAgent):
     def __init__(
         self,
         prompt_template: Optional[str] = None,
-        chat_memory: Optional[bool] = True,
         **kwargs,
     ):
         """
