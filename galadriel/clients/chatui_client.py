@@ -45,10 +45,7 @@ class ChatUIClient(AgentInput, AgentOutput):
         self.port = port
 
         # Replace single connection with a dictionary of connections
-        self.active_connections: Dict[str, asyncio.Queue] = {
-            "chat": None,
-            "cron": None
-        }
+        self.active_connections: Dict[str, asyncio.Queue] = {"chat": None, "cron": None}  # type: ignore
 
         # Set up CORS
         self.app.add_middleware(
@@ -91,28 +88,34 @@ class ChatUIClient(AgentInput, AgentOutput):
 
         # Process only the last message in the conversation
         last_message = chat_request.messages[-1]
-        
+
         # Check if this is a cron check request
         if "[CRON CHECK]" in last_message.content:
             # Create a response stream for cron messages
             response_stream = self._create_response_stream("cron")
-            
+
             # If we don't have a cron connection with messages, add a "no messages" response
             if not self.active_connections["cron"] or self.active_connections["cron"].empty():
                 # Create a queue if it doesn't exist
                 if not self.active_connections["cron"]:
                     self.active_connections["cron"] = asyncio.Queue()
-                
+
                 # Add a "no messages" response to the queue
                 no_messages_response = {
                     "id": "chatcmpl-cron-check",
                     "object": "chat.completion.chunk",
                     "created": int(time.time()),
                     "model": "galadriel",
-                    "choices": [{"index": 0, "delta": {"role": "assistant", "content": "No cron messages available"}, "finish_reason": None}],
+                    "choices": [
+                        {
+                            "index": 0,
+                            "delta": {"role": "assistant", "content": "No cron messages available"},
+                            "finish_reason": None,
+                        }
+                    ],
                 }
                 await self.active_connections["cron"].put(no_messages_response)
-                
+
                 # Add a final message to close the stream
                 final_message = {
                     "id": "chatcmpl-cron-check",
@@ -122,7 +125,7 @@ class ChatUIClient(AgentInput, AgentOutput):
                     "choices": [{"index": 0, "delta": {}, "finish_reason": "stop"}],
                 }
                 await self.active_connections["cron"].put(final_message)
-            
+
             return StreamingResponse(
                 response_stream,
                 media_type="text/event-stream",
@@ -192,7 +195,7 @@ class ChatUIClient(AgentInput, AgentOutput):
 
         finally:
             # Clean up when the connection is closed
-            self.active_connections[connection_type] = None
+            self.active_connections[connection_type] = None  # type: ignore
 
     async def send(self, request: Message, response: Message) -> None:
         """Send a response message back to the chat interface in OpenAI format.
@@ -208,7 +211,7 @@ class ChatUIClient(AgentInput, AgentOutput):
         # Determine if this is a cron message
         is_cron = response.additional_kwargs and response.additional_kwargs.get("author") == "cron"
         connection_type = "cron" if is_cron else "chat"
-        
+
         # Check if we have an active connection for this type
         if not self.active_connections[connection_type]:
             if is_cron:

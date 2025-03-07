@@ -14,16 +14,22 @@ from galadriel.memory.memory_store import MemoryStore
 load_dotenv(dotenv_path=Path(".") / ".env", override=True)
 load_dotenv(dotenv_path=Path(".") / ".agents.env", override=True)
 
+
 class CronUI(Cron):
     async def start(self, queue: PushOnlyQueue):
         while True:
             try:
-                await queue.put(Message(content="Start a trading research session",
-                                        conversation_id="chat-1",
-                                        additional_kwargs={"author": "cron"}))
+                await queue.put(
+                    Message(
+                        content="Start a trading research session",
+                        conversation_id="chat-1",
+                        additional_kwargs={"author": "cron"},
+                    )
+                )
                 await asyncio.sleep(self.interval_seconds)
             except asyncio.CancelledError:
                 break
+
 
 cron_client = CronUI(interval_seconds=120)
 chatui_client = ChatUIClient()
