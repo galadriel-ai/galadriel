@@ -25,26 +25,21 @@ REQUEST_TIMEOUT = 180  # seconds
 
 @click.group(
     help="""
-Galadriel: A CLI tool to create autonomous agents and deploy them to Galadriel L1.
-
-Usage:
-  galadriel [resource] [subcommand] [options]
-
-Resources:
-  agent     Manage agents (create, update, etc.)
-
-Options:
-  -h, --help    Show this help message and exit
-
-For more information about each resource, use:
-  galadriel <resource> --help
+A CLI tool to create autonomous agents and deploy them to Galadriel's decentralized agent network.
 """
 )
 def galadriel():
     pass
 
 
-@galadriel.command()
+# ===== AGENT COMMANDS =====
+@galadriel.group()
+def agent():
+    """Agent management commands"""
+    pass
+
+
+@agent.command()
 def init() -> None:
     """Create a new Agent folder template in the current directory."""
     agent_name = ""
@@ -62,7 +57,7 @@ def init() -> None:
         click.echo(f"Error creating agent template: {str(e)}", err=True)
 
 
-@galadriel.command()
+@agent.command()
 @click.option("--image-name", default="agent", help="Name of the Docker image")
 def build(image_name: str) -> None:
     """Build the agent Docker image."""
@@ -75,7 +70,7 @@ def build(image_name: str) -> None:
         raise click.ClickException(str(e))
 
 
-@galadriel.command()
+@agent.command()
 @click.option("--image-name", default="agent", help="Name of the Docker image")
 def publish(image_name: str) -> None:
     """Publish the agent Docker image to the Docker Hub."""
@@ -92,7 +87,7 @@ def publish(image_name: str) -> None:
         raise click.ClickException(str(e))
 
 
-@galadriel.command()
+@agent.command()
 @click.option("--image-name", default="agent", help="Name of the Docker image")
 def deploy(image_name: str) -> None:
     """Build, publish and deploy the agent."""
@@ -118,24 +113,7 @@ def deploy(image_name: str) -> None:
         raise click.ClickException(str(e))
 
 
-@galadriel.command()
-@click.option("--agent-id", help="ID of the agent to update")
-@click.option("--image-name", default="agent", help="Name of the Docker image")
-def update(agent_id: str, image_name: str):
-    """Update the agent"""
-    click.echo(f"Updating agent {agent_id}")
-    try:
-        docker_username, _ = _assert_config_files(image_name=image_name)
-        status = _galadriel_update(image_name=image_name, docker_username=docker_username, agent_id=agent_id)
-        if status:
-            click.echo(f"Successfully updated agent {agent_id}")
-        else:
-            raise click.ClickException(f"Failed to update agent {agent_id}")
-    except Exception as e:
-        raise click.ClickException(str(e))
-
-
-@galadriel.command()
+@agent.command()
 @click.option("--agent-id", help="ID of the agent to get state for")
 def state(agent_id: str):
     """Get information about a deployed agent from Galadriel platform."""
@@ -161,32 +139,7 @@ def state(agent_id: str):
         click.echo(f"Failed to get agent state: {str(e)}")
 
 
-@galadriel.command()
-def states():
-    """Get all agent states"""
-    try:
-        load_dotenv(dotenv_path=Path(".") / ".env", override=True)
-        api_key = os.getenv("GALADRIEL_API_KEY")
-        if not api_key:
-            raise click.ClickException("GALADRIEL_API_KEY not found in environment")
-
-        response = requests.get(
-            f"{API_BASE_URL}/agents/",
-            headers={
-                "Content-Type": "application/json",
-                "Authorization": f"Bearer {api_key}",
-            },
-            timeout=REQUEST_TIMEOUT,
-        )
-
-        if not response.status_code == 200:
-            click.echo(f"Failed to get agent state with status {response.status_code}: {response.text}")
-        click.echo(json.dumps(response.json(), indent=2))
-    except Exception as e:
-        click.echo(f"Failed to get agent state: {str(e)}")
-
-
-@galadriel.command()
+@agent.command()
 @click.argument("agent_id")
 def destroy(agent_id: str):
     """Destroy a deployed agent from Galadriel platform."""
@@ -213,15 +166,59 @@ def destroy(agent_id: str):
         click.echo(f"Failed to destroy agent: {str(e)}")
 
 
+@agent.command()
+@click.option("--agent-id", help="ID of the agent to update")
+@click.option("--image-name", default="agent", help="Name of the Docker image")
+def update(agent_id: str, image_name: str):
+    """Update the agent"""
+    click.echo(f"Updating agent {agent_id}")
+    try:
+        docker_username, _ = _assert_config_files(image_name=image_name)
+        status = _galadriel_update(image_name=image_name, docker_username=docker_username, agent_id=agent_id)
+        if status:
+            click.echo(f"Successfully updated agent {agent_id}")
+        else:
+            raise click.ClickException(f"Failed to update agent {agent_id}")
+    except Exception as e:
+        raise click.ClickException(str(e))
+
+
+@agent.command()
+def list():
+    """Get all your agents in the network"""
+    try:
+        load_dotenv(dotenv_path=Path(".") / ".env", override=True)
+        api_key = os.getenv("GALADRIEL_API_KEY")
+        if not api_key:
+            raise click.ClickException("GALADRIEL_API_KEY not found in environment")
+
+        response = requests.get(
+            f"{API_BASE_URL}/agents/",
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {api_key}",
+            },
+            timeout=REQUEST_TIMEOUT,
+        )
+
+        if not response.status_code == 200:
+            click.echo(f"Failed to get agent state with status {response.status_code}: {response.text}")
+        click.echo(json.dumps(response.json(), indent=2))
+    except Exception as e:
+        click.echo(f"Failed to get agent state: {str(e)}")
+
+
+# ===== WALLET COMMANDS =====
 @galadriel.group()
 def wallet():
     """Wallet management commands"""
+    pass
 
 
 @wallet.command()
 @click.option("--path", default=DEFAULT_SOLANA_KEY_PATH, help="Path to save the wallet key file")
 def create(path: str):
-    """Create a new admin wallet"""
+    """Create a new wallet"""
     try:
         pub_key = _create_solana_wallet(path)
         click.echo(f"Successfully created Solana wallet {pub_key} at {path}")
