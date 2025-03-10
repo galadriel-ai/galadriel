@@ -109,7 +109,7 @@ class ChatUIClient(AgentInput, AgentOutput):
                     "choices": [
                         {
                             "index": 0,
-                            "delta": {"role": "assistant", "content": ""},
+                            "delta": {"role": "assistant", "content": " "},
                             "finish_reason": None,
                         }
                     ],
