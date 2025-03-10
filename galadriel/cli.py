@@ -250,18 +250,17 @@ def import_wallet(private_key: str, path: str):
         try:
             json.loads(private_key)
         except json.JSONDecodeError:
-raise click.ClickException("Invalid private key! Please provide a valid JSON array")
+            raise click.ClickException("Invalid private key! Please provide a valid JSON array")
         # Save the private key to the default path
         os.makedirs(os.path.dirname(DEFAULT_SOLANA_KEY_PATH), exist_ok=True)
         with open(DEFAULT_SOLANA_KEY_PATH, "w", encoding="utf-8") as file:
             file.write(private_key)
-_update_agent_env_file({"SOLANA_KEY_PATH": DEFAULT_SOLANA_KEY_PATH})
+        _update_agent_env_file({"SOLANA_KEY_PATH": DEFAULT_SOLANA_KEY_PATH})
 
         click.echo("Successfully imported Solana wallet from private key")
     elif path:
         if not os.path.exists(path):
-
-           raise click.ClickException(f"File {path} does not exist")
+            raise click.ClickException(f"File {path} does not exist")
         _update_agent_env_file({"SOLANA_KEY_PATH": path})
 
         click.echo(f"Successfully imported Solana wallet from {path}")
@@ -281,11 +280,10 @@ def airdrop():
 
     try:
         with open(key_path, "r", encoding="utf-8") as file:
-
-        seed = json.load(file)
+            seed = json.load(file)
             pub_key = Keypair.from_bytes(seed).pubkey()
             _request_airdrop(str(pub_key))
-except json.JSONDecodeError:
+    except json.JSONDecodeError:
         raise click.ClickException(f"Invalid JSON format in key file: {key_path}")
     except Exception as e:
         raise click.ClickException(f"Failed to request airdrop: {str(e)}")
