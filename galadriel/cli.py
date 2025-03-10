@@ -183,8 +183,8 @@ def update(agent_id: str, image_name: str):
         raise click.ClickException(str(e))
 
 
-@agent.command()
-def list():
+@agent.command(name="list")
+def list_agents():
     """Get all your agents in the network"""
     try:
         load_dotenv(dotenv_path=Path(".") / ".env", override=True)
