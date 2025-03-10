@@ -416,9 +416,40 @@ build-backend = "poetry.core.masonry.api"
 
 def _build_image(docker_username: str) -> None:
     """Core logic to build the Docker image."""
-    click.echo(f"Building Docker image with tag {docker_username}/{os.environ['IMAGE_NAME']}...")
+    image_name = os.environ['IMAGE_NAME']
+    full_image_name = f"{docker_username}/{image_name}"
+    
+    click.echo(f"Building Docker image with tag {full_image_name}...")
     subprocess.run(["docker-compose", "build"], check=True)
-    click.echo("Successfully built Docker image!")
+    
+    # Get additional image information
+    try:
+        # Get image ID
+        result = subprocess.run(
+            ["docker", "images", "--format", "{{.ID}}", full_image_name],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        image_id = result.stdout.strip()
+        
+        # Get image size
+        result = subprocess.run(
+            ["docker", "images", "--format", "{{.Size}}", full_image_name],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        image_size = result.stdout.strip()
+        
+        click.echo("Successfully built Docker image!")
+        click.echo(f"Image details:")
+        click.echo(f"  - Repository: {full_image_name}")
+        click.echo(f"  - Image ID: {image_id}")
+        click.echo(f"  - Size: {image_size}")
+    except subprocess.CalledProcessError as e:
+        click.echo(f"Warning: Could not retrieve detailed image information: {str(e)}")
+        click.echo(f"Image {full_image_name} was built successfully but details are unavailable.")
 
 
 def _get_image_layer_hashes(image_name: str) -> List[str]:
