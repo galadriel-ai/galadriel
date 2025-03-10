@@ -1,15 +1,16 @@
-from galadriel.core_agent import LiteLLMModel
-from dotenv import load_dotenv
+import asyncio
+import os
 from pathlib import Path
 
-from galadriel.tools.composio_converter import convert_action
+from dotenv import load_dotenv
+
 from character_agent import CharacterAgent
-from tools import get_time
-from galadriel import AgentRuntime
+from galadriel import AgentRuntime, LiteLLMModel
 from galadriel.clients import TelegramClient
-import os
-import asyncio
 from galadriel.logging_utils import get_agent_logger
+from galadriel.memory.memory_store import MemoryStore
+from galadriel.tools.composio_converter import convert_action
+from tools import get_time
 
 load_dotenv(dotenv_path=Path(".") / ".env", override=True)
 model = LiteLLMModel(model_id="gpt-4o", api_key=os.getenv("OPENAI_API_KEY"))
@@ -29,7 +30,6 @@ elon_musk_agent = CharacterAgent(
     character_json_path="agent.json",
     tools=[composio_weather_tool, get_time],
     model=model,
-    max_steps=6,
 )
 
 # Set up the runtime
@@ -37,6 +37,9 @@ runtime = AgentRuntime(
     inputs=[telegram_client],
     outputs=[telegram_client],
     agent=elon_musk_agent,
+    memory_store=MemoryStore(
+        api_key=os.getenv("OPENAI_API_KEY"), embedding_model="text-embedding-3-large", agent_name="elon_musk_agent"
+    ),
 )
 
 # Run the agent

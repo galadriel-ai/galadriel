@@ -1,6 +1,7 @@
 import asyncio
 from typing import Dict
 from typing import Optional
+from uuid import uuid4
 
 from pydantic import BaseModel
 from pydantic import Field
@@ -9,18 +10,16 @@ GALADRIEL_API_BASE_URL = "https://api.galadriel.com/v1"
 
 
 class Message(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid4()))
     content: str
     conversation_id: Optional[str] = None
     type: Optional[str] = None
+    final: bool = False
     additional_kwargs: Optional[Dict] = None
 
 
-class HumanMessage(Message):
-    type: str = "human"
-
-
-class AgentMessage(Message):
-    type: str = "agent"
+class AgentState(BaseModel):
+    memory_folder_path: Optional[str] = None
 
 
 class PushOnlyQueue:

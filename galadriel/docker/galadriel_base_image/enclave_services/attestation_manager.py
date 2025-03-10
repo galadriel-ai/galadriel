@@ -25,6 +25,7 @@ class AttestationManager:
 
             # Serialize and store the private key
             with open(self.PRIVATE_KEY_FILE, "wb") as priv_file:
+                print(f"Storing private key in {self.PRIVATE_KEY_FILE}")
                 priv_file.write(
                     private_key.private_bytes(
                         encoding=serialization.Encoding.PEM,
@@ -35,6 +36,7 @@ class AttestationManager:
 
             # Serialize and store the public key
             with open(self.PUBLIC_KEY_FILE, "wb") as pub_file:
+                print(f"Storing public key in {self.PUBLIC_KEY_FILE}")
                 pub_file.write(
                     public_key.public_bytes(
                         encoding=serialization.Encoding.PEM,

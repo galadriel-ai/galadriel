@@ -1,13 +1,17 @@
 function lint {
-  pylint galadriel/*
+  ruff check
+}
+
+function lint-fix {
+  ruff check --fix
 }
 
 function format {
-  black .
+  ruff format
 }
 
 function type-check {
-  mypy galadriel
+  mypy galadriel/
 }
 
 function unit-test {

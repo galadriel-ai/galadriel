@@ -1,6 +1,6 @@
-from galadriel.core_agent import tool
 from datetime import datetime
-from typing import Optional
+
+from galadriel.tools import tool
 
 
 @tool

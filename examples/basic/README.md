@@ -5,7 +5,7 @@
 This example demonstrates an agent which receives and processes a sequence of messages. It uses:
 
 - `gpt-4o` model from OpenAI
-- [CodeAgent](https://huggingface.co/docs/smolagents/reference/agents#smolagents.CodeAgent) from `smolagents` which performs a series of steps until it reaches the final result
+- [CodeAgent](https://github.com/galadriel-ai/galadriel/blob/main/galadriel/agent.py) which performs a series of steps until it reaches the final result
 - `SimpleMessageClient` which implements
   - `AgentInput` to infinitely send predefined messages to the agent
   - `AgentOutput` to receive results from the agent and print them

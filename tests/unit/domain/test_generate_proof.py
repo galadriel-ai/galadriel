@@ -8,13 +8,13 @@ def test_none():
 
 
 def test_empty():
-    result = generate_proof.execute(Message(content=""), Message(content=""))
-    assert result == "48b31d5a4b8d609632cef2b1ad68e0e8dd1c56b6f7fd0888d4e1e11263185e0e"
+    result = generate_proof.execute(Message(id="test-id-1", content=""), Message(id="test-id-2", content=""))
+    assert result == "52ababcd2769bb476088ff9341f479f29f0c481ca693b7122cf38ac9419f4fcc"
 
 
 def test_hello_world():
     result = generate_proof.execute(
-        Message(content="hello"),
-        Message(content="world"),
+        Message(id="test-id-1", content="hello"),
+        Message(id="test-id-2", content="world"),
     )
-    assert result == "9041cb20b1ab3c83a4945cbab0c651d3e8eb1fd0a2239203a331a7ad2a5be4f0"
+    assert result == "c38a220184ffa2508ef7ac3feb8a4a6cca63ef24527ff27e77f36a93c979ba2e"

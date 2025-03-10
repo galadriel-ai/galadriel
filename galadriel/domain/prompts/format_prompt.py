@@ -3,6 +3,22 @@ import json
 import random
 
 
+def validate_prompt_template(prompt_template: str) -> None:
+    """Validate that template contains {{request}} placeholder.
+
+    Args:
+        prompt_template: The template string to validate
+
+    Raises:
+        ValueError: If template doesn't contain {{request}}
+    """
+    if "{{request}}" not in prompt_template:
+        raise ValueError("Prompt template must contain {{request}}")
+
+    if "{{chat_history}}" not in prompt_template:
+        raise ValueError("Prompt template must contain {{chat_history}}, otherwise it can't use any memory")
+
+
 def execute(prompt_template: str, prompt_state: Dict) -> str:
     prompt = prompt_template
     for k, v in prompt_state.items():
