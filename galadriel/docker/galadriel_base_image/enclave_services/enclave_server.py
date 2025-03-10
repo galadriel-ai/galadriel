@@ -56,8 +56,8 @@ class EnclaveServer:
                     conn.sendall(response.encode())
                 elif data == RequestType.SHUTDOWN.value:
                     logger.info("Shutdown request received")
-                    stop_agent()
-                    conn.sendall(b"OK")
+                    result = stop_agent()
+                    conn.sendall(b"OK" if result else b"ERROR")
                 else:
                     logger.warning(f"Unknown request type: {data}")
                     conn.sendall(b"Unknown request type")
