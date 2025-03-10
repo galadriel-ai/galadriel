@@ -94,7 +94,7 @@ class ChatUIClient(AgentInput, AgentOutput):
             # Create a response stream for cron messages
             response_stream = self._create_response_stream("cron")
 
-            # If we don't have a cron connection with messages, add a "no messages" response
+            # If we don't have a cron connection with messages, add an empty response
             if not self.active_connections["cron"] or self.active_connections["cron"].empty():
                 # Create a queue if it doesn't exist
                 if not self.active_connections["cron"]:
@@ -109,7 +109,7 @@ class ChatUIClient(AgentInput, AgentOutput):
                     "choices": [
                         {
                             "index": 0,
-                            "delta": {"role": "assistant", "content": "No cron messages available"},
+                            "delta": {"role": "assistant", "content": ""},
                             "finish_reason": None,
                         }
                     ],
