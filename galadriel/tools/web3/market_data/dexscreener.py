@@ -12,16 +12,10 @@ class GetTokenDataTool(Tool):
 
     Retrieves and formats token data from DexScreener API, removing unnecessary
     information to fit context limits.
-
-    Attributes:
-        name (str): Tool identifier
-        description (str): Description of the tool's functionality
-        inputs (dict): Schema for required input parameters
-        output_type (str): Type of data returned by the tool
     """
 
-    name = "get_token_data"
-    description = "Fetch detailed data for a specific token from DexScreener"
+    name = "dexscreener_get_token_data"
+    description = "Get detailed token pair data from DexScreener by token address. Returns array of pairs with chain ID, DEX info, base/quote tokens, price, volume, liquidity and other market data."
     inputs = {
         "ecosystem": {
             "type": "string",
@@ -64,16 +58,10 @@ class SearchTokenPairTool(Tool):
 
     Retrieves and formats token pair data from DexScreener API, removing unnecessary
     information to fit context limits.
-
-    Attributes:
-        name (str): Tool identifier
-        description (str): Description of the tool's functionality
-        inputs (dict): Schema for required input parameters
-        output_type (str): Type of data returned by the tool
     """
 
-    name = "search_token_pair"
-    description = "Search for token pairs on DexScreener"
+    name = "dexscreener_search_token_pair"
+    description = "Search for token pairs on DexScreener by token symbol. Returns pairs with price, volume, liquidity and other market data."
     inputs = {
         "token_symbol": {
             "type": "string",
