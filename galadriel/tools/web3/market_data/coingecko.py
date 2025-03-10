@@ -1,5 +1,7 @@
 import json
 import os
+from abc import ABC
+
 from typing import List
 
 import requests
@@ -7,7 +9,7 @@ import requests
 from galadriel.tools import Tool
 
 
-class CoingeckoTool(Tool):
+class CoingeckoTool(Tool, ABC):
     """Base class for Coingecko API tools.
 
     This class provides common functionality for accessing the Coingecko API,
@@ -41,16 +43,10 @@ class GetCoinPriceTool(CoingeckoTool):
 
     Fetches current price, market cap, 24hr volume, and 24hr price change
     for a specified cryptocurrency.
-
-    Attributes:
-        name (str): Tool identifier for the agent system
-        description (str): Description of the tool's functionality
-        inputs (dict): Schema for the required input parameters
-        output_type (str): Type of data returned by the tool
     """
 
-    name = "get_coin_price"
-    description = "This is a tool that returns the price of given crypto token together with market cap, 24hr vol and 24hr change."  # pylint: disable=C0301
+    name = "coingecko_get_coin_price"
+    description = "Get current prices and market data for cryptocurrencies using their Coingecko API IDs. Returns price, market cap, 24h volume and 24h price change percentage."  # pylint: disable=C0301
     inputs = {
         "token_names": {
             "type": "array",
@@ -107,16 +103,10 @@ class GetCoinMarketDataTool(CoingeckoTool):
 
     Fetches current market data for a specified cryptocurrency, including
     price, market cap, 24hr volume, and 24hr price change percentage.
-
-    Attributes:
-        name (str): Tool identifier for the agent system
-        description (str): Description of the tool's functionality
-        inputs (dict): Schema for the required input parameters
-        output_type (str): Type of data returned by the tool
     """
 
-    name = "get_coin_market_data"
-    description = "This is a tool that returns the market data of given crypto token."
+    name = "coingecko_get_coin_market_data"
+    description = "Get comprehensive coin data from CoinGecko including name, price, market data and exchange tickers based on coin ID"
     inputs = {
         "coin_id": {
             "type": "string",
@@ -154,16 +144,10 @@ class GetCoinHistoricalDataTool(CoingeckoTool):
 
     Fetches historical price data for a specified cryptocurrency over
     a given time period.
-
-    Attributes:
-        name (str): Tool identifier for the agent system
-        description (str): Description of the tool's functionality
-        inputs (dict): Schema for the required input parameters
-        output_type (str): Type of data returned by the tool
     """
 
-    name = "get_coin_historical_data"
-    description = "This is a tool that returns the historical chart data of a coin including time in UNIX, price, market cap and 24hrs volume ."
+    name = "coingecko_get_coin_historical_data"
+    description = "Get historical market data for a cryptocurrency by its CoinGecko ID, including price, market cap, and 24h volume over time. Returns time series data with UNIX timestamps and values in USD."
     inputs = {
         "token": {
             "type": "string",
@@ -201,16 +185,10 @@ class GetMarketDataPerCategoriesTool(CoingeckoTool):
     """Tool for retrieving market data for cryptocurrencies in specific categories.
 
     Fetches market data for cryptocurrencies in specific categories from CoinGecko.
-
-    Attributes:
-        name (str): Tool identifier for the agent system
-        description (str): Description of the tool's functionality
-        inputs (dict): Schema for the required input parameters
-        output_type (str): Type of data returned by the tool
     """
 
-    name = "get_market_data_per_categories"
-    description = "This is a tool that returns the market data for cryptocurrencies in specific categories."
+    name = "coingecko_get_market_data_per_categories"
+    description = "Get market data for cryptocurrencies in specific categories from CoinGecko. Returns market data for the specified categories."
     inputs = {
         "categories": {
             "type": "array",
@@ -243,16 +221,10 @@ class FetchTrendingCoinsTool(CoingeckoTool):
 
     Fetches a list of cryptocurrencies that are currently trending
     on CoinGecko.
-
-    Attributes:
-        name (str): Tool identifier for the agent system
-        description (str): Description of the tool's functionality
-        inputs (dict): Schema for the required input parameters
-        output_type (str): Type of data returned by the tool
     """
 
-    name = "fetch_trending_coins"
-    description = "This is a tool that returns the trending coins on coingecko."
+    name = "coingecko_fetch_trending_coins"
+    description = "Get currently trending cryptocurrencies from CoinGecko. Returns a list of trending coins with their market data."
     inputs = {
         "dummy": {
             "type": "string",

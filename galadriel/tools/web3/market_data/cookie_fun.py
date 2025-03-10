@@ -38,10 +38,15 @@ class CookieFunBase(Tool, ABC):
 
 
 class GetAgentByTwitterTool(CookieFunBase):
-    """Tool for fetching agent data by Twitter username."""
+    """Tool for fetching agent contract data by Twitter username.
 
-    name = "get_agent_by_twitter"
-    description = "Get agent data by Twitter username from Cookie.fun"
+    Returns contract data for an agent, including the chain identifier:
+    - For EVM chains: Returns chain ID (e.g. 1 for Ethereum mainnet, see chainlist.org)
+    - For Solana: Returns -2
+    """
+
+    name = "cookie_fun_get_agent_by_twitter"
+    description = "Get agent's contract data by Twitter username from Cookie.fun, including chain identifiers (-2 for Solana, EVM chain IDs for others)"
     inputs = {
         "twitter_username": {
             "type": "string",
@@ -84,10 +89,15 @@ class GetAgentByTwitterTool(CookieFunBase):
 
 
 class GetAgentByAddressTool(CookieFunBase):
-    """Tool for fetching agent data by contract address."""
+    """Tool for fetching agent contract data by address.
 
-    name = "get_agent_by_address"
-    description = "Get agent data by contract address from Cookie.fun"
+    Returns contract data for an agent, including the chain identifier:
+    - For EVM chains: Returns chain ID (e.g. 1 for Ethereum mainnet, see chainlist.org)
+    - For Solana: Returns -2
+    """
+
+    name = "cookie_fun_get_agent_by_address"
+    description = "Get agent's contract data by address from Cookie.fun, including chain identifiers (-2 for Solana, EVM chain IDs for others)"
     inputs = {
         "contract_address": {
             "type": "string",
@@ -130,10 +140,16 @@ class GetAgentByAddressTool(CookieFunBase):
 
 
 class GetAgentsPagedTool(CookieFunBase):
-    """Tool for fetching paginated list of agents ordered by mindshare."""
+    """Tool for fetching paginated list of agents ordered by mindshare.
 
-    name = "get_agents_paged"
-    description = "Get list of agents details ordered by mindshare (descending)"
+    Returns a list of agents with their details as JSON string.
+    Chain property in response indicates:
+    - -2: Solana blockchain
+    - Other numbers: EVM chain IDs (see chainlist.org)
+    """
+
+    name = "cookie_fun_get_agents_paged"
+    description = "Get list of agents details ordered by mindshare (descending) from Cookie.fun, including chain identifiers (-2 for Solana, EVM chain IDs for others)"
     inputs = {
         "interval": {
             "type": "string",

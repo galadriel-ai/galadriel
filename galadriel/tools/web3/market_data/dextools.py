@@ -46,7 +46,7 @@ class DexToolsBase(Tool, ABC):
 class GetBlockchainInfoTool(DexToolsBase):
     """Tool for fetching blockchain information from DEXTools."""
 
-    name = "get_dextools_blockchain"
+    name = "dextools_get_blockchain_info"
     description = "Retrieve name, website and DEXTools ID of a specific blockchain from DEXTools"
     inputs = {
         "chain": {
@@ -76,7 +76,7 @@ class GetBlockchainInfoTool(DexToolsBase):
 class GetBlockchainsTool(DexToolsBase):
     """Tool for fetching all blockchains from DEXTools."""
 
-    name = "get_dextools_blockchains"
+    name = "dextools_get_blockchains"
     description = "Get name, website and DEXTools ID for all supported blockchains from DEXTools"
     inputs = {
         "sort": {
@@ -136,7 +136,7 @@ class GetBlockchainsTool(DexToolsBase):
 class GetDexFactoryInfoTool(DexToolsBase):
     """Tool for fetching DEX factory information from DEXTools."""
 
-    name = "get_dextools_dex_factory"
+    name = "dextools_get_dex_factory_info"
     description = "Retrieve information about a specific DEX factory from DEXTools, including factory address, name, website, number of pools, 24h volume, and number of swaps in last 24h"
     inputs = {
         "chain": {
@@ -171,7 +171,7 @@ class GetDexFactoryInfoTool(DexToolsBase):
 class GetDexesTool(DexToolsBase):
     """Tool for fetching DEXes on a specific chain from DEXTools."""
 
-    name = "get_dextools_dexes"
+    name = "dextools_get_dexes"
     description = "Get all supported DEXes on a specific chain from DEXTools, including DEX address, name, website, number of pools, 24h volume, and number of swaps in last 24h"
     inputs = {
         "chain": {
@@ -232,7 +232,7 @@ class GetDexesTool(DexToolsBase):
 class GetPoolInfoTool(DexToolsBase):
     """Tool for fetching pool information from DEXTools."""
 
-    name = "get_dextools_pool"
+    name = "dextools_get_pool_info"
     description = "Retrieve information about a specific pool from DEXTools, including creation time, exchange details (name and factory address), pool address, and information about both tokens in the pair (name, symbol, and address)"
     inputs = {
         "chain": {
@@ -267,7 +267,7 @@ class GetPoolInfoTool(DexToolsBase):
 class GetPoolLiquidityTool(DexToolsBase):
     """Tool for fetching pool liquidity from DEXTools."""
 
-    name = "get_dextools_pool_liquidity"
+    name = "dextools_get_pool_liquidity"
     description = "Retrieve liquidity information about a specific pool from DEXTools"
     inputs = {
         "chain": {
@@ -302,7 +302,7 @@ class GetPoolLiquidityTool(DexToolsBase):
 class GetPoolsTool(DexToolsBase):
     """Tool for fetching pools from DEXTools."""
 
-    name = "get_dextools_pools"
+    name = "dextools_get_pools"
     description = "Retrieve pools from DEXTools with time range and optional sorting, including pool address, creation time, exchange details (name and factory address), and information about both tokens in the pair (name, symbol, and address)"
     inputs = {
         "chain": {
@@ -361,7 +361,7 @@ class GetPoolsTool(DexToolsBase):
 class GetTokenInfoTool(DexToolsBase):
     """Tool for fetching token information from DEXTools."""
 
-    name = "get_dextools_token"
+    name = "dextools_get_token_info"
     description = "Retrieve detailed token information from DEXTools including name, symbol, logo, description, creation details, decimals and social media links"
     inputs = {
         "chain": {
@@ -396,7 +396,7 @@ class GetTokenInfoTool(DexToolsBase):
 class GetTokenPriceTool(DexToolsBase):
     """Tool for fetching token price from DEXTools."""
 
-    name = "get_dextools_token_price"
+    name = "dextools_get_token_price"
     description = "Retrieve token price information from DEXTools including current price, 24h price, and percentage variations over 5m, 1h, 6h and 24h periods in both token and chain native currency"
     inputs = {
         "chain": {
@@ -431,7 +431,7 @@ class GetTokenPriceTool(DexToolsBase):
 class GetTokenPoolsTool(DexToolsBase):
     """Tool for fetching token pools from DEXTools."""
 
-    name = "get_dextools_token_pools"
+    name = "dextools_get_token_pools"
     description = "Retrieve token pools from DEXTools with time range and optional sorting"
     inputs = {
         "chain": {
@@ -503,7 +503,7 @@ class GetTokenPoolsTool(DexToolsBase):
 class GetRankingHotPoolsTool(DexToolsBase):
     """Tool for fetching hot pools ranking from DEXTools."""
 
-    name = "get_dextools_hot_pools"
+    name = "dextools_get_ranking_hot_pools"
     description = "Retrieve hot pools ranking from DEXTools. Returns a list of the most active trading pools, including details like rank, creation time, exchange info, pool address, and token pair information."
     inputs = {
         "chain": {
@@ -533,7 +533,7 @@ class GetRankingHotPoolsTool(DexToolsBase):
 class GetRankingGainersTool(DexToolsBase):
     """Tool for fetching gainers ranking from DEXTools."""
 
-    name = "get_dextools_gainers"
+    name = "dextools_get_ranking_gainers"
     description = "Retrieve a list of tokens that have gained the most in value. Returns an array of pools with exchange details, token pair info (addresses, symbols, names), creation time, fees, rank, current price, 24h price, and 24h variation percentage."
 
     inputs = {
@@ -564,7 +564,7 @@ class GetRankingGainersTool(DexToolsBase):
 class GetRankingLosersTool(DexToolsBase):
     """Tool for fetching losers ranking from DEXTools."""
 
-    name = "get_dextools_losers"
+    name = "dextools_get_ranking_losers"
     description = "Retrieve a list of tokens that have lost the most in value. Returns an array of pools with exchange details, token pair info (addresses, symbols, names), creation time, fees, rank, current price, 24h price, and 24h variation percentage."
     inputs = {
         "chain": {
