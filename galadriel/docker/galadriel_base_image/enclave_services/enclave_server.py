@@ -35,9 +35,7 @@ class EnclaveServer:
                 while True:
                     try:
                         conn, _ = server.accept()
-                        threading.Thread(
-                            target=self._handle_client, args=(conn,)
-                        ).start()
+                        threading.Thread(target=self._handle_client, args=(conn,)).start()
                     except Exception as e:
                         logger.error(f"Error accepting connection: {e}")
         except Exception as e:
