@@ -205,7 +205,7 @@ def list():
             click.echo(f"Failed to get agent state with status {response.status_code}: {response.text}")
         click.echo(json.dumps(response.json(), indent=2))
     except Exception as e:
-        click.echo(f"Failed to get agent state: {str(e)}")
+        click.echo(f"Failed to list agents: {str(e)}")
 
 
 # ===== WALLET COMMANDS =====
