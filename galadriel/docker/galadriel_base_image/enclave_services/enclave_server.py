@@ -35,7 +35,9 @@ class EnclaveServer:
                 while True:
                     try:
                         conn, _ = server.accept()
-                        threading.Thread(target=self._handle_client, args=(conn,)).start()
+                        threading.Thread(
+                            target=self._handle_client, args=(conn,)
+                        ).start()
                     except Exception as e:
                         logger.error(f"Error accepting connection: {e}")
         except Exception as e:
@@ -56,8 +58,8 @@ class EnclaveServer:
                     conn.sendall(response.encode())
                 elif data == RequestType.SHUTDOWN.value:
                     logger.info("Shutdown request received")
-                    stop_agent()
-                    conn.sendall(b"OK")
+                    result = stop_agent()
+                    conn.sendall(b"OK" if result else b"ERROR")
                 else:
                     logger.warning(f"Unknown request type: {data}")
                     conn.sendall(b"Unknown request type")
