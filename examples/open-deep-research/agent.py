@@ -20,7 +20,14 @@ from scripts.visual_qa import visualizer
 from galadriel import CodeAgent, AgentRuntime, ToolCallingAgent
 from galadriel.clients import ChatUIClient
 from galadriel import LiteLLMModel
-
+from galadriel.wallets.solana_wallet import SolanaWallet
+from galadriel.tools.web3.market_data import coingecko, dexscreener
+from galadriel.tools.web3.onchain.solana import (
+    jupiter,
+    raydium,
+    native as solana_native,
+    spl_token,
+)
 
 AUTHORIZED_IMPORTS = [
     "requests",
@@ -93,11 +100,7 @@ text_webbrowser_agent = ToolCallingAgent(
     verbosity_level=2,
     planning_interval=4,
     name="search_agent",
-    description="""A team member that will search the internet to answer your question.
-Ask him for all your questions that require browsing the web.
-Provide him as much context as possible, in particular if you need to search on a specific timeframe!
-And don't hesitate to provide him with a complex search task, like finding a difference between two webpages.
-Your request must be a real sentence, not a google search! Like "Find me this information (...)" rather than a few keywords.
+    description="""Your job is to search the web deeply for topics related with web3 and crypto. assume your task is about those topics only. focus on those topics and provide only relevant answers
 """,
     provide_run_summary=True,
 )
@@ -106,7 +109,56 @@ If a non-html page is in another format, especially .pdf or a Youtube video, use
 Additionally, if after some searching you find out that you need more information to answer the question, you can use `final_answer` with your request for clarification as argument to request for more information.
 If you find the error "Error in code parsing: Your code snippet is invalid, because the regex pattern ```(?:py|python)?\n(.*?)\n``` was not found in it.", ignore it and call the final_answer tool"""
 
+solana_wallet = SolanaWallet(key_path=os.getenv("SOLANA_KEY_PATH"))
+
+# Prepare a Web3 specific toolkit, relevant for the trading agent
+tools = [
+    coingecko.GetMarketDataPerCategoriesTool(),
+    coingecko.GetCoinMarketDataTool(),
+    coingecko.GetCoinHistoricalDataTool(),
+    dexscreener.GetTokenDataTool(),
+    solana_native.GetSOLBalanceTool(solana_wallet),
+    spl_token.GetTokenBalanceTool(solana_wallet),
+    raydium.SwapTokenTool(solana_wallet),
+    jupiter.SwapTokenTool(solana_wallet),
+]
+
+# WEB3_AGENT_PROMPT = """You are a highly knowledgeable crypto trading assistant with expertise in the Solana ecosystem. You have access to real-time market data and trading capabilities through various tools.
+# Your goal is to help users understand market conditions and execute trades safely.
+# When you get new question, see memory for previous answers. Here is the chat history: \n\n {{chat_history}} \n
+# Answer this: {{request}}
+# """
+
+# Create a trading agent
+trading_agent = CodeAgent(
+    # prompt_template=WEB3_AGENT_PROMPT,  # Use the new comprehensive prompt
+    model=model,
+    tools=tools,
+    add_base_tools=True,
+    additional_authorized_imports=["json"],
+    chat_memory=True,
+    max_steps=6,
+    name="web3_agent",
+    description="""
+    Agent which is able to handle any question related to cryptocurrency operations.
+    A team member who is a highly knowledgeable crypto with expertise in the Solana ecosystem. It has access to real-time market data and trading capabilities through various tools. 
+Call it when you want to:
+- get cryptocurrency market data (eg token prices)
+- get balance of some account
+- swap tokens
+    """,
+    provide_run_summary=True,
+)
+# Make the trading agent more reliable by increasing the number of steps he can take to complete the task
+
+MANAGER_PROMPT = """You are a helpful crypto analyst. Your goal is to provide users the insights about trading as well as answer quick questions about pricing and execute onchain operations like token swaps.
+All questions about prices, tokens etc are related to crypto.
+For quick questions, don't do a lot of planning, just provide the answers. For more complex questions eg about trading strategies, plan and execute a thorough research. {{request}}
+History: {{chat_history}}
+"""
+
 manager_agent = CodeAgent(
+    prompt_template=MANAGER_PROMPT,
     model=model,
     tools=[visualizer, document_inspection_tool],
     max_steps=12,
@@ -116,12 +168,12 @@ manager_agent = CodeAgent(
     managed_agents=[text_webbrowser_agent],
 )
 
-chatui_client = ChatUIClient()
+client = ChatUIClient()
 
 # Set up the runtime
 runtime = AgentRuntime(
-    inputs=[chatui_client],
-    outputs=[chatui_client],
+    inputs=[client],
+    outputs=[client],
     agent=manager_agent,
     memory_store=MemoryStore(
         api_key=os.getenv("OPENAI_API_KEY"),
