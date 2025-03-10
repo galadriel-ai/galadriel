@@ -328,6 +328,11 @@ from galadriel import AgentRuntime, CodeAgent, LiteLLMModel
 from galadriel.clients import TerminalClient
 from galadriel.tools import DuckDuckGoSearchTool
 
+env_path = Path(".") / ".env"
+if not env_path.exists():
+    print(f"Looks like .env file is missing. Did you forget to create it from template.env?")
+    exit(1)
+
 load_dotenv(dotenv_path=Path(".") / ".env", override=True)
 model = LiteLLMModel(model_id="gpt-4o", api_key=os.getenv("OPENAI_API_KEY"))
 
