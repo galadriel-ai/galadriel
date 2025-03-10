@@ -13,8 +13,6 @@ from smolagents import CodeAgent as InternalCodeAgent
 from smolagents import ToolCallingAgent as InternalToolCallingAgent
 from smolagents import ActionStep
 
-from galadriel.domain.generate_proof import generate_proof
-from galadriel.domain.publish_proof import publish_proof
 from galadriel.domain.extract_step_logs import pull_messages_from_step
 from galadriel.domain.validate_solana_payment import SolanaPaymentValidator
 from galadriel.domain.prompts import format_prompt
@@ -25,6 +23,7 @@ from galadriel.errors import PaymentValidationError
 from galadriel.logging_utils import init_logging
 from galadriel.logging_utils import get_agent_logger
 from galadriel.memory.memory_store import MemoryStore
+from galadriel.proof.prover import Prover
 from galadriel.state.agent_state_repository import AgentStateRepository
 
 logger = get_agent_logger()
@@ -89,6 +88,7 @@ class AgentOutput:
         Args:
             request (Message): The original request that generated the response
             response (Message): The response to be delivered
+            proof (Proof): The proof of the response's authenticity
         """
 
 
@@ -213,9 +213,7 @@ class ToolCallingAgent(Agent, InternalToolCallingAgent):
             return
         # Stream is enabled
         async for message in stream_agent_response(
-            agent_run=InternalToolCallingAgent.run(
-                self, task=formatted_task, stream=True
-            ),
+            agent_run=InternalToolCallingAgent.run(self, task=formatted_task, stream=True),
             conversation_id=request.conversation_id,  # type: ignore
             additional_kwargs=request.additional_kwargs,
             model=self.model,
@@ -260,6 +258,11 @@ class AgentRuntime:
         self.enable_logs = enable_logs
         self.shutdown_event = asyncio.Event()
         self.agent_state_repository = AgentStateRepository()
+        try:
+            self.prover: Optional[Prover] = Prover()
+        except Exception as e:
+            self.prover = None
+            logger.error(f"Error initializing prover: {e}. Proofs will not be generated.")
         env_path = Path(".") / ".env"
         _load_dotenv(dotenv_path=env_path)
         # AgentConfig should have some settings for debug?
@@ -284,8 +287,7 @@ class AgentRuntime:
         # Start agent inputs
         # Create tasks for all inputs and track them
         input_tasks = [
-            asyncio.create_task(self._safe_client_start(agent_input, push_only_queue))
-            for agent_input in self.inputs
+            asyncio.create_task(self._safe_client_start(agent_input, push_only_queue)) for agent_input in self.inputs
         ]
 
         while not self.shutdown_event.is_set():
@@ -337,24 +339,23 @@ class AgentRuntime:
             except PaymentValidationError:
                 logger.error("Payment validation error", exc_info=True)
             except Exception:
-                logger.error(
-                    "Unexpected error during payment validation", exc_info=True
-                )
+                logger.error("Unexpected error during payment validation", exc_info=True)
         # Run the agent if payment validation passed or not required
         if task_and_payment or not self.solana_payment_validator.pricing:
             memories = None
+            proof: Optional[Proof] = None
             if self.memory_store:
                 try:
-                    memories = await self.memory_store.get_memories(
-                        prompt=request.content
-                    )
+                    memories = await self.memory_store.get_memories(prompt=request.content)
                 except Exception as e:
                     logger.error(f"Error getting memories: {e}")
             try:
                 async for response in self.agent.execute(request, memories, stream=stream):  # type: ignore
+                    if response.final and self.prover:
+                        proof = await self.prover.generate_proof(request, response)
                     for output in self.outputs:
                         try:
-                            await output.send(request, response)
+                            await output.send(request, response, proof)
                         except Exception:
                             logger.error(
                                 "Failed to send streaming response via output",
@@ -364,13 +365,11 @@ class AgentRuntime:
                 logger.error("Error during agent execution", exc_info=True)
         # Send the response to the outputs
         if response:
-            proof: Proof = await generate_proof(request, response, logger)
-            await publish_proof(request, response, proof, logger)
+            if proof:
+                await self.prover.publish_proof(request, response, proof)
             if self.memory_store:
                 try:
-                    await self.memory_store.add_memory(
-                        request=request, response=response
-                    )
+                    await self.memory_store.add_memory(request=request, response=response)
                 except Exception as e:
                     logger.error(f"Error adding memory: {e}")
 
@@ -386,9 +385,7 @@ class AgentRuntime:
         try:
             await agent_input.start(queue)
         except Exception as e:
-            logger.error(
-                f"Input client {agent_input.__class__.__name__} failed", exc_info=True
-            )
+            logger.error(f"Input client {agent_input.__class__.__name__} failed", exc_info=True)
             raise e
 
     async def _save_chat_memories(self, file_name: str) -> None:
@@ -400,12 +397,6 @@ class AgentRuntime:
         if self.memory_store:
             return self.memory_store.save_data_locally(file_name)
         return None
-
-    async def _generate_proof(self, request: Message, response: Message) -> str:
-        return generate_proof.execute(request, response)
-
-    async def _publish_proof(self, request: Message, response: Message, proof: str):
-        publish_proof.execute(request, response, proof)
 
     async def _load_agent_state(self):
         """Load agent state from persistent storage if available."""
@@ -422,9 +413,7 @@ class AgentRuntime:
                 return False
 
             self.memory_store.load_memory_from_folder(agent_state.memory_folder_path)
-            logger.info(
-                f"Successfully loaded agent memory from {agent_state.memory_folder_path}"
-            )
+            logger.info(f"Successfully loaded agent memory from {agent_state.memory_folder_path}")
             return True
 
         except Exception as e:

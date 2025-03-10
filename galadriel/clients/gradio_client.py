@@ -140,9 +140,7 @@ class GradioClient(AgentInput, AgentOutput):
         )
         # Log the local URL for accessing the Gradio interface
         if not self.is_public:
-            self.logger.info(
-                f"Gradio interface available at: http://0.0.0.0:{self.server_port}"
-            )
+            self.logger.info(f"Gradio interface available at: http://0.0.0.0:{self.server_port}")
 
         # Process messages from input queue
         while True:

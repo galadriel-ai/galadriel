@@ -7,7 +7,7 @@ import pytest
 
 from galadriel import AgentRuntime, Agent, AgentInput, AgentOutput
 from galadriel import agent
-from galadriel.entities import Message, PushOnlyQueue, Pricing
+from galadriel.entities import Message, PushOnlyQueue, Pricing, Proof
 from galadriel.errors import PaymentValidationError
 
 CONVERSATION_ID = "ci1"
@@ -42,7 +42,7 @@ class MockAgentOutput(AgentOutput):
         self.output_responses: List[Message] = []
         # self.output_proofs: List[str] = []
 
-    async def send(self, request: Message, response: Message):
+    async def send(self, request: Message, response: Message, proof: Proof):
         self.output_requests.append(request)
         self.output_responses.append(response)
         # self.output_proofs.append(proof)

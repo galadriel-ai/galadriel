@@ -82,9 +82,7 @@ class TwitterMentionClient(TwitterApiClient, AgentInput, AgentOutput):
             The response will only be posted if the original request contains
             a valid tweet_id in its additional_kwargs.
         """
-        if request.additional_kwargs and (
-            tweet_id := request.additional_kwargs.get("tweet_id")
-        ):
+        if request.additional_kwargs and (tweet_id := request.additional_kwargs.get("tweet_id")):
             await self._post_reply(tweet_id, response.content)
 
     async def _fetch_mentions(self, user_id: str) -> List[Dict]:

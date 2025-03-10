@@ -71,11 +71,7 @@ class TelegramClient(AgentInput, AgentOutput):
 
             user = message.from_user
             # Construct author name from available user information
-            author = (
-                f"{user.first_name} {user.last_name}".strip()
-                if user.first_name
-                else user.username or str(user.id)
-            )
+            author = f"{user.first_name} {user.last_name}".strip() if user.first_name else user.username or str(user.id)
 
             incoming = Message(
                 content=message.text,
