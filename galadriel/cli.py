@@ -334,7 +334,12 @@ if not env_path.exists():
     exit(1)
 
 load_dotenv(dotenv_path=Path(".") / ".env", override=True)
-model = LiteLLMModel(model_id="gpt-4o", api_key=os.getenv("OPENAI_API_KEY"))
+
+if not os.getenv("LLM_API_KEY"):
+    print("LLM_API_KEY is missing in your .env file. Please add it and try again.")
+    exit(1)
+
+model = LiteLLMModel(model_id="gpt-4o", api_key=os.getenv("LLM_API_KEY"))
 
 {agent_name} = CodeAgent(
     model=model,
