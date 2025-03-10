@@ -339,7 +339,11 @@ if not os.getenv("LLM_API_KEY"):
     print("LLM_API_KEY is missing in your .env file. Please add it and try again.")
     exit(1)
 
-model = LiteLLMModel(model_id="gpt-4o", api_key=os.getenv("LLM_API_KEY"))
+if not os.getenv("LLM_MODEL"):
+    print("LLM_MODEL is missing in your .env file. Please add it and try again.")
+    exit(1)
+
+model = LiteLLMModel(model_id=os.getenv("LLM_MODEL"), api_key=os.getenv("LLM_API_KEY"))
 
 {agent_name} = CodeAgent(
     model=model,
