@@ -42,3 +42,10 @@ class Pricing(BaseModel):
         min_length=32,
         max_length=44,
     )
+
+
+class Proof(BaseModel):
+    hash: str
+    signature: str
+    public_key: str
+    attestation: str

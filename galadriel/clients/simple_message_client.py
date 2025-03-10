@@ -3,7 +3,7 @@ from typing import List
 from typing import Optional
 
 from galadriel import AgentInput, AgentOutput
-from galadriel.entities import Message, PushOnlyQueue
+from galadriel.entities import Message, PushOnlyQueue, Proof
 
 
 class SimpleMessageClient(AgentInput, AgentOutput):
@@ -69,7 +69,7 @@ class SimpleMessageClient(AgentInput, AgentOutput):
         await queue.put(message)
         await self.response_received.wait()
 
-    async def send(self, request: Message, response: Message):
+    async def send(self, request: Message, response: Message, proof: Optional[Proof] = None):
         """Print the request and response messages to stdout.
 
         A simple implementation of message output that prints formatted

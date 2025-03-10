@@ -7,7 +7,7 @@ from telebot.async_telebot import AsyncTeleBot
 
 from galadriel import AgentInput
 from galadriel import AgentOutput
-from galadriel.entities import Message
+from galadriel.entities import Message, Proof
 from galadriel.entities import PushOnlyQueue
 
 
@@ -88,7 +88,7 @@ class TelegramClient(AgentInput, AgentOutput):
         self.logger.info("Starting AsyncTeleBot polling...")
         await self.bot.infinity_polling()
 
-    async def send(self, request: Message, response: Message):
+    async def send(self, request: Message, response: Message, proof: Optional[Proof] = None):
         """Send a response message back to the Telegram chat.
 
         Args:

@@ -9,6 +9,7 @@ from galadriel.connectors.twitter import TwitterApiClient
 from galadriel.connectors.twitter import TwitterCredentials
 from galadriel.entities import Message
 from galadriel.entities import PushOnlyQueue
+from galadriel.entities import Proof
 
 
 class TwitterMentionClient(TwitterApiClient, AgentInput, AgentOutput):
@@ -67,7 +68,7 @@ class TwitterMentionClient(TwitterApiClient, AgentInput, AgentOutput):
             )
             await queue.put(message)
 
-    async def send(self, request: Message, response: Message) -> None:
+    async def send(self, request: Message, response: Message, proof: Optional[Proof] = None) -> None:
         """Post a reply to a Twitter mention.
 
         If the original request contains a tweet_id, posts the response

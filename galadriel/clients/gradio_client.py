@@ -5,7 +5,7 @@ from datetime import datetime
 import gradio as gr
 
 from galadriel import AgentInput, AgentOutput
-from galadriel.entities import Message, PushOnlyQueue
+from galadriel.entities import Message, PushOnlyQueue, Proof
 
 
 class GradioClient(AgentInput, AgentOutput):
@@ -65,15 +65,21 @@ class GradioClient(AgentInput, AgentOutput):
             # Hidden refresh button to update the UI state.
             # Its click action calls refresh_chat, which returns the latest chat history.
             refresh_btn = gr.Button("Refresh", visible=False, elem_id="refresh-btn")
-            refresh_btn.click(self._refresh_chat, inputs=[chatbot, stored_messages], outputs=[chatbot, stored_messages])
+            refresh_btn.click(
+                self._refresh_chat,
+                inputs=[chatbot, stored_messages],
+                outputs=[chatbot, stored_messages],
+            )
             # JavaScript to click the hidden refresh button every 0.1 second
-            gr.HTML("""
+            gr.HTML(
+                """
             <script>
             setInterval(function(){
                 document.getElementById("refresh-btn").click();
             }, 100);
             </script>
-            """)
+            """
+            )
 
     async def _refresh_chat(self, chatbot, stored_messages):
         """
@@ -127,7 +133,10 @@ class GradioClient(AgentInput, AgentOutput):
         # Launch Gradio interface in a background thread
         self.interface.queue()
         self.interface.launch(
-            server_name="0.0.0.0", server_port=self.server_port, share=self.is_public, prevent_thread_lock=True
+            server_name="0.0.0.0",
+            server_port=self.server_port,
+            share=self.is_public,
+            prevent_thread_lock=True,
         )
         # Log the local URL for accessing the Gradio interface
         if not self.is_public:
@@ -151,7 +160,7 @@ class GradioClient(AgentInput, AgentOutput):
 
             await asyncio.sleep(0.1)
 
-    async def send(self, request: Message, response: Message) -> None:
+    async def send(self, request: Message, response: Message, proof: Optional[Proof] = None) -> None:
         """Send a response message to the Gradio interface.
 
         Args:

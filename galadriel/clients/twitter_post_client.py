@@ -1,5 +1,7 @@
+from typing import Optional
+
 from galadriel import AgentOutput
-from galadriel.entities import Message
+from galadriel.entities import Message, Proof
 from galadriel.tools.twitter import TwitterPostTool
 
 
@@ -28,7 +30,7 @@ class TwitterPostClient(AgentOutput):
         """
         self.twitter_post_tool = TwitterPostTool()
 
-    async def send(self, request: Message, response: Message) -> None:
+    async def send(self, request: Message, response: Message, proof: Optional[Proof] = None) -> None:
         """Post a tweet or reply to Twitter.
 
         Posts the response content as a tweet. If the response includes

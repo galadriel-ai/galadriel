@@ -7,7 +7,7 @@ from discord.ext import commands
 
 from galadriel import AgentInput
 from galadriel import AgentOutput
-from galadriel.entities import Message
+from galadriel.entities import Message, Proof
 from galadriel.entities import PushOnlyQueue
 
 
@@ -113,7 +113,7 @@ class DiscordClient(commands.Bot, AgentInput, AgentOutput):
         self.message_queue = queue
         await super().start(os.getenv("DISCORD_TOKEN", ""))
 
-    async def send(self, request: Message, response: Message) -> None:
+    async def send(self, request: Message, response: Message, proof: Optional[Proof] = None) -> None:
         """Send a response message to the appropriate Discord channel.
 
         Args:

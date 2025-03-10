@@ -11,7 +11,7 @@ from pydantic import BaseModel
 import uvicorn
 
 from galadriel import AgentInput, AgentOutput
-from galadriel.entities import Message, PushOnlyQueue
+from galadriel.entities import Message, PushOnlyQueue, Proof
 
 
 class ChatMessage(BaseModel):
@@ -30,7 +30,12 @@ class ChatUIClient(AgentInput, AgentOutput):
     integration with a web-based chat interface using Server-Sent Events (SSE).
     """
 
-    def __init__(self, host: str = "0.0.0.0", port: int = 8000, logger: Optional[logging.Logger] = None):
+    def __init__(
+        self,
+        host: str = "0.0.0.0",
+        port: int = 8000,
+        logger: Optional[logging.Logger] = None,
+    ):
         """Initialize the ChatUI client.
 
         Args:
@@ -197,7 +202,7 @@ class ChatUIClient(AgentInput, AgentOutput):
             # Clean up when the connection is closed
             self.active_connections[connection_type] = None  # type: ignore
 
-    async def send(self, request: Message, response: Message) -> None:
+    async def send(self, request: Message, response: Message, proof: Optional[Proof] = None) -> None:
         """Send a response message back to the chat interface in OpenAI format.
 
         Args:
@@ -230,7 +235,13 @@ class ChatUIClient(AgentInput, AgentOutput):
             "object": "chat.completion.chunk",
             "created": int(time.time()),
             "model": "galadriel",
-            "choices": [{"index": 0, "delta": {"role": role, "content": response.content}, "finish_reason": None}],
+            "choices": [
+                {
+                    "index": 0,
+                    "delta": {"role": role, "content": response.content},
+                    "finish_reason": None,
+                }
+            ],
         }
 
         # Add any additional metadata that might be useful for the UI
