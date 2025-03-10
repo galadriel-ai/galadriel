@@ -88,7 +88,7 @@ class TelegramClient(AgentInput, AgentOutput):
         self.logger.info("Starting AsyncTeleBot polling...")
         await self.bot.infinity_polling()
 
-    async def send(self, request: Message, response: Message, proof: Proof):
+    async def send(self, request: Message, response: Message, proof: Optional[Proof] = None):
         """Send a response message back to the Telegram chat.
 
         Args:

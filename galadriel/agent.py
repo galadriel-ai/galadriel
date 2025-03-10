@@ -82,7 +82,7 @@ class AgentOutput:
     to their final destination.
     """
 
-    async def send(self, request: Message, response: Message, proof: Proof) -> None:
+    async def send(self, request: Message, response: Message, proof: Optional[Proof] = None) -> None:
         """Send a processed response to its destination.
 
         Args:
@@ -365,7 +365,7 @@ class AgentRuntime:
                 logger.error("Error during agent execution", exc_info=True)
         # Send the response to the outputs
         if response:
-            if proof:
+            if proof and self.prover:
                 await self.prover.publish_proof(request, response, proof)
             if self.memory_store:
                 try:

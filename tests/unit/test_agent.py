@@ -42,7 +42,7 @@ class MockAgentOutput(AgentOutput):
         self.output_responses: List[Message] = []
         # self.output_proofs: List[str] = []
 
-    async def send(self, request: Message, response: Message, proof: Proof):
+    async def send(self, request: Message, response: Message, proof: Optional[Proof] = None):
         self.output_requests.append(request)
         self.output_responses.append(response)
         # self.output_proofs.append(proof)

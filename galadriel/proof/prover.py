@@ -19,7 +19,6 @@ PUBLIC_KEY_PATH = "/public_key.pem"
 
 class Prover:
     def __init__(self):
-        # Convert the string to bytes and load the private key
         with open(PRIVATE_KEY_PATH, "rb") as priv_file:
             self.private_key = serialization.load_pem_private_key(data=priv_file.read(), password=None)
 
@@ -28,7 +27,6 @@ class Prover:
             self.public_key_bytes = self.public_key.public_bytes(
                 encoding=serialization.Encoding.Raw, format=serialization.PublicFormat.Raw
             )
-        print(self.private_key)
         self.nsm_util = NSMUtil()
 
     async def generate_proof(self, request: Message, response: Message) -> Proof:

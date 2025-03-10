@@ -69,7 +69,7 @@ class SimpleMessageClient(AgentInput, AgentOutput):
         await queue.put(message)
         await self.response_received.wait()
 
-    async def send(self, request: Message, response: Message, proof: Proof):
+    async def send(self, request: Message, response: Message, proof: Optional[Proof] = None):
         """Print the request and response messages to stdout.
 
         A simple implementation of message output that prints formatted

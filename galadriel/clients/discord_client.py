@@ -113,7 +113,7 @@ class DiscordClient(commands.Bot, AgentInput, AgentOutput):
         self.message_queue = queue
         await super().start(os.getenv("DISCORD_TOKEN", ""))
 
-    async def send(self, request: Message, response: Message, proof: Proof) -> None:
+    async def send(self, request: Message, response: Message, proof: Optional[Proof] = None) -> None:
         """Send a response message to the appropriate Discord channel.
 
         Args:

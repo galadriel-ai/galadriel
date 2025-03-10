@@ -202,7 +202,7 @@ class ChatUIClient(AgentInput, AgentOutput):
             # Clean up when the connection is closed
             self.active_connections[connection_type] = None  # type: ignore
 
-    async def send(self, request: Message, response: Message, proof: Proof) -> None:
+    async def send(self, request: Message, response: Message, proof: Optional[Proof] = None) -> None:
         """Send a response message back to the chat interface in OpenAI format.
 
         Args:

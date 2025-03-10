@@ -68,7 +68,7 @@ class TwitterMentionClient(TwitterApiClient, AgentInput, AgentOutput):
             )
             await queue.put(message)
 
-    async def send(self, request: Message, response: Message, proof: Proof) -> None:
+    async def send(self, request: Message, response: Message, proof: Optional[Proof] = None) -> None:
         """Post a reply to a Twitter mention.
 
         If the original request contains a tweet_id, posts the response

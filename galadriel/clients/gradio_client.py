@@ -160,7 +160,7 @@ class GradioClient(AgentInput, AgentOutput):
 
             await asyncio.sleep(0.1)
 
-    async def send(self, request: Message, response: Message, proof: Proof) -> None:
+    async def send(self, request: Message, response: Message, proof: Optional[Proof] = None) -> None:
         """Send a response message to the Gradio interface.
 
         Args:
