@@ -1,12 +1,10 @@
-import asyncio
 import os
 from pathlib import Path
 
 from dotenv import load_dotenv
 
-from galadriel import AgentRuntime, LiteLLMModel
+from galadriel import LiteLLMModel
 from galadriel.agent import CodeAgent
-from galadriel.clients import ChatUIClient
 from galadriel.wallets.solana_wallet import SolanaWallet
 from galadriel.tools.web3.market_data import dexscreener
 from galadriel.tools.web3.onchain.solana import (
@@ -15,8 +13,16 @@ from galadriel.tools.web3.onchain.solana import (
     spl_token,
 )
 
-# Set up a comprehensive prompt for the trading agent
-AGENT_PROMPT = """You are a highly knowledgeable crypto trading assistant with expertise in the Solana ecosystem. You have access to real-time market data and trading capabilities through various tools. 
+
+load_dotenv(dotenv_path=Path(".") / ".env", override=True)
+load_dotenv(dotenv_path=Path(".") / ".agents.env", override=True)
+
+model = LiteLLMModel(
+    model_id="openai/gpt-4o",
+    api_key=os.getenv("OPENAI_API_KEY"),
+)
+
+TRADING_AGENT_PROMPT = """You are a highly knowledgeable crypto trading assistant with expertise in the Solana ecosystem. You have access to real-time market data and trading capabilities through various tools. 
 Your goal is to help users understand market conditions and execute trades safely.
 
 IMPORTANT INSTRUCTIONS FOR TOKEN SWAPS:
@@ -36,45 +42,21 @@ When you get new question, see memory for previous answers. Here is the chat his
 Answer this: {{request}}
 """
 
-load_dotenv(dotenv_path=Path(".") / ".env", override=True)
-load_dotenv(dotenv_path=Path(".") / ".agents.env", override=True)
-
-model = LiteLLMModel(
-    model_id="openai/gpt-4o",
-    api_key=os.getenv("OPENAI_API_KEY"),
-)
-
 solana_wallet = SolanaWallet(key_path=os.getenv("SOLANA_KEY_PATH"))
 
-# Prepare a Web3 specific toolkit, relevant for the trading agent
-tools = [
-    # coingecko.GetMarketDataPerCategoriesTool(),
-    # coingecko.GetCoinMarketDataTool(),
-    # coingecko.GetCoinHistoricalDataTool(),
-    solana_native.GetSOLBalanceTool(solana_wallet),
-    spl_token.GetTokenBalanceTool(solana_wallet),
-    dexscreener.SearchTokenPairTool(),
-    jupiter.BuildSwapTransactionTool(solana_wallet),
-]
-
-# Create a trading agent
 trading_agent = CodeAgent(
-    prompt_template=AGENT_PROMPT,  # Use the new comprehensive prompt
     model=model,
-    tools=tools,
-    add_base_tools=True,
-    additional_authorized_imports=["json"],
-    max_steps=5,  # Make the trading agent more reliable by increasing the number of steps he can take to complete the task
+    tools=[
+        solana_native.GetSOLBalanceTool(solana_wallet),
+        spl_token.GetTokenBalanceTool(solana_wallet),
+        dexscreener.SearchTokenPairTool(),
+        jupiter.BuildSwapTransactionTool(solana_wallet),
+    ],
+    max_steps=4,
+    verbosity_level=2,
+    name="trading_chat",
+    description="""A team member that can execute any onchain operation like tokens swap.
+""",
+    provide_run_summary=True,
 )
-
-client = ChatUIClient()
-
-# Set up the runtime
-runtime = AgentRuntime(
-    inputs=[client],
-    outputs=[client],
-    agent=trading_agent,
-)
-
-# Run the agent
-asyncio.run(runtime.run())
+trading_agent.prompt_templates["managed_agent"]["task"] = TRADING_AGENT_PROMPT

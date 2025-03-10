@@ -44,7 +44,8 @@ class ChatUIClient(AgentInput, AgentOutput):
         self.host = host
         self.port = port
 
-        self.active_connection: Optional[asyncio.Queue] = None
+        # Replace single connection with a dictionary of connections
+        self.active_connections: Dict[str, asyncio.Queue] = {"chat": None, "cron": None}  # type: ignore
 
         # Set up CORS
         self.app.add_middleware(
@@ -88,6 +89,52 @@ class ChatUIClient(AgentInput, AgentOutput):
         # Process only the last message in the conversation
         last_message = chat_request.messages[-1]
 
+        # Check if this is a cron check request
+        if "[CRON CHECK]" in last_message.content:
+            # Create a response stream for cron messages
+            response_stream = self._create_response_stream("cron")
+
+            # If we don't have a cron connection with messages, add an empty response
+            if not self.active_connections["cron"] or self.active_connections["cron"].empty():
+                # Create a queue if it doesn't exist
+                if not self.active_connections["cron"]:
+                    self.active_connections["cron"] = asyncio.Queue()
+
+                # Add a "no messages" response to the queue
+                no_messages_response = {
+                    "id": "chatcmpl-cron-check",
+                    "object": "chat.completion.chunk",
+                    "created": int(time.time()),
+                    "model": "galadriel",
+                    "choices": [
+                        {
+                            "index": 0,
+                            "delta": {"role": "assistant", "content": " "},
+                            "finish_reason": None,
+                        }
+                    ],
+                }
+                await self.active_connections["cron"].put(no_messages_response)
+
+                # Add a final message to close the stream
+                final_message = {
+                    "id": "chatcmpl-cron-check",
+                    "object": "chat.completion.chunk",
+                    "created": int(time.time()),
+                    "model": "galadriel",
+                    "choices": [{"index": 0, "delta": {}, "finish_reason": "stop"}],
+                }
+                await self.active_connections["cron"].put(final_message)
+
+            return StreamingResponse(
+                response_stream,
+                media_type="text/event-stream",
+                headers={
+                    "Cache-Control": "no-cache",
+                    "Connection": "keep-alive",
+                },
+            )
+
         # Create a unique conversation ID (in practice, you might want to manage this differently)
         conversation_id = "chat-1"  # Simplified for this example
 
@@ -106,7 +153,7 @@ class ChatUIClient(AgentInput, AgentOutput):
         self.logger.info(f"Enqueued message: {incoming}")
 
         # Create a response stream for this conversation
-        response_stream = self._create_response_stream(conversation_id)
+        response_stream = self._create_response_stream("chat")
 
         return StreamingResponse(
             response_stream,
@@ -117,13 +164,14 @@ class ChatUIClient(AgentInput, AgentOutput):
             },
         )
 
-    async def _create_response_stream(self, conversation_id: str) -> AsyncGenerator[str, None]:
-        """Create a response stream for a specific conversation."""
-        # Create a queue for this connection
-        queue: asyncio.Queue[Dict] = asyncio.Queue()
+    async def _create_response_stream(self, connection_type: str) -> AsyncGenerator[str, None]:
+        """Create a response stream for a specific connection type (chat or cron)."""
+        # Create a queue for this connection if it doesn't exist
+        if not self.active_connections[connection_type]:
+            self.active_connections[connection_type] = asyncio.Queue()
 
-        # Store the active connection
-        self.active_connection = queue
+        # Get the queue for this connection
+        queue = self.active_connections[connection_type]
 
         try:
             # Keep the connection open
@@ -147,7 +195,7 @@ class ChatUIClient(AgentInput, AgentOutput):
 
         finally:
             # Clean up when the connection is closed
-            self.active_connection = None
+            self.active_connections[connection_type] = None  # type: ignore
 
     async def send(self, request: Message, response: Message) -> None:
         """Send a response message back to the chat interface in OpenAI format.
@@ -160,10 +208,18 @@ class ChatUIClient(AgentInput, AgentOutput):
             self.logger.warning("No conversation_id found in response; cannot respond.")
             return
 
-        # Check if we have an active connection
-        if not self.active_connection:
-            self.logger.warning(f"No active connection for conversation {response.conversation_id}")
-            return
+        # Determine if this is a cron message
+        is_cron = response.additional_kwargs and response.additional_kwargs.get("author") == "cron"
+        connection_type = "cron" if is_cron else "chat"
+
+        # Check if we have an active connection for this type
+        if not self.active_connections[connection_type]:
+            if is_cron:
+                # For cron messages, create a queue if it doesn't exist
+                self.active_connections[connection_type] = asyncio.Queue()
+            else:
+                self.logger.warning(f"No active connection for conversation {response.conversation_id}")
+                return
 
         # Get role from additional_kwargs or default to "assistant"
         role = response.additional_kwargs.get("role", "assistant") if response.additional_kwargs else "assistant"
@@ -184,8 +240,8 @@ class ChatUIClient(AgentInput, AgentOutput):
             if metadata:  # Only add if there's something left
                 formatted_response["choices"][0]["delta"]["metadata"] = metadata  # type: ignore
 
-        # Send the response to the active connection
-        await self.active_connection.put(formatted_response)
+        # Send the response to the appropriate connection
+        await self.active_connections[connection_type].put(formatted_response)
 
         # Send a final message to indicate completion if this is the final message
         if response.final:
@@ -196,8 +252,8 @@ class ChatUIClient(AgentInput, AgentOutput):
                 "model": "galadriel",
                 "choices": [{"index": 0, "delta": {}, "finish_reason": "stop"}],
             }
-            await self.active_connection.put(final_message)
+            await self.active_connections[connection_type].put(final_message)
 
-        self.logger.info("Response sent to conversation")
+        self.logger.info(f"Response sent to {connection_type} connection")
         # Yield a small delay to that the response is picked up and sent to the client
         await asyncio.sleep(0.1)

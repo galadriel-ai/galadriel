@@ -110,7 +110,7 @@ solana_wallet = SolanaWallet(key_path=os.getenv("SOLANA_KEY_PATH"))
 trading_agent = CodeAgent(
     model=model,
     tools=[
-        jupiter.PrepareSwapTokenTool(solana_wallet),
+        jupiter.BuildSwapTransactionTool(solana_wallet),
     ],
     max_steps=4,
     verbosity_level=2,

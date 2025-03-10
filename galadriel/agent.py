@@ -36,8 +36,6 @@ Answer the following question: \n\n {{request}} \n
 Please remember the chat history and use it to answer the question, if relevant to the question.
 Maintain a natural conversation, don't add signatures at the end of your messages.
 Call the final_answer tool if you have a final answer to the question.
-If you find the error "Error in code parsing: Your code snippet is invalid, 
-because the regex pattern ```(?:py|python)?\n(.*?)\n``` was not found in it.", ignore it and call the final_answer tool
 """
 
 
@@ -106,7 +104,6 @@ class CodeAgent(Agent, InternalCodeAgent):
     def __init__(
         self,
         prompt_template: Optional[str] = None,
-        chat_memory: Optional[bool] = True,
         **kwargs,
     ):
         """Initialize the CodeAgent.
@@ -137,13 +134,6 @@ class CodeAgent(Agent, InternalCodeAgent):
         formatted_task = format_prompt.execute(self.prompt_template, request_dict)
 
         if not stream:
-            # answer = {
-            #     "operation": "swap",
-            #     "transaction_data": "AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAQAHCpBErv3pDB2sZmcils4IvPtY/9d36augBNVys0uY0Ndfhk25ZMtnf851zvt+cfEwCyaTa5+v9tk0fDorkPJbDSK/ahSOFOL+MSZQntWj9RuagEXDW8dA7bL+F61MbetVuAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAwZGb+UhFzL/7K26csOb57yM5bvF9xJrLEObOkAAAAAEedVb8jHAbu50xW7OaBUH/bGy3qP0jlECsc2iVrwTjwbd9uHXZaGT2cvhRs7reawctIXtX1s3kTqM9YV+/wCpjJclj04kifG7PRApFI4NgwtaE5na/xCEBI572Nvp+Fm0P/on9df2SnTAmx8pWHneSwmrNt/J3VFLMhqns4zl6Pqi2bXH3Telt0voZcKLTaXSgBFpWpKRLdfZ33TDraWfHFcFg+ZBgkhgrQ7HkcONzUlJuPEutTOJ6ITfeAvvlCMGBAAFAsBcFQAHBgACAA0DBgEBAwIAAgwCAAAAAMqaOwAAAAAGAQIBEQUbBgACAQUJBQgFDwYKDgoMCwoKCgoKCgoKAgEAI+UXy5d6460qAQAAAAdkAAEAypo7AAAAALvXDy0UAAAAMgAABgMCAAABCQGNko/JTCgIBgp7k+SOQWyLrTF9HUe25cpZcqnGXyD9lwOqqawDHwIA",
-            #     "input_mint": "So11111111111111111111111111111111111111112",
-            #     "output_mint": "HsNx7RirehVMy54xnFtcgCBPDMrwNnJKykageqdWpump",
-            #     "input_amount": 1000000000
-            # }
             answer = InternalCodeAgent.run(self, task=formatted_task)
 
             yield Message(
@@ -178,7 +168,6 @@ class ToolCallingAgent(Agent, InternalToolCallingAgent):
     def __init__(
         self,
         prompt_template: Optional[str] = None,
-        chat_memory: Optional[bool] = True,
         **kwargs,
     ):
         """
