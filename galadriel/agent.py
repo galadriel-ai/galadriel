@@ -36,8 +36,6 @@ Answer the following question: \n\n {{request}} \n
 Please remember the chat history and use it to answer the question, if relevant to the question.
 Maintain a natural conversation, don't add signatures at the end of your messages.
 Call the final_answer tool if you have a final answer to the question.
-If you find the error "Error in code parsing: Your code snippet is invalid, 
-because the regex pattern ```(?:py|python)?\n(.*?)\n``` was not found in it.", ignore it and call the final_answer tool
 """
 
 
