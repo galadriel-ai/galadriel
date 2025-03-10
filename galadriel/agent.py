@@ -134,7 +134,15 @@ class CodeAgent(Agent, InternalCodeAgent):
         formatted_task = format_prompt.execute(self.prompt_template, request_dict)
 
         if not stream:
+            # answer = {
+            #     "operation": "swap",
+            #     "transaction_data": "AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAQAHCpBErv3pDB2sZmcils4IvPtY/9d36augBNVys0uY0Ndfhk25ZMtnf851zvt+cfEwCyaTa5+v9tk0fDorkPJbDSK/ahSOFOL+MSZQntWj9RuagEXDW8dA7bL+F61MbetVuAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAwZGb+UhFzL/7K26csOb57yM5bvF9xJrLEObOkAAAAAEedVb8jHAbu50xW7OaBUH/bGy3qP0jlECsc2iVrwTjwbd9uHXZaGT2cvhRs7reawctIXtX1s3kTqM9YV+/wCpjJclj04kifG7PRApFI4NgwtaE5na/xCEBI572Nvp+Fm0P/on9df2SnTAmx8pWHneSwmrNt/J3VFLMhqns4zl6Pqi2bXH3Telt0voZcKLTaXSgBFpWpKRLdfZ33TDraWfHFcFg+ZBgkhgrQ7HkcONzUlJuPEutTOJ6ITfeAvvlCMGBAAFAsBcFQAHBgACAA0DBgEBAwIAAgwCAAAAAMqaOwAAAAAGAQIBEQUbBgACAQUJBQgFDwYKDgoMCwoKCgoKCgoKAgEAI+UXy5d6460qAQAAAAdkAAEAypo7AAAAALvXDy0UAAAAMgAABgMCAAABCQGNko/JTCgIBgp7k+SOQWyLrTF9HUe25cpZcqnGXyD9lwOqqawDHwIA",
+            #     "input_mint": "So11111111111111111111111111111111111111112",
+            #     "output_mint": "HsNx7RirehVMy54xnFtcgCBPDMrwNnJKykageqdWpump",
+            #     "input_amount": 1000000000
+            # }
             answer = InternalCodeAgent.run(self, task=formatted_task)
+
             yield Message(
                 content=str(answer),
                 conversation_id=request.conversation_id,
@@ -236,7 +244,7 @@ class AgentRuntime:
         pricing: Optional[Pricing] = None,
         memory_store: Optional[MemoryStore] = MemoryStore(),
         debug: bool = False,
-        enable_logs: bool = False,
+        enable_logs: bool = True,
     ):
         """Initialize the AgentRuntime.
 
@@ -287,7 +295,9 @@ class AgentRuntime:
         while not self.shutdown_event.is_set():
             active_tasks = [task for task in input_tasks if not task.done()]
             if not active_tasks:
-                raise RuntimeError("All input clients died")
+                logger.info("All input clients finished. Stopping the runtime...")
+                self.stop()
+                break
             # Get the next request from the queue
             try:
                 request = await asyncio.wait_for(input_queue.get(), timeout=1.0)
@@ -297,6 +307,7 @@ class AgentRuntime:
             await self._run_request(request, stream)
 
         await self._save_agent_state()
+        logger.info("Runtime done.")
 
     def stop(self):
         self.shutdown_event.set()

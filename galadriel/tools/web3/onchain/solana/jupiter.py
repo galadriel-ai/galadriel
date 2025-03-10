@@ -91,7 +91,7 @@ class SwapTokenTool(SolanaBaseTool):
         return f"Successfully swapped {amount} {token1} for {token2}, tx sig: {result}."
 
 
-class PrepareSwapTokenTool(SolanaBaseTool):
+class BuildSwapTransactionTool(SolanaBaseTool):
     """Tool for preparing token swap transactions using Jupiter Protocol on Solana.
 
     This tool prepares a swap transaction between any two SPL tokens using Jupiter's
@@ -99,12 +99,15 @@ class PrepareSwapTokenTool(SolanaBaseTool):
     it returns the transaction data for later use.
     """
 
-    name = "jupiter_prepare_swap"
-    description = "Prepares (but does not execute) a swap transaction on Jupiter Swap. Returns the raw transaction data as a JSON string without any additional interpretation. The output should be passed directly to the user without modification."
+    name = "jupiter_build_swap_transaction"
+    description = "Builds a swap transaction on Jupiter Swap. Returns the raw transaction data as a JSON string without any additional interpretation. The output should be passed directly to the user without modification."
     inputs = {
         "token1": {"type": "string", "description": "The address of the token to sell"},
         "token2": {"type": "string", "description": "The address of the token to buy"},
-        "amount": {"type": "number", "description": "The amount of token1 to swap"},
+        "amount": {
+            "type": "number",
+            "description": "The amount of token1 to swap in token1's native units, without decimals",
+        },
         "slippage_bps": {
             "type": "number",
             "description": "Slippage tolerance in basis points. Defaults to 300 (3%)",
@@ -277,11 +280,10 @@ def swap(
 
 if __name__ == "__main__":
     wallet = SolanaWallet(key_path=os.getenv("SOLANA_KEY_PATH"))  # type: ignore
-    swap_tool = SwapTokenTool(wallet)
-    result = swap_tool.forward(
+    result = BuildSwapTransactionTool(wallet).forward(
         "So11111111111111111111111111111111111111112",
-        "JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN",
-        0.0001,
+        "HsNx7RirehVMy54xnFtcgCBPDMrwNnJKykageqdWpump",
+        0.001,
         300,
     )
     print(result)
