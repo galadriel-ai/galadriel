@@ -91,6 +91,17 @@ def publish(image_name: str) -> None:
 @click.option("--image-name", default="agent", help="Name of the Docker image")
 def deploy(image_name: str) -> None:
     """Build, publish and deploy the agent."""
+
+    if not os.path.exists(".agents.env"):
+        raise click.ClickException(
+            "Agent requires .agents.env which contains all environment variables the Agent will use when it runs in the network. This file is missing. Rename .template.agents.env or create your own."
+        )
+
+    load_dotenv(dotenv_path=Path(".") / ".env")
+    galadriel_api_key = os.getenv("GALADRIEL_API_KEY")
+    if not galadriel_api_key:
+        raise click.ClickException("GALADRIEL_API_KEY not found in environment")
+
     try:
         docker_username, docker_password = _assert_config_files(image_name=image_name)
 
@@ -104,8 +115,8 @@ def deploy(image_name: str) -> None:
             docker_password=docker_password,
         )
 
-        click.echo("Deploying agent...")
-        agent_id = _galadriel_deploy(image_name, docker_username)
+        click.echo("Deploying agent to Galadriel network...")
+        agent_id = _galadriel_deploy(image_name, docker_username, galadriel_api_key)
         if not agent_id:
             raise click.ClickException("Failed to deploy agent")
         click.echo(f"Successfully deployed agent! Agent ID: {agent_id}")
@@ -591,18 +602,10 @@ def _publish_image(image_name: str, docker_username: str, docker_password: str) 
     click.echo("Agent's Docker image published successfully to Docker Hub")
 
 
-def _galadriel_deploy(image_name: str, docker_username: str) -> Optional[str]:
+def _galadriel_deploy(image_name: str, docker_username: str, galadriel_api_key: str) -> Optional[str]:
     """Deploy agent to Galadriel platform."""
 
-    if not os.path.exists(".agents.env"):
-        raise click.ClickException("No .agents.env file found in current directory. Please create one.")
-
     env_vars = dict(dotenv_values(".agents.env"))
-
-    load_dotenv(dotenv_path=Path(".") / ".env")
-    api_key = os.getenv("GALADRIEL_API_KEY")
-    if not api_key:
-        raise click.ClickException("GALADRIEL_API_KEY not found in environment")
 
     docker_image = f"{docker_username}/{image_name}:latest"
     image_hash = _get_image_hash(docker_image)
@@ -615,7 +618,7 @@ def _galadriel_deploy(image_name: str, docker_username: str) -> Optional[str]:
     }
     headers = {
         "Content-Type": "application/json",
-        "Authorization": f"Bearer {api_key}",
+        "Authorization": f"Bearer {galadriel_api_key}",
         "accept": "application/json",
     }
     response = requests.post(
