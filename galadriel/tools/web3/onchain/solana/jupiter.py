@@ -38,12 +38,6 @@ class SwapTokenTool(SolanaBaseTool):
 
     This tool enables token swaps between any two SPL tokens using Jupiter's
     aggregator for optimal routing and pricing.
-
-    Attributes:
-        name (str): Tool identifier for the agent system
-        description (str): Description of the tool's functionality
-        inputs (dict): Schema for the required input parameters
-        output_type (str): Type of data returned by the tool
     """
 
     name = "jupiter_swap_token"

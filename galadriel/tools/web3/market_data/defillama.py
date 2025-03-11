@@ -11,8 +11,8 @@ class GetProtocolTVLTool(Tool):
     Fetches current TVL data for a specified protocol using the DeFi Llama API.
     """
 
-    name = "get_protocol_tvl"
-    description = "This tool returns the Total Value Locked (TVL) for a given DeFi protocol."
+    name = "defillama_get_protocol_tvl"
+    description = "Get Total Value Locked (TVL) for a given DeFi protocol using DeFi Llama API"
     inputs = {
         "protocol_name": {
             "type": "string",
