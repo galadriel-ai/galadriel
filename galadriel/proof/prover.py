@@ -9,10 +9,7 @@ import requests
 from cryptography.hazmat.primitives import serialization
 
 from galadriel.entities import GALADRIEL_API_BASE_URL, Message, Proof
-from galadriel.logging_utils import get_agent_logger
 from galadriel.docker.galadriel_base_image.enclave_services.nsm_util import NSMUtil
-
-logger = get_agent_logger()
 
 PRIVATE_KEY_PATH = "/private_key.pem"
 PUBLIC_KEY_PATH = "/public_key.pem"
@@ -40,7 +37,7 @@ class Prover:
             hashed_data = self._hash_data(request, response)
 
             # Sign data directly using the private key
-            signature = self.private_key.sign(hashed_data)
+            signature = self.sign(hashed_data)
 
             # Get attestation doc
             attestation_doc = self.nsm_util.get_attestation_doc(self.public_key_bytes)
@@ -52,16 +49,21 @@ class Prover:
                 attestation=base64.b64encode(attestation_doc).decode(),
             )
         except Exception as e:
-            logger.error(f"Error generating proof: {e}")
             raise e
 
         return proof
+
+    def sign(self, data: bytes) -> bytes:
+        return self.private_key.sign(data)
 
     def _hash_data(self, request: Message, response: Message) -> bytes:
         combined_str = (
             f"{json.dumps(request.model_dump(), sort_keys=True)}{json.dumps(response.model_dump(), sort_keys=True)}"
         )
-        return hashlib.sha256(combined_str.encode("utf-8")).digest()
+        return self.hash(combined_str)
+
+    def hash(self, value: str) -> bytes:
+        return hashlib.sha256(value.encode("utf-8")).digest()
 
     async def publish_proof(self, request: Message, response: Message, proof: Proof) -> bool:
         url = urljoin(GALADRIEL_API_BASE_URL, "/verified/chat/log")
@@ -90,5 +92,4 @@ class Prover:
         api_key = os.getenv("GALADRIEL_API_KEY")
         if api_key:
             return "Bearer " + api_key
-        logger.info("GALADRIEL_API_KEY missing, set this as export GALADRIEL_API_KEY=<key>")
         return None

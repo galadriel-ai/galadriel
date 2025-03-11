@@ -6,7 +6,6 @@ from pathlib import Path
 from typing import AsyncGenerator, Dict, List
 from typing import Optional
 
-
 from dotenv import load_dotenv as _load_dotenv
 
 from smolagents import CodeAgent as InternalCodeAgent
@@ -267,7 +266,7 @@ class AgentRuntime:
         _load_dotenv(dotenv_path=env_path)
         # AgentConfig should have some settings for debug?
         if self.enable_logs:
-            init_logging(self.debug)
+            init_logging(self.prover, self.debug)
 
     async def run(self, stream: bool = False):
         """Start the agent runtime loop.
@@ -275,6 +274,7 @@ class AgentRuntime:
         Creates an single queue and continuously processes incoming requests.
         Al agent inputs receive the same instance of the queue and append requests to it.
         """
+        logger.info("Agent runtime started")
         input_queue = asyncio.Queue()  # type: ignore
         push_only_queue = PushOnlyQueue(input_queue)
 
@@ -305,7 +305,7 @@ class AgentRuntime:
             await self._run_request(request, stream)
 
         await self._save_agent_state()
-        logger.info("Runtime done.")
+        logger.info("Agent runtime Stopped.")
 
     def stop(self):
         self.shutdown_event.set()
@@ -352,7 +352,11 @@ class AgentRuntime:
             try:
                 async for response in self.agent.execute(request, memories, stream=stream):  # type: ignore
                     if response.final and self.prover:
-                        proof = await self.prover.generate_proof(request, response)
+                        try:
+                            proof = await self.prover.generate_proof(request, response)
+                        except Exception as e:
+                            logger.error(f"Error generating proof: {e}")
+                            raise e
                     for output in self.outputs:
                         try:
                             await output.send(request, response, proof)

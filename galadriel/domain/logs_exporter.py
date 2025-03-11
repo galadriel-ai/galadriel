@@ -13,6 +13,7 @@ from urllib.parse import urljoin
 import requests
 
 from galadriel.entities import GALADRIEL_API_BASE_URL
+from galadriel.proof.prover import Prover
 
 LOG_EXPORT_INTERVAL_SECONDS = 30
 LOG_EXPORT_BATCH_SIZE = 20
@@ -22,10 +23,12 @@ class LogsExportHandler(logging.Handler):
     def __init__(
         self,
         logger: logging.Logger,
+        prover: Optional[Prover],
         export_interval_seconds: int = LOG_EXPORT_INTERVAL_SECONDS,
     ):
         super().__init__()
         self.logger = logger
+        self.prover = prover
         self.log_records: List[str] = []
         self.export_interval_seconds = export_interval_seconds
 
@@ -74,11 +77,27 @@ class LogsExportHandler(logging.Handler):
                             "text": log_line["message"],
                             "level": str(log_line.get("levelname", "info")).lower(),
                             "timestamp": self._format_timestamp(log_line.get("asctime")),
+                            "signature": self._get_signature(log_line["message"]),
                         }
                     )
             except Exception:
                 pass
         return formatted_logs[:LOG_EXPORT_BATCH_SIZE]
+
+    def _format_timestamp(self, asctime: Optional[str]) -> int:
+        if not asctime:
+            return 0
+        try:
+            dt_obj = datetime.strptime(asctime, "%Y-%m-%d %H:%M:%S,%f").replace(tzinfo=timezone.utc)
+            return int(dt_obj.timestamp())
+        except Exception:
+            return 0
+
+    def _get_signature(self, message: str) -> Optional[str]:
+        if not self.prover:
+            return None
+        hashed = self.prover.hash(message)
+        return self.prover.sign(hashed).hex()
 
     def _export_logs(self, api_key: str, agent_id: str, agent_instance_id: str, formatted_logs: List[Dict]) -> bool:
         is_export_success = False
@@ -98,12 +117,3 @@ class LogsExportHandler(logging.Handler):
             except Exception:
                 self.logger.error("Failed to export logs", exc_info=True)
         return is_export_success
-
-    def _format_timestamp(self, asctime: Optional[str]) -> int:
-        if not asctime:
-            return 0
-        try:
-            dt_obj = datetime.strptime(asctime, "%Y-%m-%d %H:%M:%S,%f").replace(tzinfo=timezone.utc)
-            return int(dt_obj.timestamp())
-        except Exception:
-            return 0

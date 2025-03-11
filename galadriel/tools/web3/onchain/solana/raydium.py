@@ -133,7 +133,7 @@ class SwapTokenTool(SolanaBaseTool):
 
 
 if __name__ == "__main__":
-    init_logging(False)
+    init_logging(None, False)
     wallet = SolanaWallet(key_path=os.getenv("SOLANA_KEY_PATH"))  # type: ignore
     swap_tool = SwapTokenTool(wallet)
     res = swap_tool.forward(
