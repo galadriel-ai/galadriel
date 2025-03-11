@@ -38,8 +38,7 @@ Common token addresses:
 - BONK: "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263"
 - JUP: "JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN"
 
-When you get new question, see memory for previous answers. Here is the chat history: \n\n {{chat_history}} \n 
-Answer this: {{request}}
+Answer this: {{task}}
 """
 
 solana_wallet = SolanaWallet(key_path=os.getenv("SOLANA_KEY_PATH"))
@@ -54,7 +53,7 @@ trading_agent = CodeAgent(
     ],
     max_steps=4,
     verbosity_level=2,
-    name="trading_chat",
+    name="trading_agent",
     description="""A team member that can execute any onchain operation like tokens swap.
 """,
     provide_run_summary=True,

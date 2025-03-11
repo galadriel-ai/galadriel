@@ -129,9 +129,7 @@ class CodeAgent(Agent, InternalCodeAgent):
     async def execute(  # type: ignore
         self, request: Message, memory: Optional[str] = None, stream: bool = False
     ) -> AsyncGenerator[Message, None]:
-        # Make sure memory has a default empty string value
-        chat_history = memory or ""
-        request_dict = {"request": request.content, "chat_history": chat_history}
+        request_dict = {"request": request.content, "chat_history": memory}
         formatted_task = format_prompt.execute(self.prompt_template, request_dict)
 
         if not stream:
@@ -196,7 +194,7 @@ class ToolCallingAgent(Agent, InternalToolCallingAgent):
     async def execute(  # type: ignore
         self, request: Message, memory: Optional[str] = None, stream: bool = False
     ) -> AsyncGenerator[Message, None]:
-        request_dict = {"request": request.content, "chat_history": memory or ""}
+        request_dict = {"request": request.content, "chat_history": memory}
         formatted_task = format_prompt.execute(self.prompt_template, request_dict)
 
         if not stream:
