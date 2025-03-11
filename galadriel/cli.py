@@ -88,7 +88,11 @@ def publish(image_name: str) -> None:
 
 @agent.command()
 @click.option("--image-name", default="agent", help="Name of the Docker image")
-def deploy(image_name: str) -> None:
+@click.option("--skip-build", is_flag=True, default=False, help="Skips building Agent's Docker image.")
+@click.option(
+    "--skip-publish", is_flag=True, default=False, help="Skips publishing Agent's Docker image to Docker Hub."
+)
+def deploy(image_name: str, skip_build: bool, skip_publish: bool) -> None:
     """Build, publish and deploy the agent."""
 
     if not os.path.exists(".agents.env"):
@@ -104,15 +108,17 @@ def deploy(image_name: str) -> None:
     try:
         docker_username, docker_password = _assert_config_files(image_name=image_name)
 
-        click.echo("Building agent...")
-        _build_image(docker_username=docker_username)
+        if not skip_build:
+            click.echo("Building agent...")
+            _build_image(docker_username=docker_username)
 
-        click.echo("Publishing agent...")
-        _publish_image(
-            image_name=image_name,
-            docker_username=docker_username,
-            docker_password=docker_password,
-        )
+        if not skip_publish:
+            click.echo("Publishing agent...")
+            _publish_image(
+                image_name=image_name,
+                docker_username=docker_username,
+                docker_password=docker_password,
+            )
 
         click.echo("Deploying agent to Galadriel network...")
         agent_id = _galadriel_deploy(image_name, docker_username, galadriel_api_key)
