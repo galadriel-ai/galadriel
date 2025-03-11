@@ -2,12 +2,13 @@ import base64
 import hashlib
 import json
 import os
+from urllib.parse import urljoin
 from typing import Optional
 
 import requests
 from cryptography.hazmat.primitives import serialization
 
-from galadriel.entities import Message, Proof
+from galadriel.entities import GALADRIEL_API_BASE_URL, Message, Proof
 from galadriel.logging_utils import get_agent_logger
 from galadriel.docker.galadriel_base_image.enclave_services.nsm_util import NSMUtil
 
@@ -19,13 +20,17 @@ PUBLIC_KEY_PATH = "/public_key.pem"
 
 class Prover:
     def __init__(self):
+        self.authorization = self._get_authorization()
+        if self.authorization is None:
+            raise ValueError("GALADRIEL_API_KEY is not set")
         with open(PRIVATE_KEY_PATH, "rb") as priv_file:
             self.private_key = serialization.load_pem_private_key(data=priv_file.read(), password=None)
 
         with open(PUBLIC_KEY_PATH, "rb") as pub_file:
             self.public_key = serialization.load_pem_public_key(data=pub_file.read())
             self.public_key_bytes = self.public_key.public_bytes(
-                encoding=serialization.Encoding.Raw, format=serialization.PublicFormat.Raw
+                encoding=serialization.Encoding.Raw,
+                format=serialization.PublicFormat.Raw,
             )
         self.nsm_util = NSMUtil()
 
@@ -59,11 +64,11 @@ class Prover:
         return hashlib.sha256(combined_str.encode("utf-8")).digest()
 
     async def publish_proof(self, request: Message, response: Message, proof: Proof) -> bool:
-        url = "https://api.galadriel.com/v1/verified/chat/log"
+        url = urljoin(GALADRIEL_API_BASE_URL, "/verified/chat/log")
         headers = {
             "accept": "application/json",
             "Content-Type": "application/json",
-            "Authorization": self._get_authorization(),
+            "Authorization": self.authorization,
         }
         data = {
             "attestation": proof.attestation,

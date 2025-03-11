@@ -1,10 +1,11 @@
 import base64
 from unittest.mock import mock_open, patch
+from urllib.parse import urljoin
 import pytest
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
-from galadriel.entities import Message, Proof
+from galadriel.entities import GALADRIEL_API_BASE_URL, Message, Proof
 from galadriel.proof.prover import Prover
 
 
@@ -45,7 +46,10 @@ def mock_files(mock_private_key, mock_public_key):
 
 @pytest.fixture
 def prover(mock_files):
-    with patch("galadriel.proof.prover.NSMUtil") as mock_nsm:
+    with (
+        patch("galadriel.proof.prover.NSMUtil") as mock_nsm,
+        patch.dict("os.environ", {"GALADRIEL_API_KEY": "test_key"}),
+    ):
         mock_nsm.return_value.get_attestation_doc.return_value = b"mock_attestation_doc"
         yield Prover()
 
@@ -121,14 +125,13 @@ async def test_publish_proof_success(prover):
         proof = await prover.generate_proof(request, response)
 
         # Execute
-        with patch.dict("os.environ", {"GALADRIEL_API_KEY": "test_key"}):
-            result = await prover.publish_proof(request, response, proof)
+        result = await prover.publish_proof(request, response, proof)
 
         # Assert
         assert result is True
         mock_post.assert_called_once()
         call_args = mock_post.call_args
-        assert call_args[0][0] == "https://api.galadriel.com/v1/verified/chat/log"
+        assert call_args[0][0] == urljoin(GALADRIEL_API_BASE_URL, "/verified/chat/log")
         assert call_args[1]["headers"]["Authorization"] == "Bearer test_key"
 
 
@@ -151,13 +154,12 @@ async def test_publish_proof_failure(prover):
 
 def test_get_authorization_with_key(prover):
     """Test authorization header generation with API key"""
-    # Setup
-    with patch.dict("os.environ", {"GALADRIEL_API_KEY": "test_key"}):
-        # Execute
-        auth = prover._get_authorization()
 
-        # Assert
-        assert auth == "Bearer test_key"
+    # Execute
+    auth = prover._get_authorization()
+
+    # Assert
+    assert auth == "Bearer test_key"
 
 
 def test_get_authorization_without_key(prover):
@@ -169,3 +171,9 @@ def test_get_authorization_without_key(prover):
 
         # Assert
         assert auth is None
+
+
+def test_no_authorization_during_init():
+    """Test initialization without API key"""
+    with pytest.raises(ValueError, match="GALADRIEL_API_KEY is not set"):
+        Prover()
