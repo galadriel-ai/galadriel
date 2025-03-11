@@ -41,7 +41,6 @@ anchorpy = "^0.20.0"
 dextools-python = "^0.3.2"
 litellm = {version = "^1.58.2"}
 gradio = "^5.15.0"
-docker = "7.1.0"
 audioop-lts = { version = "^0.2.1", python = "^3.13" }
 ruff = { version = "^0.9.6", optional = true }
 mypy = { version = "^1.11.2", optional = true }

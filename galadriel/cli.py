@@ -4,7 +4,6 @@ import os
 import re
 import shutil
 import subprocess
-import docker
 from pathlib import Path
 from typing import List
 from typing import Optional
@@ -528,15 +527,6 @@ def _get_image_hash(image_name: str) -> str:
 
 def _publish_image(image_name: str, docker_username: str, docker_password: str) -> None:
     """Core logic to publish the Docker image to the Docker Hub."""
-
-    # Login to Docker Hub
-    click.echo("Logging into Docker Hub API to manage repositories...")
-    try:
-        client = docker.from_env()
-        client.login(username=docker_username, password=docker_password)
-        click.echo("Successfully logged into Docker Hub API")
-    except docker.errors.APIError as e:
-        raise click.ClickException(f"Login to Docker Hub API failed: {str(e)}")
 
     # Get authentication token
     token_response = requests.post(
