@@ -442,7 +442,7 @@ def _build_image(docker_username: str) -> None:
         )
         image_size = result.stdout.strip()
 
-        click.echo("Successfully built Docker image!")
+        click.echo("Agent's Docker image built successfully")
         click.echo("Image details:")
         click.echo(f"  - Repository: {full_image_name}")
         click.echo(f"  - Image ID: {image_id}")
@@ -519,13 +519,13 @@ def _publish_image(image_name: str, docker_username: str, docker_password: str) 
     """Core logic to publish the Docker image to the Docker Hub."""
 
     # Login to Docker Hub
-    click.echo("Logging into Docker Hub...")
+    click.echo("Logging into Docker Hub API to manage repositories...")
     try:
         client = docker.from_env()
         client.login(username=docker_username, password=docker_password)
-        click.echo("Successfully logged into Docker Hub")
+        click.echo("Successfully logged into Docker Hub API")
     except docker.errors.APIError as e:
-        raise click.ClickException(f"Docker login failed: {str(e)}")
+        raise click.ClickException(f"Login to Docker Hub API failed: {str(e)}")
 
     # Get authentication token
     token_response = requests.post(
@@ -533,10 +533,10 @@ def _publish_image(image_name: str, docker_username: str, docker_password: str) 
         json={"username": docker_username, "password": docker_password},
         timeout=REQUEST_TIMEOUT,
     )
-    
+
     if token_response.status_code != 200:
         raise click.ClickException(f"Failed to authenticate with Docker Hub: {token_response.text}")
-    
+
     token = token_response.json()["token"]
 
     # Check if repository exists
@@ -545,7 +545,7 @@ def _publish_image(image_name: str, docker_username: str, docker_password: str) 
         headers={"Authorization": f"JWT {token}"},
         timeout=REQUEST_TIMEOUT,
     )
-    
+
     if check_repo_response.status_code == 404:
         # Repository doesn't exist, create it
         click.echo(f"Creating repository {docker_username}/{image_name}...")
@@ -558,7 +558,7 @@ def _publish_image(image_name: str, docker_username: str, docker_password: str) 
             json={"namespace": docker_username, "name": image_name, "is_private": False},
             timeout=REQUEST_TIMEOUT,
         )
-        
+
         if create_repo_response.status_code not in [200, 201]:
             click.echo(f"Warning: Failed to create repository: {create_repo_response.text}")
         else:
@@ -567,12 +567,28 @@ def _publish_image(image_name: str, docker_username: str, docker_password: str) 
         click.echo(f"Repository {docker_username}/{image_name} already exists")
     else:
         click.echo(f"Warning: Unexpected response when checking repository: {check_repo_response.text}")
-        
+
     # Push image to Docker Hub
+    click.echo(f"Pushing Docker image {docker_username}/{image_name}:latest ...")
+
+    # Login to Docker Hub to publish the image
+
+    click.echo("Login to Docker Hub for publishing image ...")
+    try:
+        subprocess.run(
+            ["docker", "login", "-u", docker_username, "-p", docker_password, "docker.io"],
+            check=True,
+            stderr=subprocess.DEVNULL,  # Silence the warning of passing password on the command line. This is not a problem since we are using it on local machine.
+        )
+        click.echo("Successfully logged into Docker Hub")
+    except subprocess.CalledProcessError:
+        click.echo("Failed to login to Docker Hub")
+        raise
+
     click.echo(f"Pushing Docker image {docker_username}/{image_name}:latest ...")
     subprocess.run(["docker", "push", f"{docker_username}/{image_name}:latest"], check=True)
 
-    click.echo("Successfully pushed Docker image!")
+    click.echo("Agent's Docker image published successfully to Docker Hub")
 
 
 def _galadriel_deploy(image_name: str, docker_username: str) -> Optional[str]:
