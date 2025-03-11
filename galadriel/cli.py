@@ -527,25 +527,47 @@ def _publish_image(image_name: str, docker_username: str, docker_password: str) 
     except docker.errors.APIError as e:
         raise click.ClickException(f"Docker login failed: {str(e)}")
 
-    # Create repository if it doesn't exist
-    click.echo(f"Creating repository {docker_username}/{image_name} if it doesn't exist...")
-    create_repo_url = f"https://hub.docker.com/v2/repositories/{docker_username}/{image_name}"
+    # Get authentication token
     token_response = requests.post(
         "https://hub.docker.com/v2/users/login/",
         json={"username": docker_username, "password": docker_password},
         timeout=REQUEST_TIMEOUT,
     )
-    if token_response.status_code == 200:
-        token = token_response.json()["token"]
-        requests.post(
-            create_repo_url,
+    
+    if token_response.status_code != 200:
+        raise click.ClickException(f"Failed to authenticate with Docker Hub: {token_response.text}")
+    
+    token = token_response.json()["token"]
+
+    # Check if repository exists
+    check_repo_response = requests.get(
+        f"https://hub.docker.com/v2/repositories/{docker_username}/{image_name}",
+        headers={"Authorization": f"JWT {token}"},
+        timeout=REQUEST_TIMEOUT,
+    )
+    
+    if check_repo_response.status_code == 404:
+        # Repository doesn't exist, create it
+        click.echo(f"Creating repository {docker_username}/{image_name}...")
+        create_repo_response = requests.post(
+            "https://hub.docker.com/v2/repositories/",
             headers={
                 "Content-Type": "application/json",
                 "Authorization": f"JWT {token}",
             },
-            json={"name": image_name, "is_private": False},
+            json={"namespace": docker_username, "name": image_name, "is_private": False},
             timeout=REQUEST_TIMEOUT,
         )
+        
+        if create_repo_response.status_code not in [200, 201]:
+            click.echo(f"Warning: Failed to create repository: {create_repo_response.text}")
+        else:
+            click.echo(f"Successfully created repository {docker_username}/{image_name}")
+    elif check_repo_response.status_code == 200:
+        click.echo(f"Repository {docker_username}/{image_name} already exists")
+    else:
+        click.echo(f"Warning: Unexpected response when checking repository: {check_repo_response.text}")
+        
     # Push image to Docker Hub
     click.echo(f"Pushing Docker image {docker_username}/{image_name}:latest ...")
     subprocess.run(["docker", "push", f"{docker_username}/{image_name}:latest"], check=True)
