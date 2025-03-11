@@ -13,18 +13,17 @@ from smolagents import CodeAgent as InternalCodeAgent
 from smolagents import ToolCallingAgent as InternalToolCallingAgent
 from smolagents import ActionStep
 
-from galadriel.domain import generate_proof
-from galadriel.domain import publish_proof
 from galadriel.domain.extract_step_logs import pull_messages_from_step
 from galadriel.domain.validate_solana_payment import SolanaPaymentValidator
 from galadriel.domain.prompts import format_prompt
-from galadriel.entities import Message
+from galadriel.entities import Message, Proof
 from galadriel.entities import Pricing
 from galadriel.entities import PushOnlyQueue
 from galadriel.errors import PaymentValidationError
 from galadriel.logging_utils import init_logging
 from galadriel.logging_utils import get_agent_logger
 from galadriel.memory.memory_store import MemoryStore
+from galadriel.proof.prover import Prover
 from galadriel.state.agent_state_repository import AgentStateRepository
 
 logger = get_agent_logger()
@@ -83,12 +82,13 @@ class AgentOutput:
     to their final destination.
     """
 
-    async def send(self, request: Message, response: Message) -> None:
+    async def send(self, request: Message, response: Message, proof: Optional[Proof] = None) -> None:
         """Send a processed response to its destination.
 
         Args:
             request (Message): The original request that generated the response
             response (Message): The response to be delivered
+            proof (Proof): The proof of the response's authenticity
         """
 
 
@@ -258,6 +258,11 @@ class AgentRuntime:
         self.enable_logs = enable_logs
         self.shutdown_event = asyncio.Event()
         self.agent_state_repository = AgentStateRepository()
+        try:
+            self.prover: Optional[Prover] = Prover()
+        except Exception as e:
+            self.prover = None
+            logger.error(f"Error initializing prover: {e}. Proofs will not be generated.")
         env_path = Path(".") / ".env"
         _load_dotenv(dotenv_path=env_path)
         # AgentConfig should have some settings for debug?
@@ -338,6 +343,7 @@ class AgentRuntime:
         # Run the agent if payment validation passed or not required
         if task_and_payment or not self.solana_payment_validator.pricing:
             memories = None
+            proof: Optional[Proof] = None
             if self.memory_store:
                 try:
                     memories = await self.memory_store.get_memories(prompt=request.content)
@@ -345,17 +351,22 @@ class AgentRuntime:
                     logger.error(f"Error getting memories: {e}")
             try:
                 async for response in self.agent.execute(request, memories, stream=stream):  # type: ignore
+                    if response.final and self.prover:
+                        proof = await self.prover.generate_proof(request, response)
                     for output in self.outputs:
                         try:
-                            await output.send(request, response)
+                            await output.send(request, response, proof)
                         except Exception:
-                            logger.error("Failed to send streaming response via output", exc_info=True)
+                            logger.error(
+                                "Failed to send streaming response via output",
+                                exc_info=True,
+                            )
             except Exception:
                 logger.error("Error during agent execution", exc_info=True)
         # Send the response to the outputs
         if response:
-            # proof = await self._generate_proof(request, response)
-            # await self._publish_proof(request, response, proof)
+            if proof and self.prover:
+                await self.prover.publish_proof(request, response, proof)
             if self.memory_store:
                 try:
                     await self.memory_store.add_memory(request=request, response=response)
@@ -386,12 +397,6 @@ class AgentRuntime:
         if self.memory_store:
             return self.memory_store.save_data_locally(file_name)
         return None
-
-    async def _generate_proof(self, request: Message, response: Message) -> str:
-        return generate_proof.execute(request, response)
-
-    async def _publish_proof(self, request: Message, response: Message, proof: str):
-        publish_proof.execute(request, response, proof)
 
     async def _load_agent_state(self):
         """Load agent state from persistent storage if available."""
@@ -437,7 +442,10 @@ class AgentRuntime:
 
 
 async def stream_agent_response(
-    agent_run, conversation_id: str, additional_kwargs: Optional[Dict] = None, model=None
+    agent_run,
+    conversation_id: str,
+    additional_kwargs: Optional[Dict] = None,
+    model=None,
 ) -> AsyncGenerator[Message, None]:
     """Stream responses from an agent run.
 
@@ -458,13 +466,19 @@ async def stream_agent_response(
                 step_log.input_token_count = model.last_input_token_count
                 step_log.output_token_count = model.last_output_token_count
         async for message in pull_messages_from_step(
-            step_log, conversation_id=conversation_id, additional_kwargs=additional_kwargs
+            step_log,
+            conversation_id=conversation_id,
+            additional_kwargs=additional_kwargs,
         ):
             yield message
     # final message
     yield Message(
         content=f"\n**Final answer:**\n{step_log.to_string()}\n",
         conversation_id=conversation_id,
-        additional_kwargs={**(additional_kwargs or {}), "role": "assistant", "type": "completion_message"},
+        additional_kwargs={
+            **(additional_kwargs or {}),
+            "role": "assistant",
+            "type": "completion_message",
+        },
         final=True,
     )
