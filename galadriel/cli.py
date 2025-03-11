@@ -416,12 +416,12 @@ build-backend = "poetry.core.masonry.api"
 
 def _build_image(docker_username: str) -> None:
     """Core logic to build the Docker image."""
-    image_name = os.environ['IMAGE_NAME']
+    image_name = os.environ["IMAGE_NAME"]
     full_image_name = f"{docker_username}/{image_name}"
-    
+
     click.echo(f"Building Docker image with tag {full_image_name}...")
     subprocess.run(["docker-compose", "build"], check=True)
-    
+
     # Get additional image information
     try:
         # Get image ID
@@ -432,7 +432,7 @@ def _build_image(docker_username: str) -> None:
             text=True,
         )
         image_id = result.stdout.strip()
-        
+
         # Get image size
         result = subprocess.run(
             ["docker", "images", "--format", "{{.Size}}", full_image_name],
@@ -441,9 +441,9 @@ def _build_image(docker_username: str) -> None:
             text=True,
         )
         image_size = result.stdout.strip()
-        
+
         click.echo("Successfully built Docker image!")
-        click.echo(f"Image details:")
+        click.echo("Image details:")
         click.echo(f"  - Repository: {full_image_name}")
         click.echo(f"  - Image ID: {image_id}")
         click.echo(f"  - Size: {image_size}")
