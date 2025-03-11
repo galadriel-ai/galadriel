@@ -7,6 +7,7 @@ from typing import Optional
 from pythonjsonlogger import jsonlogger
 
 from galadriel.domain.logs_exporter import LogsExportHandler
+from galadriel.proof.prover import Prover
 
 GALADRIEL_NODE_LOGGER = "galadriel"
 
@@ -16,7 +17,7 @@ LOGGING_MESSAGE_FORMAT = "%(asctime)s %(name)-12s %(levelname)s %(message)s"
 logger: Optional[logging.Logger] = None
 
 
-def init_logging(debug: bool):
+def init_logging(prover: Optional[Prover], debug: bool):
     global logger  # pylint:disable=W0603
     if logger:
         return
@@ -24,7 +25,7 @@ def init_logging(debug: bool):
     file_handler = _get_file_logger()
     console_handler = _get_console_logger()
     logger = logging.getLogger()
-    logs_exports_handler = LogsExportHandler(logger)
+    logs_exports_handler = LogsExportHandler(logger, prover)
     logger.setLevel(log_level)
     logger.addHandler(console_handler)
     logger.addHandler(file_handler)
