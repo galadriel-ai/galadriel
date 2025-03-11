@@ -4,7 +4,6 @@ import os
 import re
 import shutil
 import subprocess
-import docker
 from pathlib import Path
 from typing import List
 from typing import Optional
@@ -91,6 +90,17 @@ def publish(image_name: str) -> None:
 @click.option("--image-name", default="agent", help="Name of the Docker image")
 def deploy(image_name: str) -> None:
     """Build, publish and deploy the agent."""
+
+    if not os.path.exists(".agents.env"):
+        raise click.ClickException(
+            "Agent requires .agents.env which contains all environment variables the Agent will use when it runs in the network. This file is missing. Rename .template.agents.env or create your own."
+        )
+
+    load_dotenv(dotenv_path=Path(".") / ".env")
+    galadriel_api_key = os.getenv("GALADRIEL_API_KEY")
+    if not galadriel_api_key:
+        raise click.ClickException("GALADRIEL_API_KEY not found in environment")
+
     try:
         docker_username, docker_password = _assert_config_files(image_name=image_name)
 
@@ -104,8 +114,8 @@ def deploy(image_name: str) -> None:
             docker_password=docker_password,
         )
 
-        click.echo("Deploying agent...")
-        agent_id = _galadriel_deploy(image_name, docker_username)
+        click.echo("Deploying agent to Galadriel network...")
+        agent_id = _galadriel_deploy(image_name, docker_username, galadriel_api_key)
         if not agent_id:
             raise click.ClickException("Failed to deploy agent")
         click.echo(f"Successfully deployed agent! Agent ID: {agent_id}")
@@ -442,7 +452,7 @@ def _build_image(docker_username: str) -> None:
         )
         image_size = result.stdout.strip()
 
-        click.echo("Successfully built Docker image!")
+        click.echo("Agent's Docker image built successfully")
         click.echo("Image details:")
         click.echo(f"  - Repository: {full_image_name}")
         click.echo(f"  - Image ID: {image_id}")
@@ -518,53 +528,74 @@ def _get_image_hash(image_name: str) -> str:
 def _publish_image(image_name: str, docker_username: str, docker_password: str) -> None:
     """Core logic to publish the Docker image to the Docker Hub."""
 
-    # Login to Docker Hub
-    click.echo("Logging into Docker Hub...")
-    try:
-        client = docker.from_env()
-        client.login(username=docker_username, password=docker_password)
-        click.echo("Successfully logged into Docker Hub")
-    except docker.errors.APIError as e:
-        raise click.ClickException(f"Docker login failed: {str(e)}")
-
-    # Create repository if it doesn't exist
-    click.echo(f"Creating repository {docker_username}/{image_name} if it doesn't exist...")
-    create_repo_url = f"https://hub.docker.com/v2/repositories/{docker_username}/{image_name}"
+    # Get authentication token
     token_response = requests.post(
         "https://hub.docker.com/v2/users/login/",
         json={"username": docker_username, "password": docker_password},
         timeout=REQUEST_TIMEOUT,
     )
-    if token_response.status_code == 200:
-        token = token_response.json()["token"]
-        requests.post(
-            create_repo_url,
+
+    if token_response.status_code != 200:
+        raise click.ClickException(f"Failed to authenticate with Docker Hub: {token_response.text}")
+
+    token = token_response.json()["token"]
+
+    # Check if repository exists
+    check_repo_response = requests.get(
+        f"https://hub.docker.com/v2/repositories/{docker_username}/{image_name}",
+        headers={"Authorization": f"JWT {token}"},
+        timeout=REQUEST_TIMEOUT,
+    )
+
+    if check_repo_response.status_code == 404:
+        # Repository doesn't exist, create it
+        click.echo(f"Creating repository {docker_username}/{image_name}...")
+        create_repo_response = requests.post(
+            "https://hub.docker.com/v2/repositories/",
             headers={
                 "Content-Type": "application/json",
                 "Authorization": f"JWT {token}",
             },
-            json={"name": image_name, "is_private": False},
+            json={"namespace": docker_username, "name": image_name, "is_private": False},
             timeout=REQUEST_TIMEOUT,
         )
+
+        if create_repo_response.status_code not in [200, 201]:
+            click.echo(f"Warning: Failed to create repository: {create_repo_response.text}")
+        else:
+            click.echo(f"Successfully created repository {docker_username}/{image_name}")
+    elif check_repo_response.status_code == 200:
+        click.echo(f"Repository {docker_username}/{image_name} already exists")
+    else:
+        click.echo(f"Warning: Unexpected response when checking repository: {check_repo_response.text}")
+
     # Push image to Docker Hub
+    click.echo(f"Pushing Docker image {docker_username}/{image_name}:latest ...")
+
+    # Login to Docker Hub to publish the image
+
+    click.echo("Login to Docker Hub for publishing image ...")
+    try:
+        subprocess.run(
+            ["docker", "login", "-u", docker_username, "-p", docker_password, "docker.io"],
+            check=True,
+            stderr=subprocess.DEVNULL,  # Silence the warning of passing password on the command line. This is not a problem since we are using it on local machine.
+        )
+        click.echo("Successfully logged into Docker Hub")
+    except subprocess.CalledProcessError:
+        click.echo("Failed to login to Docker Hub")
+        raise
+
     click.echo(f"Pushing Docker image {docker_username}/{image_name}:latest ...")
     subprocess.run(["docker", "push", f"{docker_username}/{image_name}:latest"], check=True)
 
-    click.echo("Successfully pushed Docker image!")
+    click.echo("Agent's Docker image published successfully to Docker Hub")
 
 
-def _galadriel_deploy(image_name: str, docker_username: str) -> Optional[str]:
+def _galadriel_deploy(image_name: str, docker_username: str, galadriel_api_key: str) -> Optional[str]:
     """Deploy agent to Galadriel platform."""
 
-    if not os.path.exists(".agents.env"):
-        raise click.ClickException("No .agents.env file found in current directory. Please create one.")
-
     env_vars = dict(dotenv_values(".agents.env"))
-
-    load_dotenv(dotenv_path=Path(".") / ".env")
-    api_key = os.getenv("GALADRIEL_API_KEY")
-    if not api_key:
-        raise click.ClickException("GALADRIEL_API_KEY not found in environment")
 
     docker_image = f"{docker_username}/{image_name}:latest"
     image_hash = _get_image_hash(docker_image)
@@ -577,7 +608,7 @@ def _galadriel_deploy(image_name: str, docker_username: str) -> Optional[str]:
     }
     headers = {
         "Content-Type": "application/json",
-        "Authorization": f"Bearer {api_key}",
+        "Authorization": f"Bearer {galadriel_api_key}",
         "accept": "application/json",
     }
     response = requests.post(
