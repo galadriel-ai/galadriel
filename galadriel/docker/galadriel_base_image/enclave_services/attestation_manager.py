@@ -20,14 +20,14 @@ class AttestationManager:
     def _initialize_keypair(self):
         """Generate and store the Ed25519 keypair if it doesn't exist."""
         if not os.path.exists(self.PRIVATE_KEY_FILE) or not os.path.exists(self.PUBLIC_KEY_FILE):
-            private_key = Ed25519PrivateKey.generate()
-            public_key = private_key.public_key()
+            self.private_key = Ed25519PrivateKey.generate()
+            self.public_key = self.private_key.public_key()
 
             # Serialize and store the private key
             with open(self.PRIVATE_KEY_FILE, "wb") as priv_file:
                 print(f"Storing private key in {self.PRIVATE_KEY_FILE}")
                 priv_file.write(
-                    private_key.private_bytes(
+                    self.private_key.private_bytes(
                         encoding=serialization.Encoding.PEM,
                         format=serialization.PrivateFormat.PKCS8,
                         encryption_algorithm=serialization.NoEncryption(),
@@ -38,7 +38,7 @@ class AttestationManager:
             with open(self.PUBLIC_KEY_FILE, "wb") as pub_file:
                 print(f"Storing public key in {self.PUBLIC_KEY_FILE}")
                 pub_file.write(
-                    public_key.public_bytes(
+                    self.public_key.public_bytes(
                         encoding=serialization.Encoding.PEM,
                         format=serialization.PublicFormat.SubjectPublicKeyInfo,
                     )
@@ -48,8 +48,10 @@ class AttestationManager:
 
     def _get_public_key(self) -> bytes:
         """Retrieve the public key from the stored file."""
-        with open(self.PUBLIC_KEY_FILE, "rb") as pub_file:
-            return pub_file.read()
+        return self.public_key.public_bytes(
+            encoding=serialization.Encoding.Raw,
+            format=serialization.PublicFormat.Raw,
+        )
 
     def handle_request(self, data: str) -> str:
         """Process the request."""
