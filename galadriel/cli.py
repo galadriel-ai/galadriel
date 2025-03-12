@@ -770,7 +770,7 @@ def _get_installed_galadriel_version() -> str:
     Get the installed galadriel package version.
 
     Returns:
-        The version string (e.g., "0.0.11")
+        The version string (e.g., "0.0.15")
     """
     try:
         import importlib.metadata
@@ -778,5 +778,5 @@ def _get_installed_galadriel_version() -> str:
         return importlib.metadata.version("galadriel")
     except Exception as e:
         click.echo(f"Failed to get installed galadriel version: {e}")
-        click.echo("Falling back to default version 0.0.11")
-        return "0.0.11"
+        click.echo("Falling back to default version 0.0.15")
+        return "0.0.15"

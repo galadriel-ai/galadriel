@@ -1,22 +1,18 @@
-# Galadriel Agent
-
-## Setup
-```shell
-pip install galadriel
-galadriel agent init
-```
-
-## Run your agent
-```shell
-cd {your_agent_name}
-python agent.py
-```
-
 # Galadriel Agent CLI
 
-Command-line interface for creating, building, and managing Galadriel agents.
+Command-line interface for creating, building, and deploying autonomous agents to Galadriel's agent network. This tool helps you manage the entire agent lifecycle - from initialization and development to deployment and monitoring. It also provides wallet management commands for creating and managing Solana wallets to interact with the Galadriel network.
 
-## Commands
+## Setup
+
+### Installation
+
+Install the Galadriel package using pip:
+
+```bash
+pip install galadriel
+```
+
+## Agent Commands
 
 ### Initialize a New Agent
 Create a new agent project with all necessary files and structure.
@@ -25,9 +21,6 @@ galadriel agent init
 ```
 This will prompt you for:
 - Agent name
-- Docker username (can set up with random values to start off with)
-- Docker password (can set up with random values to start off with)
-- Galadriel API key
 
 The command creates:
 - Basic agent structure
@@ -52,21 +45,23 @@ Options:
 - `--image-name`: Name for the Docker image (default: "agent")
 
 ### Deploy Agent
-Deploy the agent to the Galadriel platform.
+Build, publish and deploy the agent to the Galadriel platform.
 ```
-galadriel agent deploy [--image-name NAME]
+galadriel agent deploy [--image-name NAME] [--skip-build] [--skip-publish]
 ```
 Options:
 - `--image-name`: Name for the Docker image (default: "agent")
+- `--skip-build`: Skip building the Docker image
+- `--skip-publish`: Skip publishing the Docker image to Docker Hub
 
 ### Update Agent
 Update an existing agent on the Galadriel platform.
 ```
-galadriel agent update [--image-name NAME] [--agent-id AGENT_ID]
+galadriel agent update --agent-id AGENT_ID [--image-name NAME]
 ```
 Options:
-- `--image-name`: Name for the Docker image (default: "agent")
 - `--agent-id`: ID of the agent to update
+- `--image-name`: Name for the Docker image (default: "agent")
 
 ### Get Agent State
 Retrieve the current state of a deployed agent.
@@ -79,7 +74,7 @@ Required:
 ### List All Agents
 Get information about all deployed agents.
 ```
-galadriel agent states
+galadriel agent list
 ```
 
 ### Destroy Agent
@@ -89,6 +84,33 @@ galadriel agent destroy AGENT_ID
 ```
 Required:
 - `AGENT_ID`: ID of the agent to destroy
+
+## Wallet Commands
+
+### Create Wallet
+Create a new Solana wallet.
+```
+galadriel wallet create [--path PATH]
+```
+Options:
+- `--path`: Path to save the wallet key file (default: "~/.galadriel/solana/default_key.json")
+
+### Import Wallet
+Import an existing wallet.
+```
+galadriel wallet import [--private-key KEY] [--path PATH]
+```
+Options:
+- `--private-key`: Private key of the wallet to import in JSON format
+- `--path`: Path to the wallet key file to import
+
+Note: You must provide either `--private-key` or `--path`, but not both.
+
+### Request Airdrop
+Request an airdrop of 0.001 SOL to your Solana wallet.
+```
+galadriel wallet airdrop
+```
 
 ## Configuration Files
 
@@ -104,8 +126,9 @@ GALADRIEL_API_KEY=your_api_key
 Environment variables for the agent runtime (do not include deployment credentials):
 ```
 # Example
-OPENAI_API_KEY=your_key
-DATABASE_URL=your_url
+LLM_API_KEY=your_key
+LLM_MODEL=your_model
+SOLANA_KEY_PATH=path_to_your_solana_key
 ```
 
 ## Examples
@@ -113,13 +136,22 @@ DATABASE_URL=your_url
 Create and deploy a new agent:
 ```
 # Initialize new agent
-galadriel init
+galadriel agent init
 
 # Build and deploy
-galadriel deploy --image-name my-agent
+galadriel agent deploy --image-name my-agent
 
 # Check agent status
-galadriel state --agent-id your-agent-id
+galadriel agent state --agent-id your-agent-id
+```
+
+Create and manage a wallet:
+```
+# Create a new wallet
+galadriel wallet create
+
+# Request an airdrop
+galadriel wallet airdrop
 ```
 
 ## Error Handling
