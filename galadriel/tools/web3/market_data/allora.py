@@ -2,7 +2,7 @@ import json
 import logging
 import os
 import asyncio
-from typing import Dict, Any, List
+from typing import Any
 from abc import ABC
 
 from allora_sdk.v2.api_client import (
@@ -75,7 +75,7 @@ class AlloraListTopicsTool(AlloraBaseTool):
 
     name = "allora_list_topics"
     description = "List all available Allora Network topics for market forecasting"
-    inputs = {}
+    inputs = {}  # type: ignore
     output_type = "string"
 
     def forward(self) -> str:  # pylint: disable=W0221
@@ -100,9 +100,7 @@ class AlloraGetInferenceTool(AlloraBaseTool):
 
     name = "allora_get_inference"
     description = "Get market forecasting inference from Allora Network for a specific topic"
-    inputs = {
-        "topic_id": {"type": "integer", "description": "The ID of the topic to get inference for"}
-    }
+    inputs = {"topic_id": {"type": "integer", "description": "The ID of the topic to get inference for"}}
     output_type = "string"
 
     def forward(self, topic_id: int) -> str:  # pylint: disable=W0221
@@ -129,9 +127,7 @@ class AlloraGetPriceInferenceTool(AlloraBaseTool):
     """
 
     name = "allora_get_price_inference"
-    description = (
-        "Get price inference from Allora Network for a specific cryptocurrency and timeframe"
-    )
+    description = "Get price inference from Allora Network for a specific cryptocurrency and timeframe"
     inputs = {
         "token": {
             "type": "string",
@@ -169,9 +165,7 @@ class AlloraGetPriceInferenceTool(AlloraBaseTool):
                 "timeframe": timeframe,
                 "inference": response.inference_data.network_inference_normalized,
                 "confidence_intervals": {
-                    "percentiles": (
-                        response.inference_data.confidence_interval_percentiles_normalized
-                    ),
+                    "percentiles": (response.inference_data.confidence_interval_percentiles_normalized),
                     "values": response.inference_data.confidence_interval_values_normalized,
                 },
                 "timestamp": response.inference_data.timestamp,
