@@ -156,6 +156,42 @@ def state(agent_id: str):
 
 
 @agent.command()
+@click.option("--agent-id", help="ID of the agent to update metadata for")
+def metadata(agent_id: str):
+    """Update metadata for a deployed agent."""
+    load_dotenv(dotenv_path=Path(".") / ".env", override=True)
+    api_key = os.getenv("GALADRIEL_API_KEY")
+    if not api_key:
+        raise click.ClickException("GALADRIEL_API_KEY not found in environment")
+
+    description = input("Agent description (empty for none): ")
+    client_url = input("Agent client URL (empty for none): ")
+
+    try:
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {api_key}",
+            "accept": "application/json",
+        }
+        response = requests.post(
+            f"{API_BASE_URL}/agents/{agent_id}/configure",
+            json={
+                "description": description,
+                "client_url": client_url,
+            },
+            headers=headers,
+            timeout=REQUEST_TIMEOUT,
+        )
+
+        if not response.status_code == 200:
+            click.echo(f"Failed to get agent state with status {response.status_code}: {response.text}")
+        else:
+            click.echo("Agent metadata successfully updated.")
+    except Exception as e:
+        click.echo(f"Failed to get agent state: {str(e)}")
+
+
+@agent.command()
 @click.argument("agent_id")
 def destroy(agent_id: str):
     """Destroy a deployed agent from Galadriel platform."""
@@ -585,7 +621,8 @@ def _publish_image(image_name: str, docker_username: str, docker_password: str) 
         subprocess.run(
             ["docker", "login", "-u", docker_username, "-p", docker_password, "docker.io"],
             check=True,
-            stderr=subprocess.DEVNULL,  # Silence the warning of passing password on the command line. This is not a problem since we are using it on local machine.
+            # Silence the warning of passing password on the command line. This is not a problem since we are using it on local machine.
+            stderr=subprocess.DEVNULL,
         )
         click.echo("Successfully logged into Docker Hub")
     except subprocess.CalledProcessError:
