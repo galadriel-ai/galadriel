@@ -164,9 +164,8 @@ def metadata(agent_id: str):
     if not api_key:
         raise click.ClickException("GALADRIEL_API_KEY not found in environment")
 
-    client_url = ""
-    while not client_url:
-        client_url = input("Agent client URL: ")
+    description = input("Agent description (empty for none): ")
+    client_url = input("Agent client URL (empty for none): ")
 
     try:
         headers = {
@@ -177,6 +176,7 @@ def metadata(agent_id: str):
         response = requests.post(
             f"{API_BASE_URL}/agents/{agent_id}/configure",
             json={
+                "description": description,
                 "client_url": client_url,
             },
             headers=headers,
