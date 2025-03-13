@@ -5,15 +5,15 @@ from botocore.exceptions import ClientError
 
 from galadriel.state.agent_state_repository import AgentStateRepository
 
-AGENT_INSTANCE_ID = "test-agent-123"
+AGENT_ID = "test-agent-123"
 BUCKET_NAME = "agents-memory-storage"
 
 
 @pytest.fixture
-def mock_agent_instance_id(monkeypatch):
-    """Mock the AGENT_INSTANCE_ID environment variable."""
-    monkeypatch.setenv("AGENT_INSTANCE_ID", AGENT_INSTANCE_ID)
-    yield AGENT_INSTANCE_ID
+def mock_agent_id(monkeypatch):
+    """Mock the AGENT_ID environment variable."""
+    monkeypatch.setenv("AGENT_ID", AGENT_ID)
+    yield AGENT_ID
 
 
 @pytest.fixture
@@ -25,7 +25,7 @@ def mock_s3_client():
 
 
 @pytest.fixture
-def repository(mock_s3_client, mock_agent_instance_id):
+def repository(mock_s3_client, mock_agent_id):
     return AgentStateRepository()
 
 
@@ -38,8 +38,8 @@ def test_download_with_specific_key(mock_download_folder, repository):
 
     assert result is not None
     mock_download_folder.assert_called_once_with(
-        f"agents/{AGENT_INSTANCE_ID}/{key}/",
-        f"/tmp/{AGENT_INSTANCE_ID}/{key}/",
+        f"agents/{AGENT_ID}/{key}/",
+        f"/tmp/{AGENT_ID}/{key}/",
     )
 
 
@@ -52,12 +52,10 @@ def test_download_latest(mock_download_folder, repository, mock_s3_client):
     result = repository.download_agent_state()
 
     assert result is not None
-    mock_s3_client.get_object.assert_called_once_with(
-        Bucket=BUCKET_NAME, Key=f"agents/{AGENT_INSTANCE_ID}/latest.state"
-    )
+    mock_s3_client.get_object.assert_called_once_with(Bucket=BUCKET_NAME, Key=f"agents/{AGENT_ID}/latest.state")
     mock_download_folder.assert_called_once_with(
-        f"agents/{AGENT_INSTANCE_ID}/{latest_key}/",
-        f"/tmp/{AGENT_INSTANCE_ID}/{latest_key}/",
+        f"agents/{AGENT_ID}/{latest_key}/",
+        f"/tmp/{AGENT_ID}/{latest_key}/",
     )
 
 
@@ -83,9 +81,11 @@ def test_upload_with_specific_key(mock_upload_folder, repository, mock_s3_client
     result = repository.upload_agent_state(file_path, key)
 
     assert result == key
-    mock_upload_folder.assert_called_once_with(file_path, f"agents/{AGENT_INSTANCE_ID}/state_{key}")
+    mock_upload_folder.assert_called_once_with(file_path, f"agents/{AGENT_ID}/state_{key}")
     mock_s3_client.put_object.assert_called_once_with(
-        Bucket=BUCKET_NAME, Key=f"agents/{AGENT_INSTANCE_ID}/latest.state", Body=key.encode()
+        Bucket=BUCKET_NAME,
+        Key=f"agents/{AGENT_ID}/latest.state",
+        Body=key.encode(),
     )
 
 
@@ -99,9 +99,11 @@ def test_upload_without_key(mock_upload_folder, repository, mock_s3_client):
         result = repository.upload_agent_state(file_path)
 
     assert result == "20240226_150000"
-    mock_upload_folder.assert_called_once_with(file_path, f"agents/{AGENT_INSTANCE_ID}/state_20240226_150000")
+    mock_upload_folder.assert_called_once_with(file_path, f"agents/{AGENT_ID}/state_20240226_150000")
     mock_s3_client.put_object.assert_called_once_with(
-        Bucket=BUCKET_NAME, Key=f"agents/{AGENT_INSTANCE_ID}/latest.state", Body=b"20240226_150000"
+        Bucket=BUCKET_NAME,
+        Key=f"agents/{AGENT_ID}/latest.state",
+        Body=b"20240226_150000",
     )
 
 
@@ -123,8 +125,16 @@ def test_upload_folder_to_s3(repository, mock_s3_client, tmp_path):
 
     # Expected S3 upload calls
     expected_calls = [
-        call(str(local_folder / "file1.txt"), repository.bucket_name, f"{remote_folder}file1.txt"),
-        call(str(local_folder / "subdir/file2.txt"), repository.bucket_name, f"{remote_folder}subdir/file2.txt"),
+        call(
+            str(local_folder / "file1.txt"),
+            repository.bucket_name,
+            f"{remote_folder}file1.txt",
+        ),
+        call(
+            str(local_folder / "subdir/file2.txt"),
+            repository.bucket_name,
+            f"{remote_folder}subdir/file2.txt",
+        ),
     ]
 
     # Assert that upload_file was called correctly
@@ -168,7 +178,9 @@ def test_download_folder_from_s3(repository, mock_s3_client, tmp_path):
 
     # Verify S3 download calls
     mock_s3_client.download_file.assert_any_call(
-        repository.bucket_name, "agents/test-instance/state_20240226/file1.txt", str(local_folder / "file1.txt")
+        repository.bucket_name,
+        "agents/test-instance/state_20240226/file1.txt",
+        str(local_folder / "file1.txt"),
     )
     mock_s3_client.download_file.assert_any_call(
         repository.bucket_name,

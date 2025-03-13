@@ -12,7 +12,7 @@ logger = get_agent_logger()
 
 class AgentStateRepository:
     def __init__(self):
-        self.agent_instance_id = os.getenv("AGENT_INSTANCE_ID")
+        self.agent_id = os.getenv("AGENT_ID")
         self.s3_client = boto3.client("s3")
         self.bucket_name = "agents-memory-storage"
 
@@ -28,12 +28,12 @@ class AgentStateRepository:
         try:
             if key is None:
                 # Fetch the latest state key from S3
-                latest_marker_path = f"agents/{self.agent_instance_id}/latest.state"
+                latest_marker_path = f"agents/{self.agent_id}/latest.state"
                 key_obj = self.s3_client.get_object(Bucket=self.bucket_name, Key=latest_marker_path)
                 key = key_obj["Body"].read().decode("utf-8")  # Read the state key from file
 
-            remote_folder_path = f"agents/{self.agent_instance_id}/{key}/"
-            local_folder_path = f"/tmp/{self.agent_instance_id}/{key}/"
+            remote_folder_path = f"agents/{self.agent_id}/{key}/"
+            local_folder_path = f"/tmp/{self.agent_id}/{key}/"
 
             # Download the full folder
             success = self._download_folder_from_s3(remote_folder_path, local_folder_path)
@@ -55,13 +55,13 @@ class AgentStateRepository:
         """
         try:
             key = key or datetime.now().strftime("%Y%m%d_%H%M%S")
-            remote_folder_path = f"agents/{self.agent_instance_id}/state_{key}"
+            remote_folder_path = f"agents/{self.agent_id}/state_{key}"
 
             # Upload folder to S3
             success = self._upload_folder_to_s3(local_folder_path, remote_folder_path)
             if success:
                 # Update the "latest" reference
-                latest_marker_path = f"agents/{self.agent_instance_id}/latest.state"
+                latest_marker_path = f"agents/{self.agent_id}/latest.state"
                 self.s3_client.put_object(Bucket=self.bucket_name, Key=latest_marker_path, Body=key.encode())
                 return key
             return None
