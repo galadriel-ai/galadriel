@@ -31,7 +31,7 @@ class CronUI(Cron):
                 break
 
 
-cron_client = CronUI(interval_seconds=120)
+cron_client = CronUI(interval_seconds=3600)
 chatui_client = ChatUIClient()
 
 # Set up the runtime
