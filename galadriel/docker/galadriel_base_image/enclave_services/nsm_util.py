@@ -5,7 +5,7 @@ This file is modified based on donkersgoed's repository (https://github.com/donk
 try:
     import libnsm
 except ImportError:
-    print("NSMUtil not found, mocking attestation")
+    pass
 
 
 class NSMUtil:
@@ -24,7 +24,7 @@ class NSMUtil:
                 num_bytes,
             )
         except NameError:
-            print("NSMUtil not found, mocking attestation")
+            pass
 
     def get_attestation_doc(self, public_key: bytes) -> bytes:
         """Get the attestation document from /dev/nsm."""
@@ -37,5 +37,4 @@ class NSMUtil:
             )
             return libnsm_att_doc_cose_signed
         except NameError:
-            print("NSMUtil not found, mocking attestation")
             return b"mocked_attestation_doc"
